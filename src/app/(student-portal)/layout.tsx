@@ -7,7 +7,6 @@ import {
   AppShell,
   Avatar,
   Box,
-  Burger,
   Button,
   Group,
   ScrollArea,
@@ -16,7 +15,6 @@ import {
   ThemeIcon,
   UnstyledButton,
 } from "@mantine/core";
-import { useDisclosure } from "@mantine/hooks";
 import { modals } from "@mantine/modals";
 import {
   IconCreditCard,
@@ -31,6 +29,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useEffect } from "react";
+import { BottomNav } from "@/components/portal/BottomNav";
 import { LanguageSwitcher } from "@/components/ui/LanguageSwitcher";
 import { LoadingAnimation } from "@/components/ui/LottieAnimation";
 import { useStudentLogout, useStudentMe } from "@/hooks/api/useStudentAuth";
@@ -79,7 +78,6 @@ export default function StudentPortalLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const [opened, { toggle, close }] = useDisclosure();
   const pathname = usePathname();
   const router = useRouter();
   const t = useTranslations();
@@ -148,26 +146,20 @@ export default function StudentPortalLayout({
       navbar={{
         width: 280,
         breakpoint: "sm",
-        collapsed: { mobile: !opened },
+        collapsed: { mobile: true },
       }}
       padding="md"
       styles={{
         header: {
           backgroundColor: "var(--mantine-color-blue-6)",
           borderBottom: "none",
+          paddingTop: "env(safe-area-inset-top)",
         },
       }}
     >
       <AppShell.Header>
         <Group h="100%" px="md" justify="space-between">
           <Group gap="sm">
-            <Burger
-              opened={opened}
-              onClick={toggle}
-              hiddenFrom="sm"
-              size="sm"
-              color="white"
-            />
             <ThemeIcon size={42} radius="xl" variant="white" color="blue">
               <IconSchool size={24} />
             </ThemeIcon>
@@ -268,7 +260,6 @@ export default function StudentPortalLayout({
                   key={link.href}
                   component={Link}
                   href={link.href}
-                  onClick={close}
                   p="sm"
                   style={{
                     borderRadius: "var(--mantine-radius-md)",
@@ -318,8 +309,9 @@ export default function StudentPortalLayout({
       </AppShell.Navbar>
 
       <AppShell.Main style={{ backgroundColor: "#f8f9fa" }}>
-        <Box>{children}</Box>
+        <Box pb={{ base: 80, sm: 0 }}>{children}</Box>
       </AppShell.Main>
+      <BottomNav />
     </AppShell>
   );
 }

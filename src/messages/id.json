@@ -376,6 +376,7 @@
     "payment": "Pembayaran",
     "history": "Riwayat Transaksi",
     "changePassword": "Ganti Password",
+    "settings": "Pengaturan",
     "admin": "Halaman Admin",
     "mainMenu": "Menu Utama"
   },
@@ -873,7 +874,27 @@
       "totalUnpaid": "Total Belum Bayar",
       "percentage": "Persentase Pembayaran",
       "filterByYear": "Filter berdasarkan Tahun Ajaran"
-    }
+    },
+    "studentsWithOverdue": "Siswa dengan Tunggakan",
+    "totalOverdueRecords": "Total Catatan Tunggakan",
+    "totalOutstandingAmount": "Total Jumlah Tunggakan",
+    "filterByAcademicYear": "Filter tahun ajaran",
+    "filterByGrade": "Filter tingkat",
+    "filterByClass": "Filter kelas",
+    "exportToExcel": "Ekspor ke Excel",
+    "noOverdueFound": "Tidak ada pembayaran tunggakan",
+    "overdueAmount": "Jumlah Tunggakan",
+    "parentName": "Nama Orang Tua",
+    "callParent": "Hubungi orang tua",
+    "month": "Bulan",
+    "dueDate": "Tanggal Jatuh Tempo",
+    "feeAmount": "Jumlah Tagihan",
+    "scholarshipAmount": "Jumlah Beasiswa",
+    "discountAmount": "Jumlah Diskon",
+    "paidAmount": "Jumlah Dibayar",
+    "outstanding": "Sisa Tagihan",
+    "daysOverdue": "Hari Tunggakan",
+    "days": "hari"
   },
   "onlineTransaction": {
     "title": "Transaksi Online",

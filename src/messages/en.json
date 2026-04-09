@@ -376,6 +376,7 @@
     "payment": "Payment",
     "history": "Transaction History",
     "changePassword": "Change Password",
+    "settings": "Settings",
     "admin": "Admin Page",
     "mainMenu": "Main Menu"
   },
@@ -873,7 +874,27 @@
       "totalUnpaid": "Total Unpaid",
       "percentage": "Payment Percentage",
       "filterByYear": "Filter by Academic Year"
-    }
+    },
+    "studentsWithOverdue": "Students with Overdue",
+    "totalOverdueRecords": "Total Overdue Records",
+    "totalOutstandingAmount": "Total Outstanding Amount",
+    "filterByAcademicYear": "Filter by academic year",
+    "filterByGrade": "Filter by grade",
+    "filterByClass": "Filter by class",
+    "exportToExcel": "Export to Excel",
+    "noOverdueFound": "No overdue payments found",
+    "overdueAmount": "Overdue Amount",
+    "parentName": "Parent Name",
+    "callParent": "Call parent",
+    "month": "Month",
+    "dueDate": "Due Date",
+    "feeAmount": "Fee Amount",
+    "scholarshipAmount": "Scholarship Amount",
+    "discountAmount": "Discount Amount",
+    "paidAmount": "Paid Amount",
+    "outstanding": "Outstanding",
+    "daysOverdue": "Days Overdue",
+    "days": "days"
   },
   "onlineTransaction": {
     "title": "Online Transactions",
