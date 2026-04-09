@@ -4,18 +4,15 @@ import { NavLink, Stack, Text } from "@mantine/core";
 import {
   IconAlertTriangle,
   IconBuilding,
-  IconBuildingBank,
   IconCalendar,
   IconCash,
   IconChartBar,
-  IconCreditCard,
   IconDiscount,
   IconGift,
   IconHome,
   IconReceipt,
   IconReportAnalytics,
   IconSchool,
-  IconTestPipe,
   IconUserCircle,
   IconUsers,
 } from "@tabler/icons-react";
@@ -51,26 +48,10 @@ export default function Sidebar() {
     { icon: IconDiscount, label: t("discounts"), href: "/admin/discounts" },
     { icon: IconReceipt, label: t("payments"), href: "/admin/payments" },
     {
-      icon: IconCreditCard,
-      label: t("onlineTransactions"),
-      href: "/admin/online-transactions",
-    },
-    {
       icon: IconUserCircle,
       label: t("studentAccounts"),
       href: "/admin/student-accounts",
     },
-    {
-      icon: IconBuildingBank,
-      label: t("bankAccounts"),
-      href: "/admin/bank-accounts",
-    },
-    {
-      icon: IconTestPipe,
-      label: t("testTransfer"),
-      href: "/admin/test-transfer",
-    },
-
     {
       icon: IconReportAnalytics,
       label: t("reports"),
@@ -93,11 +74,6 @@ export default function Sidebar() {
     { icon: IconHome, label: t("dashboard"), href: "/admin/dashboard" },
     { icon: IconSchool, label: t("students"), href: "/admin/students" },
     { icon: IconReceipt, label: t("payments"), href: "/admin/payments" },
-    {
-      icon: IconCreditCard,
-      label: t("onlineTransactions"),
-      href: "/admin/online-transactions",
-    },
     {
       icon: IconReportAnalytics,
       label: t("reports"),

@@ -76,13 +76,6 @@ export interface DiscountFilters {
   isActive?: boolean;
 }
 
-// Student Portal Filters
-export interface StudentPaymentRequestFilters {
-  page?: number;
-  limit?: number;
-  status?: string;
-}
-
 export interface StudentAccountFilters {
   page?: number;
   limit?: number;
@@ -101,13 +94,6 @@ export interface RateLimitFilters {
   action?: string;
   identifier?: string;
   limit?: number;
-}
-
-export interface AdminPaymentRequestFilters {
-  page?: number;
-  limit?: number;
-  status?: string;
-  search?: string;
 }
 
 export const queryKeys = {
@@ -217,36 +203,12 @@ export const queryKeys = {
     list: () => [...queryKeys.studentTuitions.all, "list"] as const,
   },
 
-  studentBanks: {
-    all: ["student-banks"] as const,
-    list: () => [...queryKeys.studentBanks.all, "list"] as const,
-  },
-
-  studentPaymentRequests: {
-    all: ["student-payment-requests"] as const,
-    lists: () => [...queryKeys.studentPaymentRequests.all, "list"] as const,
-    list: (filters: StudentPaymentRequestFilters) =>
-      [...queryKeys.studentPaymentRequests.lists(), filters] as const,
-    details: () => [...queryKeys.studentPaymentRequests.all, "detail"] as const,
-    detail: (id: string) =>
-      [...queryKeys.studentPaymentRequests.details(), id] as const,
-    active: () => [...queryKeys.studentPaymentRequests.all, "active"] as const,
-  },
-
   // Admin Phase 3
   studentAccounts: {
     all: ["student-accounts"] as const,
     lists: () => [...queryKeys.studentAccounts.all, "list"] as const,
     list: (filters: StudentAccountFilters) =>
       [...queryKeys.studentAccounts.lists(), filters] as const,
-  },
-
-  bankAccounts: {
-    all: ["bank-accounts"] as const,
-    lists: () => [...queryKeys.bankAccounts.all, "list"] as const,
-    list: () => [...queryKeys.bankAccounts.lists()] as const,
-    details: () => [...queryKeys.bankAccounts.all, "detail"] as const,
-    detail: (id: string) => [...queryKeys.bankAccounts.details(), id] as const,
   },
 
   notifications: {
@@ -262,16 +224,4 @@ export const queryKeys = {
       [...queryKeys.rateLimits.all, "list", filters] as const,
   },
 
-  testTransfer: {
-    all: ["test-transfer"] as const,
-    list: (status: string) =>
-      [...queryKeys.testTransfer.all, "list", status] as const,
-  },
-
-  adminPaymentRequests: {
-    all: ["admin-payment-requests"] as const,
-    lists: () => [...queryKeys.adminPaymentRequests.all, "list"] as const,
-    list: (filters: AdminPaymentRequestFilters) =>
-      [...queryKeys.adminPaymentRequests.lists(), filters] as const,
-  },
 } as const;

@@ -5,7 +5,6 @@
  */
 
 import cron from "node-cron";
-import { expirePendingPayments } from "@/lib/business-logic/payment-request";
 import { deactivateExpiredIdempotencyRecords } from "@/lib/middleware/idempotency";
 import { prisma } from "@/lib/prisma";
 import { deactivateExpiredRateLimits } from "@/lib/services/rate-limit-service";
@@ -37,21 +36,6 @@ cron.schedule("*/5 * * * *", async () => {
     }
   } catch (error) {
     console.error("[Rate Limit] Deactivation error:", error);
-  }
-});
-
-/**
- * Expire pending payment requests
- * Runs every minute
- */
-cron.schedule("* * * * *", async () => {
-  try {
-    const count = await expirePendingPayments();
-    if (count > 0) {
-      console.log(`[Payment Expiration] Expired ${count} payment requests`);
-    }
-  } catch (error) {
-    console.error("[Payment Expiration] Error:", error);
   }
 });
 

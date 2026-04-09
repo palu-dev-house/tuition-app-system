@@ -17,7 +17,6 @@ import {
 } from "@mantine/core";
 import { modals } from "@mantine/modals";
 import {
-  IconCreditCard,
   IconHistory,
   IconHome,
   IconKey,
@@ -36,12 +35,6 @@ import { useStudentLogout, useStudentMe } from "@/hooks/api/useStudentAuth";
 
 const navLinks = [
   { href: "/portal", labelKey: "nav.home", icon: IconHome, color: "blue" },
-  {
-    href: "/portal/payment",
-    labelKey: "nav.payment",
-    icon: IconCreditCard,
-    color: "green",
-  },
   {
     href: "/portal/history",
     labelKey: "nav.history",

@@ -1,6 +1,5 @@
 export * from "./schemas/academic-year.schema";
 export * from "./schemas/auth.schema";
-export * from "./schemas/bank-account.schema";
 export * from "./schemas/class.schema";
 export * from "./schemas/discount.schema";
 export * from "./schemas/employee.schema";
