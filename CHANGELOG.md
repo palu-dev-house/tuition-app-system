@@ -1,5 +1,31 @@
 # Changelog
 
+## [2.2.0] - 2026-04-09
+
+### Features
+- add server-side i18n helper with api namespace translations
+- add shared Zod validation schemas for all entities
+- add backend parseWithLocale and frontend Mantine Zod resolver
+- migrate all API routes to i18n + Zod validation
+- add circuit breaker for database operations
+- add request deduplication for concurrent GET requests
+- add vaul-based BottomSheet component for mobile interactions
+- migrate all forms to shared Zod validation with Mantine resolver
+- expand idempotency to all financial mutation endpoints
+- add mobile bottom navigation for student portal
+
+### Fixes
+- fix LanguageSwitcher cookie bug, translate rate limit errors
+
+### Other
+- docs: add hardening and mobile UX design spec
+- docs: remove testing section from design spec
+- docs: add hardening and mobile UX implementation plan
+- chore: remove WhatsApp integration (will be re-added later)
+- Merge branch 'main' of github.com-ARS-Ferdy:ferdyars/tuition-app-system
+
+
+
 ## [2.1.1] - 2026-02-06
 
 ### Fixes
