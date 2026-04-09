@@ -3,6 +3,7 @@
 import { LoadingOverlay, Paper, Text } from "@mantine/core";
 import { notifications } from "@mantine/notifications";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { use } from "react";
 import AcademicYearForm from "@/components/forms/AcademicYearForm";
 import PageHeader from "@/components/ui/PageHeader/PageHeader";
@@ -16,6 +17,7 @@ export default function EditAcademicYearPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
+  const t = useTranslations();
   const { id } = use(params);
   const router = useRouter();
   const { data: academicYear, isLoading } = useAcademicYear(id);
@@ -32,15 +34,15 @@ export default function EditAcademicYearPage({
       {
         onSuccess: () => {
           notifications.show({
-            title: "Success",
-            message: "Academic year updated successfully",
+            title: t("common.success"),
+            message: t("academicYear.updateSuccess"),
             color: "green",
           });
           router.push("/admin/academic-years");
         },
         onError: (error) => {
           notifications.show({
-            title: "Error",
+            title: t("common.error"),
             message: error.message,
             color: "red",
           });
@@ -50,13 +52,13 @@ export default function EditAcademicYearPage({
   };
 
   if (isLoading) return <LoadingOverlay visible />;
-  if (!academicYear) return <Text>Academic year not found</Text>;
+  if (!academicYear) return <Text>{t("academicYear.notFoundMessage")}</Text>;
 
   return (
     <>
       <PageHeader
-        title="Edit Academic Year"
-        description={`Editing ${academicYear.year}`}
+        title={t("academicYear.edit")}
+        description={t("academicYear.editDescription", { year: academicYear.year })}
       />
       <Paper withBorder p="lg" maw={500}>
         <AcademicYearForm

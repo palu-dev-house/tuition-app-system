@@ -34,6 +34,8 @@ import { getMonthDisplayName } from "@/lib/business-logic/tuition-generator";
 
 export default function OverdueReportTable() {
   const t = useTranslations("report");
+  const tClass = useTranslations("class");
+  const tAcademicYear = useTranslations("academicYear");
   const { setParams, getParam } = useQueryParams();
   const classAcademicId = getParam("classAcademicId") ?? null;
   const grade = getParam("grade") ?? null;
@@ -41,7 +43,7 @@ export default function OverdueReportTable() {
 
   const grades = Array.from({ length: 12 }, (_, i) => ({
     value: String(i + 1),
-    label: `Grade ${i + 1}`,
+    label: `${tClass("grade")} ${i + 1}`,
   }));
 
   const { data: academicYearsData } = useAcademicYears({ limit: 100 });
@@ -72,7 +74,9 @@ export default function OverdueReportTable() {
   const yearOptions =
     academicYearsData?.academicYears?.map((ay) => ({
       value: ay.id,
-      label: ay.year + (ay.isActive ? " (Active)" : ""),
+      label:
+        ay.year +
+        (ay.isActive ? ` (${tAcademicYear("statuses.active")})` : ""),
     })) || [];
 
   const classOptions =

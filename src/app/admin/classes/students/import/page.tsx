@@ -20,6 +20,7 @@ import {
   IconUpload,
 } from "@tabler/icons-react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { useState } from "react";
 import PageHeader from "@/components/ui/PageHeader/PageHeader";
 import { useAcademicYears } from "@/hooks/api/useAcademicYears";
@@ -36,6 +37,7 @@ interface ImportResult {
 }
 
 export default function ImportStudentClassesPage() {
+  const t = useTranslations();
   const router = useRouter();
   const [file, setFile] = useState<File | null>(null);
   const [academicYearId, setAcademicYearId] = useState<string | null>(null);
@@ -50,8 +52,37 @@ export default function ImportStudentClassesPage() {
   const handleImport = async () => {
     if (!file) return;
 
-    const response = await importMutation.mutateAsync(file);
-    setResult(response.data);
+    try {
+      const response = await importMutation.mutateAsync(file);
+      setResult(response.data);
+      const result = response.data;
+      if (result.errors.length > 0) {
+        notifications.show({
+          title: t("class.importCompleteWithErrors"),
+          message: t("class.importCompleteWithErrorsMessage", {
+            imported: result.imported,
+            skipped: result.skipped,
+            errors: result.errors.length,
+          }),
+          color: "yellow",
+        });
+      } else {
+        notifications.show({
+          title: t("common.success"),
+          message: t("class.importSuccessMessage", {
+            imported: result.imported,
+            skipped: result.skipped,
+          }),
+          color: "green",
+        });
+      }
+    } catch (error) {
+      notifications.show({
+        title: t("class.importFailedError"),
+        message: error instanceof Error ? error.message : String(error),
+        color: "red",
+      });
+    }
   };
 
   const handleDownloadTemplate = () => {
@@ -61,21 +92,22 @@ export default function ImportStudentClassesPage() {
   const yearOptions =
     academicYearsData?.academicYears.map((ay) => ({
       value: ay.id,
-      label: ay.year + (ay.isActive ? " (Active)" : ""),
+      label:
+        ay.year + (ay.isActive ? ` (${t("academicYear.statuses.active")})` : ""),
     })) || [];
 
   return (
     <>
       <PageHeader
-        title="Import Student Class Assignments"
-        description="Bulk assign students to classes using Excel"
+        title={t("class.importAssignmentsTitle")}
+        description={t("class.importAssignmentsDescription")}
         actions={
           <Button
             variant="light"
             leftSection={<IconArrowLeft size={18} />}
             onClick={() => router.push("/admin/classes")}
           >
-            Back to Classes
+            {t("class.backToClasses")}
           </Button>
         }
       />
@@ -83,14 +115,13 @@ export default function ImportStudentClassesPage() {
       <Stack gap="md">
         <Paper withBorder p="md">
           <Stack gap="md">
-            <Text fw={600}>Step 1: Download Template</Text>
+            <Text fw={600}>{t("class.downloadTemplateStep")}</Text>
             <Text size="sm" c="dimmed">
-              Download the template with a list of students and classes for
-              reference.
+              {t("class.downloadTemplateDesc")}
             </Text>
             <Group>
               <Select
-                placeholder="Select academic year for classes"
+                placeholder={t("class.selectAcademicYearForClasses")}
                 data={yearOptions}
                 value={academicYearId}
                 onChange={setAcademicYearId}
@@ -102,7 +133,7 @@ export default function ImportStudentClassesPage() {
                 leftSection={<IconDownload size={18} />}
                 onClick={handleDownloadTemplate}
               >
-                Download Template
+                {t("class.downloadTemplate")}
               </Button>
             </Group>
           </Stack>
@@ -110,13 +141,13 @@ export default function ImportStudentClassesPage() {
 
         <Paper withBorder p="md">
           <Stack gap="md">
-            <Text fw={600}>Step 2: Upload Filled Template</Text>
+            <Text fw={600}>{t("class.uploadStep")}</Text>
             <Text size="sm" c="dimmed">
-              Fill in the template with Student NIS and Class Name, then upload.
+              {t("class.uploadStepDesc")}
             </Text>
             <Group>
               <FileInput
-                placeholder="Select Excel file"
+                placeholder={t("class.selectExcelFile")}
                 accept=".xlsx,.xls"
                 value={file}
                 onChange={setFile}
@@ -128,7 +159,7 @@ export default function ImportStudentClassesPage() {
                 loading={importMutation.isPending}
                 disabled={!file}
               >
-                Import
+                {t("common.import")}
               </Button>
             </Group>
           </Stack>
@@ -137,7 +168,7 @@ export default function ImportStudentClassesPage() {
         {result && (
           <Paper withBorder p="md">
             <Stack gap="md">
-              <Text fw={600}>Import Results</Text>
+              <Text fw={600}>{t("class.importResults")}</Text>
 
               <Group gap="xl">
                 <Group gap="xs">
@@ -146,17 +177,21 @@ export default function ImportStudentClassesPage() {
                     size="lg"
                     leftSection={<IconCheck size={14} />}
                   >
-                    Imported: {result.imported}
+                    {t("student.importedCount", {
+                      count: result.imported,
+                      updated: 0,
+                    }).split(",")[0]}
+                    : {result.imported}
                   </Badge>
                 </Group>
                 <Group gap="xs">
                   <Badge color="yellow" size="lg">
-                    Skipped: {result.skipped}
+                    {t("common.filter")}: {result.skipped}
                   </Badge>
                 </Group>
                 <Group gap="xs">
                   <Badge color="red" size="lg">
-                    Errors: {result.errors.length}
+                    {t("common.error")}: {result.errors.length}
                   </Badge>
                 </Group>
               </Group>
@@ -165,18 +200,18 @@ export default function ImportStudentClassesPage() {
                 <>
                   <Alert
                     icon={<IconAlertCircle size={18} />}
-                    title="Import Errors"
+                    title={t("class.importErrors")}
                     color="red"
                   >
-                    Some rows could not be imported. See details below.
+                    {t("class.importErrorsDetail")}
                   </Alert>
 
                   <Table striped>
                     <Table.Thead>
                       <Table.Tr>
-                        <Table.Th>Row</Table.Th>
-                        <Table.Th>NIS</Table.Th>
-                        <Table.Th>Error</Table.Th>
+                        <Table.Th>{t("common.actions")}</Table.Th>
+                        <Table.Th>{t("student.nis")}</Table.Th>
+                        <Table.Th>{t("common.error")}</Table.Th>
                       </Table.Tr>
                     </Table.Thead>
                     <Table.Tbody>
@@ -196,7 +231,9 @@ export default function ImportStudentClassesPage() {
 
                   {result.errors.length > 50 && (
                     <Text size="sm" c="dimmed">
-                      Showing first 50 errors of {result.errors.length}
+                      {t("class.showingErrors", {
+                        count: result.errors.length,
+                      })}
                     </Text>
                   )}
                 </>

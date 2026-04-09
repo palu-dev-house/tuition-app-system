@@ -16,11 +16,13 @@ import {
   IconDownload,
   IconFileUpload,
 } from "@tabler/icons-react";
+import { useTranslations } from "next-intl";
 import { useState } from "react";
 import PageHeader from "@/components/ui/PageHeader/PageHeader";
 import { useImportClassAcademics } from "@/hooks/api/useClassAcademics";
 
 export default function ImportClassesPage() {
+  const t = useTranslations();
   const [file, setFile] = useState<File | null>(null);
   const importClasses = useImportClassAcademics();
   const [result, setResult] = useState<{
@@ -39,15 +41,15 @@ export default function ImportClassesPage() {
       onSuccess: (data) => {
         setResult(data);
         notifications.show({
-          title: "Import Complete",
-          message: `Imported ${data.imported} classes`,
+          title: t("student.importComplete"),
+          message: t("class.importClassesSuccess", { count: data.imported }),
           color: "green",
         });
         setFile(null);
       },
       onError: (error) => {
         notifications.show({
-          title: "Import Failed",
+          title: t("student.importFailed"),
           message: error.message,
           color: "red",
         });
@@ -58,8 +60,8 @@ export default function ImportClassesPage() {
   return (
     <>
       <PageHeader
-        title="Import Classes"
-        description="Import academic classes from Excel file"
+        title={t("class.importClasses")}
+        description={t("class.importClassesDescription")}
       />
       <Paper withBorder p="lg" maw={600}>
         <Stack gap="md">
@@ -68,12 +70,12 @@ export default function ImportClassesPage() {
             variant="light"
             onClick={handleDownloadTemplate}
           >
-            Download Excel Template
+            {t("student.downloadExcelTemplate")}
           </Button>
 
           <FileInput
-            label="Upload Excel File"
-            placeholder="Choose .xlsx file"
+            label={t("student.uploadExcelFile")}
+            placeholder={t("student.chooseFile")}
             accept=".xlsx,.xls"
             value={file}
             onChange={setFile}
@@ -85,7 +87,7 @@ export default function ImportClassesPage() {
             disabled={!file}
             loading={importClasses.isPending}
           >
-            Process Import
+            {t("student.processImport")}
           </Button>
 
           {result && (
@@ -93,7 +95,11 @@ export default function ImportClassesPage() {
               {result.imported > 0 && (
                 <Alert icon={<IconCheck size={18} />} color="green">
                   <Group gap="xs">
-                    <Text size="sm">Imported: {result.imported} classes</Text>
+                    <Text size="sm">
+                      {t("class.importClassesSuccess", {
+                        count: result.imported,
+                      })}
+                    </Text>
                   </Group>
                 </Alert>
               )}
@@ -101,7 +107,9 @@ export default function ImportClassesPage() {
                 <Alert icon={<IconAlertCircle size={18} />} color="red">
                   <Stack gap="xs">
                     <Text size="sm" fw={600}>
-                      {result.errors.length} rows had errors:
+                      {t("discount.rowErrors", {
+                        count: result.errors.length,
+                      })}
                     </Text>
                     {result.errors.slice(0, 5).map((err) => (
                       <Text key={err.row} size="sm">
@@ -110,7 +118,9 @@ export default function ImportClassesPage() {
                     ))}
                     {result.errors.length > 5 && (
                       <Text size="sm" c="dimmed">
-                        ... and {result.errors.length - 5} more errors
+                        {t("discount.andMoreErrors", {
+                          count: result.errors.length - 5,
+                        })}
                       </Text>
                     )}
                   </Stack>

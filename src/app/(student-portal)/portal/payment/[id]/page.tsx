@@ -28,6 +28,7 @@ import {
   IconX,
 } from "@tabler/icons-react";
 import { useParams, useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 import { PaymentDetailSkeleton } from "@/components/ui/PortalSkeleton";
 import { useStudentBanks } from "@/hooks/api/useStudentBanks";
@@ -78,6 +79,8 @@ function formatTime(seconds: number): string {
 }
 
 export default function PaymentDetailPage() {
+  const t = useTranslations("payment");
+  const tCommon = useTranslations("common");
   const params = useParams();
   const router = useRouter();
   const id = params.id as string;
@@ -118,14 +121,11 @@ export default function PaymentDetailPage() {
     if (!payment) return;
 
     modals.openConfirmModal({
-      title: "Batalkan Pembayaran?",
+      title: t("cancelConfirmTitle"),
       children: (
-        <Text size="sm">
-          Apakah Anda yakin ingin membatalkan pembayaran ini? Anda dapat membuat
-          pembayaran baru setelah membatalkan.
-        </Text>
+        <Text size="sm">{t("cancelConfirmDesc")}</Text>
       ),
-      labels: { confirm: "Ya, Batalkan", cancel: "Tidak" },
+      labels: { confirm: t("yesCancel"), cancel: tCommon("no") },
       confirmProps: { color: "red" },
       onConfirm: async () => {
         setCancelError(null);
@@ -133,13 +133,13 @@ export default function PaymentDetailPage() {
           await cancelPayment.mutateAsync(payment.id);
           refetch();
           notifications.show({
-            title: "Pembayaran Dibatalkan",
-            message: "Pembayaran berhasil dibatalkan",
+            title: t("paymentCancelled"),
+            message: t("cancelledSuccess"),
             color: "orange",
           });
         } catch (err) {
           setCancelError(
-            err instanceof Error ? err.message : "Gagal membatalkan pembayaran",
+            err instanceof Error ? err.message : t("failedCancel"),
           );
         }
       },
@@ -149,8 +149,8 @@ export default function PaymentDetailPage() {
   const handleCopy = (text: string, label: string) => {
     navigator.clipboard.writeText(text);
     notifications.show({
-      title: "Tersalin",
-      message: `${label} berhasil disalin ke clipboard`,
+      title: t("copiedTitle"),
+      message: t("copiedToClipboard", { label }),
       color: "green",
       icon: <IconCheck size={16} />,
       autoClose: 2000,

@@ -3,11 +3,13 @@
 import { Paper } from "@mantine/core";
 import { notifications } from "@mantine/notifications";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import EmployeeForm from "@/components/forms/EmployeeForm";
 import PageHeader from "@/components/ui/PageHeader/PageHeader";
 import { useCreateEmployee } from "@/hooks/api/useEmployees";
 
 export default function NewEmployeePage() {
+  const t = useTranslations();
   const router = useRouter();
   const createEmployee = useCreateEmployee();
 
@@ -19,15 +21,15 @@ export default function NewEmployeePage() {
     createEmployee.mutate(data, {
       onSuccess: () => {
         notifications.show({
-          title: "Success",
-          message: "Employee created with default password (123456)",
+          title: t("common.success"),
+          message: t("employee.defaultPasswordNote"),
           color: "green",
         });
         router.push("/admin/employees");
       },
       onError: (error) => {
         notifications.show({
-          title: "Error",
+          title: t("common.error"),
           message: error.message,
           color: "red",
         });
@@ -38,8 +40,8 @@ export default function NewEmployeePage() {
   return (
     <>
       <PageHeader
-        title="Add Employee"
-        description="Create a new employee account"
+        title={t("employee.add")}
+        description={t("employee.addDescription")}
       />
       <Paper withBorder p="lg" maw={500}>
         <EmployeeForm

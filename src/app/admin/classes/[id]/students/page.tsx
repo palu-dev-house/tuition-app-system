@@ -28,6 +28,7 @@ import {
 } from "@tabler/icons-react";
 import dayjs from "dayjs";
 import { useParams, useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { useState } from "react";
 import PageHeader from "@/components/ui/PageHeader/PageHeader";
 import {
@@ -38,6 +39,7 @@ import {
 } from "@/hooks/api/useStudentClasses";
 
 export default function ClassStudentsPage() {
+  const t = useTranslations();
   const params = useParams();
   const router = useRouter();
   const classId = params.id as string;
@@ -78,14 +80,13 @@ export default function ClassStudentsPage() {
     if (selectedStudents.length === 0) return;
 
     modals.openConfirmModal({
-      title: "Remove Students",
+      title: t("class.removeStudents"),
       children: (
         <Text size="sm">
-          Are you sure you want to remove {selectedStudents.length} student(s)
-          from this class? This will not delete their tuition records.
+          {t("class.removeStudentsConfirm", { count: selectedStudents.length })}
         </Text>
       ),
-      labels: { confirm: "Remove", cancel: "Cancel" },
+      labels: { confirm: t("class.remove"), cancel: t("common.cancel") },
       confirmProps: { color: "red" },
       onConfirm: () => {
         removeStudents.mutate(
@@ -93,6 +94,18 @@ export default function ClassStudentsPage() {
           {
             onSuccess: () => {
               setSelectedStudents([]);
+              notifications.show({
+                title: t("common.success"),
+                message: t("class.studentsRemovedSuccess"),
+                color: "green",
+              });
+            },
+            onError: (error) => {
+              notifications.show({
+                title: t("common.error"),
+                message: error.message,
+                color: "red",
+              });
             },
           },
         );
@@ -103,8 +116,8 @@ export default function ClassStudentsPage() {
   const handleAddStudents = () => {
     if (selectedToAdd.length === 0) {
       notifications.show({
-        title: "No students selected",
-        message: "Please select at least one student to add",
+        title: t("class.noStudentsSelected"),
+        message: t("class.pleaseSelectStudents"),
         color: "yellow",
       });
       return;
@@ -113,9 +126,34 @@ export default function ClassStudentsPage() {
     assignStudents.mutate(
       { classAcademicId: classId, studentNisList: selectedToAdd },
       {
-        onSuccess: () => {
+        onSuccess: (data) => {
           setSelectedToAdd([]);
           close();
+          if (data.skipped > 0) {
+            notifications.show({
+              title: t("class.studentsAssigned"),
+              message: t("class.studentsAssignedMessage", {
+                assigned: data.assigned,
+                skipped: data.skipped,
+              }),
+              color: "yellow",
+            });
+          } else {
+            notifications.show({
+              title: t("common.success"),
+              message: t("class.studentsAssignedSuccess", {
+                assigned: data.assigned,
+              }),
+              color: "green",
+            });
+          }
+        },
+        onError: (error) => {
+          notifications.show({
+            title: t("common.error"),
+            message: error.message,
+            color: "red",
+          });
         },
       },
     );
@@ -140,11 +178,18 @@ export default function ClassStudentsPage() {
   return (
     <>
       <PageHeader
-        title={data ? `Students - ${data.class.className}` : "Class Students"}
+        title={
+          data
+            ? t("class.studentsTitle", { className: data.class.className })
+            : t("class.studentsDefaultTitle")
+        }
         description={
           data
-            ? `${data.totalStudents} student(s) enrolled in ${data.class.academicYear}`
-            : "Manage students in this class"
+            ? t("class.studentsDescription", {
+                count: data.totalStudents,
+                academicYear: data.class.academicYear,
+              })
+            : t("class.studentsDefaultDescription")
         }
         actions={
           <Group gap="sm">
@@ -153,10 +198,10 @@ export default function ClassStudentsPage() {
               leftSection={<IconArrowLeft size={18} />}
               onClick={() => router.push("/admin/classes")}
             >
-              Back to Classes
+              {t("class.backToClasses")}
             </Button>
             <Button leftSection={<IconPlus size={18} />} onClick={open}>
-              Add Students
+              {t("class.addStudents")}
             </Button>
           </Group>
         }
@@ -166,7 +211,9 @@ export default function ClassStudentsPage() {
       {selectedStudents.length > 0 && (
         <Paper withBorder p="sm" mb="md" bg="red.0">
           <Group justify="space-between">
-            <Text size="sm">{selectedStudents.length} student(s) selected</Text>
+            <Text size="sm">
+              {t("class.selectedCount", { count: selectedStudents.length })}
+            </Text>
             <Button
               size="sm"
               color="red"
@@ -174,7 +221,7 @@ export default function ClassStudentsPage() {
               onClick={handleRemoveSelected}
               loading={removeStudents.isPending}
             >
-              Remove from Class
+              {t("class.removeFromClass")}
             </Button>
           </Group>
         </Paper>
@@ -200,13 +247,13 @@ export default function ClassStudentsPage() {
                   onChange={(e) => handleSelectAll(e.currentTarget.checked)}
                 />
               </Table.Th>
-              <Table.Th>NIS</Table.Th>
-              <Table.Th>Name</Table.Th>
-              <Table.Th>Parent</Table.Th>
-              <Table.Th>Phone</Table.Th>
-              <Table.Th>Join Date</Table.Th>
-              <Table.Th>Enrolled At</Table.Th>
-              <Table.Th w={80}>Actions</Table.Th>
+              <Table.Th>{t("student.nis")}</Table.Th>
+              <Table.Th>{t("common.name")}</Table.Th>
+              <Table.Th>{t("student.parentName")}</Table.Th>
+              <Table.Th>{t("common.phone")}</Table.Th>
+              <Table.Th>{t("class.joinDate")}</Table.Th>
+              <Table.Th>{t("class.enrolledAt")}</Table.Th>
+              <Table.Th w={80}>{t("common.actions")}</Table.Th>
             </Table.Tr>
           </Table.Thead>
           <Table.Tbody>
@@ -226,9 +273,9 @@ export default function ClassStudentsPage() {
                   <Stack align="center" gap="md" py="xl">
                     <IconUsers size={48} color="gray" />
                     <Text ta="center" c="dimmed">
-                      No students in this class yet.
+                      {t("class.noStudentsYet")}
                       <br />
-                      Click "Add Students" to assign students.
+                      {t("class.clickAddStudents")}
                     </Text>
                   </Stack>
                 </Table.Td>
@@ -269,26 +316,48 @@ export default function ClassStudentsPage() {
                   </Text>
                 </Table.Td>
                 <Table.Td>
-                  <Tooltip label="Remove from class">
+                  <Tooltip label={t("class.removeFromClassTooltip")}>
                     <ActionIcon
                       variant="subtle"
                       color="red"
                       onClick={() => {
                         modals.openConfirmModal({
-                          title: "Remove Student",
+                          title: t("class.removeStudents"),
                           children: (
                             <Text size="sm">
-                              Remove <strong>{student.name}</strong> from this
-                              class?
+                              {t("class.removeStudentConfirmSingle", {
+                                name: student.name,
+                              })}
                             </Text>
                           ),
-                          labels: { confirm: "Remove", cancel: "Cancel" },
+                          labels: {
+                            confirm: t("class.remove"),
+                            cancel: t("common.cancel"),
+                          },
                           confirmProps: { color: "red" },
                           onConfirm: () => {
-                            removeStudents.mutate({
-                              classAcademicId: classId,
-                              studentNisList: [student.nis],
-                            });
+                            removeStudents.mutate(
+                              {
+                                classAcademicId: classId,
+                                studentNisList: [student.nis],
+                              },
+                              {
+                                onSuccess: () => {
+                                  notifications.show({
+                                    title: t("common.success"),
+                                    message: t("class.studentsRemovedSuccess"),
+                                    color: "green",
+                                  });
+                                },
+                                onError: (error) => {
+                                  notifications.show({
+                                    title: t("common.error"),
+                                    message: error.message,
+                                    color: "red",
+                                  });
+                                },
+                              },
+                            );
                           },
                         });
                       }}
@@ -307,12 +376,12 @@ export default function ClassStudentsPage() {
       <Modal
         opened={opened}
         onClose={close}
-        title="Add Students to Class"
+        title={t("class.addStudentsToClass")}
         size="lg"
       >
         <Stack gap="md">
           <TextInput
-            placeholder="Search students by name or NIS..."
+            placeholder={t("class.searchStudents")}
             leftSection={<IconSearch size={16} />}
             value={searchUnassigned}
             onChange={(e) => setSearchUnassigned(e.currentTarget.value)}
@@ -341,9 +410,9 @@ export default function ClassStudentsPage() {
                         }
                       />
                     </Table.Th>
-                    <Table.Th>NIS</Table.Th>
-                    <Table.Th>Name</Table.Th>
-                    <Table.Th>Join Date</Table.Th>
+                    <Table.Th>{t("student.nis")}</Table.Th>
+                    <Table.Th>{t("common.name")}</Table.Th>
+                    <Table.Th>{t("class.joinDate")}</Table.Th>
                   </Table.Tr>
                 </Table.Thead>
                 <Table.Tbody>
@@ -362,7 +431,7 @@ export default function ClassStudentsPage() {
                       <Table.Tr>
                         <Table.Td colSpan={4}>
                           <Text ta="center" c="dimmed" py="md">
-                            No unassigned students found
+                            {t("class.noUnassignedStudents")}
                           </Text>
                         </Table.Td>
                       </Table.Tr>
@@ -402,21 +471,22 @@ export default function ClassStudentsPage() {
 
           {selectedToAdd.length > 0 && (
             <Text size="sm" c="dimmed">
-              {selectedToAdd.length} student(s) selected
+              {t("class.selectedCount", { count: selectedToAdd.length })}
             </Text>
           )}
 
           <Group justify="flex-end">
             <Button variant="light" onClick={close}>
-              Cancel
+              {t("common.cancel")}
             </Button>
             <Button
               onClick={handleAddStudents}
               loading={assignStudents.isPending}
               disabled={selectedToAdd.length === 0}
             >
-              Add {selectedToAdd.length > 0 ? `(${selectedToAdd.length})` : ""}{" "}
-              Students
+              {selectedToAdd.length > 0
+                ? t("class.addStudentsCount", { count: selectedToAdd.length })
+                : t("class.addStudentsBtn")}
             </Button>
           </Group>
         </Stack>

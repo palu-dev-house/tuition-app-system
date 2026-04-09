@@ -3,6 +3,7 @@
 import { LoadingOverlay, Paper, Text } from "@mantine/core";
 import { notifications } from "@mantine/notifications";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { use } from "react";
 import ClassAcademicForm from "@/components/forms/ClassAcademicForm";
 import PageHeader from "@/components/ui/PageHeader/PageHeader";
@@ -16,6 +17,7 @@ export default function EditClassPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
+  const t = useTranslations();
   const { id } = use(params);
   const router = useRouter();
   const { data: classAcademic, isLoading } = useClassAcademic(id);
@@ -31,15 +33,15 @@ export default function EditClassPage({
       {
         onSuccess: () => {
           notifications.show({
-            title: "Success",
-            message: "Class updated successfully",
+            title: t("common.success"),
+            message: t("class.updateSuccess"),
             color: "green",
           });
           router.push("/admin/classes");
         },
         onError: (error) => {
           notifications.show({
-            title: "Error",
+            title: t("common.error"),
             message: error.message,
             color: "red",
           });
@@ -49,13 +51,13 @@ export default function EditClassPage({
   };
 
   if (isLoading) return <LoadingOverlay visible />;
-  if (!classAcademic) return <Text>Class not found</Text>;
+  if (!classAcademic) return <Text>{t("class.notFoundMessage")}</Text>;
 
   return (
     <>
       <PageHeader
-        title="Edit Class"
-        description={`Editing ${classAcademic.className}`}
+        title={t("class.edit")}
+        description={t("class.editDescription", { name: classAcademic.className })}
       />
       <Paper withBorder p="lg" maw={500}>
         <ClassAcademicForm

@@ -1,6 +1,5 @@
 "use client";
 
-import { notifications } from "@mantine/notifications";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "@/lib/api-client";
 
@@ -175,31 +174,10 @@ export function useAssignStudentsToClass() {
       );
       return data.data;
     },
-    onSuccess: (data, variables) => {
+    onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: studentClassKeys.all });
       queryClient.invalidateQueries({
         queryKey: studentClassKeys.byClass(variables.classAcademicId),
-      });
-
-      if (data.skipped > 0) {
-        notifications.show({
-          title: "Students Assigned",
-          message: `${data.assigned} assigned, ${data.skipped} already in class`,
-          color: "yellow",
-        });
-      } else {
-        notifications.show({
-          title: "Success",
-          message: `${data.assigned} student(s) assigned to class`,
-          color: "green",
-        });
-      }
-    },
-    onError: (error: Error) => {
-      notifications.show({
-        title: "Error",
-        message: error.message,
-        color: "red",
       });
     },
   });
@@ -235,19 +213,6 @@ export function useRemoveStudentsFromClass() {
       queryClient.invalidateQueries({
         queryKey: studentClassKeys.byClass(variables.classAcademicId),
       });
-
-      notifications.show({
-        title: "Success",
-        message: "Student(s) removed from class",
-        color: "green",
-      });
-    },
-    onError: (error: Error) => {
-      notifications.show({
-        title: "Error",
-        message: error.message,
-        color: "red",
-      });
     },
   });
 }
@@ -274,30 +239,8 @@ export function useImportStudentClasses() {
 
       return response.json();
     },
-    onSuccess: (data) => {
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: studentClassKeys.all });
-
-      const result = data.data;
-      if (result.errors.length > 0) {
-        notifications.show({
-          title: "Import Completed with Errors",
-          message: `${result.imported} imported, ${result.skipped} skipped, ${result.errors.length} errors`,
-          color: "yellow",
-        });
-      } else {
-        notifications.show({
-          title: "Import Successful",
-          message: `${result.imported} student-class assignments imported, ${result.skipped} skipped`,
-          color: "green",
-        });
-      }
-    },
-    onError: (error: Error) => {
-      notifications.show({
-        title: "Import Failed",
-        message: error.message,
-        color: "red",
-      });
     },
   });
 }

@@ -3,11 +3,13 @@
 import { Paper } from "@mantine/core";
 import { notifications } from "@mantine/notifications";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import ClassAcademicForm from "@/components/forms/ClassAcademicForm";
 import PageHeader from "@/components/ui/PageHeader/PageHeader";
 import { useCreateClassAcademic } from "@/hooks/api/useClassAcademics";
 
 export default function NewClassPage() {
+  const t = useTranslations();
   const router = useRouter();
   const createClass = useCreateClassAcademic();
 
@@ -19,15 +21,15 @@ export default function NewClassPage() {
     createClass.mutate(data, {
       onSuccess: () => {
         notifications.show({
-          title: "Success",
-          message: "Class created successfully",
+          title: t("common.success"),
+          message: t("class.createSuccess"),
           color: "green",
         });
         router.push("/admin/classes");
       },
       onError: (error) => {
         notifications.show({
-          title: "Error",
+          title: t("common.error"),
           message: error.message,
           color: "red",
         });
@@ -37,7 +39,7 @@ export default function NewClassPage() {
 
   return (
     <>
-      <PageHeader title="Add Class" description="Create a new academic class" />
+      <PageHeader title={t("class.add")} description={t("class.addDescription")} />
       <Paper withBorder p="lg" maw={500}>
         <ClassAcademicForm
           onSubmit={handleSubmit}

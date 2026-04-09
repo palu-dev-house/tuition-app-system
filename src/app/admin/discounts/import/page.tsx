@@ -19,6 +19,7 @@ import {
   IconDownload,
   IconFileUpload,
 } from "@tabler/icons-react";
+import { useTranslations } from "next-intl";
 import { useState } from "react";
 import PageHeader from "@/components/ui/PageHeader/PageHeader";
 import { useImportDiscounts } from "@/hooks/api/useDiscounts";
@@ -31,6 +32,7 @@ interface ImportResult {
 }
 
 export default function ImportDiscountsPage() {
+  const t = useTranslations();
   const [file, setFile] = useState<File | null>(null);
   const [applyImmediately, setApplyImmediately] = useState(false);
   const importDiscounts = useImportDiscounts();
@@ -48,16 +50,25 @@ export default function ImportDiscountsPage() {
       {
         onSuccess: (data) => {
           setResult(data);
+          const affected =
+            data.tuitionsAffected > 0
+              ? t("discount.importCompleteApplied", {
+                  count: data.tuitionsAffected,
+                })
+              : "";
           notifications.show({
-            title: "Import Complete",
-            message: `Imported ${data.imported} discounts${data.tuitionsAffected > 0 ? `, applied to ${data.tuitionsAffected} tuitions` : ""}`,
+            title: t("discount.importComplete"),
+            message: t("discount.importCompleteMessage", {
+              imported: data.imported,
+              affected,
+            }),
             color: "green",
           });
           setFile(null);
         },
         onError: (error) => {
           notifications.show({
-            title: "Import Failed",
+            title: t("discount.importFailed"),
             message: error.message,
             color: "red",
           });
@@ -69,8 +80,8 @@ export default function ImportDiscountsPage() {
   return (
     <>
       <PageHeader
-        title="Import Discounts"
-        description="Import multiple discounts from Excel file"
+        title={t("discount.importTitle")}
+        description={t("discount.importPageDescription")}
       />
       <Paper withBorder p="lg" maw={700}>
         <Stack gap="md">
@@ -80,7 +91,7 @@ export default function ImportDiscountsPage() {
             variant="light"
           >
             <Text size="sm" fw={500} mb="xs">
-              Instructions:
+              {t("discount.instructions")}
             </Text>
             <List size="sm">
               <List.Item>
@@ -111,12 +122,12 @@ export default function ImportDiscountsPage() {
             variant="light"
             onClick={handleDownloadTemplate}
           >
-            Download Excel Template
+            {t("discount.downloadExcelTemplate")}
           </Button>
 
           <FileInput
-            label="Upload Excel File"
-            placeholder="Choose .xlsx file"
+            label={t("discount.uploadExcelFile")}
+            placeholder={t("discount.chooseFile")}
             accept=".xlsx,.xls"
             value={file}
             onChange={setFile}
@@ -124,8 +135,8 @@ export default function ImportDiscountsPage() {
           />
 
           <Checkbox
-            label="Apply discounts immediately to existing tuitions"
-            description="If checked, imported discounts will be applied to matching unpaid/partial tuitions"
+            label={t("discount.applyImmediately")}
+            description={t("discount.applyImmediatelyDesc")}
             checked={applyImmediately}
             onChange={(e) => setApplyImmediately(e.currentTarget.checked)}
           />
@@ -135,7 +146,7 @@ export default function ImportDiscountsPage() {
             disabled={!file}
             loading={importDiscounts.isPending}
           >
-            Process Import
+            {t("discount.processImport")}
           </Button>
 
           {result && (
@@ -144,14 +155,16 @@ export default function ImportDiscountsPage() {
                 <Stack gap="xs">
                   <Group gap="md">
                     <Badge color="green" size="lg">
-                      Imported: {result.imported}
+                      {t("discount.importComplete")}: {result.imported}
                     </Badge>
                     <Badge color="gray" size="lg">
-                      Skipped: {result.skipped}
+                      {result.skipped}
                     </Badge>
                     {result.tuitionsAffected > 0 && (
                       <Badge color="blue" size="lg">
-                        Tuitions affected: {result.tuitionsAffected}
+                        {t("discount.tuitionsAffected", {
+                          count: result.tuitionsAffected,
+                        })}
                       </Badge>
                     )}
                   </Group>
@@ -162,7 +175,9 @@ export default function ImportDiscountsPage() {
                 <Alert icon={<IconAlertCircle size={18} />} color="red">
                   <Stack gap="xs">
                     <Text size="sm" fw={600}>
-                      {result.errors.length} rows had errors:
+                      {t("discount.rowErrors", {
+                        count: result.errors.length,
+                      })}
                     </Text>
                     {result.errors.slice(0, 5).map((err, index) => (
                       <Text key={index} size="sm">
@@ -172,7 +187,9 @@ export default function ImportDiscountsPage() {
                     ))}
                     {result.errors.length > 5 && (
                       <Text size="sm" c="dimmed">
-                        ... and {result.errors.length - 5} more errors
+                        {t("discount.andMoreErrors", {
+                          count: result.errors.length - 5,
+                        })}
                       </Text>
                     )}
                   </Stack>

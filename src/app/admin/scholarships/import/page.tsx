@@ -18,6 +18,7 @@ import {
   IconDownload,
   IconFileUpload,
 } from "@tabler/icons-react";
+import { useTranslations } from "next-intl";
 import { useState } from "react";
 import PageHeader from "@/components/ui/PageHeader/PageHeader";
 import { useImportScholarships } from "@/hooks/api/useScholarships";
@@ -30,6 +31,7 @@ interface ImportResult {
 }
 
 export default function ImportScholarshipsPage() {
+  const t = useTranslations();
   const [file, setFile] = useState<File | null>(null);
   const importScholarships = useImportScholarships();
   const [result, setResult] = useState<ImportResult | null>(null);
@@ -45,15 +47,18 @@ export default function ImportScholarshipsPage() {
       onSuccess: (data) => {
         setResult(data);
         notifications.show({
-          title: "Import Complete",
-          message: `Imported ${data.imported} scholarships, ${data.autoPayments} tuitions auto-paid`,
+          title: t("scholarship.importComplete"),
+          message: t("scholarship.importCompleteMessage", {
+            imported: data.imported,
+            autoPayments: data.autoPayments,
+          }),
           color: "green",
         });
         setFile(null);
       },
       onError: (error) => {
         notifications.show({
-          title: "Import Failed",
+          title: t("scholarship.importFailed"),
           message: error.message,
           color: "red",
         });
@@ -64,8 +69,8 @@ export default function ImportScholarshipsPage() {
   return (
     <>
       <PageHeader
-        title="Import Scholarships"
-        description="Import scholarships from Excel file"
+        title={t("scholarship.importTitle")}
+        description={t("scholarship.importPageDescription")}
       />
       <Paper withBorder p="lg" maw={700}>
         <Stack gap="md">
@@ -75,7 +80,7 @@ export default function ImportScholarshipsPage() {
             variant="light"
           >
             <Text size="sm" fw={500} mb="xs">
-              Instructions:
+              {t("scholarship.instructions")}
             </Text>
             <List size="sm">
               <List.Item>
@@ -102,12 +107,12 @@ export default function ImportScholarshipsPage() {
             variant="light"
             onClick={handleDownloadTemplate}
           >
-            Download Excel Template
+            {t("scholarship.downloadExcelTemplate")}
           </Button>
 
           <FileInput
-            label="Upload Excel File"
-            placeholder="Choose .xlsx file"
+            label={t("scholarship.uploadExcelFile")}
+            placeholder={t("scholarship.chooseFile")}
             accept=".xlsx,.xls"
             value={file}
             onChange={setFile}
@@ -119,7 +124,7 @@ export default function ImportScholarshipsPage() {
             disabled={!file}
             loading={importScholarships.isPending}
           >
-            Process Import
+            {t("scholarship.processImport")}
           </Button>
 
           {result && (
@@ -128,13 +133,15 @@ export default function ImportScholarshipsPage() {
                 <Stack gap="xs">
                   <Group gap="md">
                     <Badge color="green" size="lg">
-                      Imported: {result.imported}
+                      {t("scholarship.importComplete")}: {result.imported}
                     </Badge>
                     <Badge color="gray" size="lg">
-                      Skipped: {result.skipped}
+                      {result.skipped}
                     </Badge>
                     <Badge color="blue" size="lg">
-                      Auto-paid: {result.autoPayments} tuitions
+                      {t("scholarship.autoPaid", {
+                        count: result.autoPayments,
+                      })}
                     </Badge>
                   </Group>
                 </Stack>
@@ -144,7 +151,9 @@ export default function ImportScholarshipsPage() {
                 <Alert icon={<IconAlertCircle size={18} />} color="red">
                   <Stack gap="xs">
                     <Text size="sm" fw={600}>
-                      {result.errors.length} rows had errors:
+                      {t("scholarship.rowErrors", {
+                        count: result.errors.length,
+                      })}
                     </Text>
                     {result.errors.slice(0, 5).map((err, index) => (
                       <Text key={index} size="sm">
@@ -154,7 +163,9 @@ export default function ImportScholarshipsPage() {
                     ))}
                     {result.errors.length > 5 && (
                       <Text size="sm" c="dimmed">
-                        ... and {result.errors.length - 5} more errors
+                        {t("scholarship.andMoreErrors", {
+                          count: result.errors.length - 5,
+                        })}
                       </Text>
                     )}
                   </Stack>
