@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.1.1] - 2026-02-06
+
+### Fixes
+- missing locales
+
+
+
 ## [2.1.0] - 2026-02-06
 
 ### Fixes
