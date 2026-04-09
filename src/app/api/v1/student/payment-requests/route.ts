@@ -65,7 +65,7 @@ export async function POST(request: NextRequest) {
       session.studentNis,
     );
     if (!rateLimitResult.success) {
-      return rateLimitErrorResponse(rateLimitResult);
+      return await rateLimitErrorResponse(rateLimitResult, request);
     }
 
     // Get idempotency key from header or generate from payload

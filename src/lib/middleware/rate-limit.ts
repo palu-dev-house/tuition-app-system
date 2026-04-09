@@ -1,21 +1,27 @@
+import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 import { RATE_LIMITS } from "@/lib/config/rate-limit-config";
+import { getServerT } from "@/lib/i18n-server";
 import {
   checkRateLimit,
   type RateLimitResult,
 } from "@/lib/services/rate-limit-service";
 
 /**
- * Rate limit error response
+ * Rate limit error response with i18n
  */
-export function rateLimitErrorResponse(result: RateLimitResult) {
+export async function rateLimitErrorResponse(
+  result: RateLimitResult,
+  request: NextRequest,
+) {
+  const t = await getServerT(request);
   const retryAfter = Math.ceil((result.reset.getTime() - Date.now()) / 1000);
 
   return NextResponse.json(
     {
       success: false,
       error: {
-        message: `Terlalu banyak permintaan. Coba lagi dalam ${retryAfter} detik.`,
+        message: t("api.rateLimitExceeded", { seconds: retryAfter }),
         code: "RATE_LIMIT_EXCEEDED",
         retryAfter,
       },

@@ -21,11 +21,7 @@ export function LanguageSwitcher({
 
   const toggleLocale = () => {
     const newLocale: Locale = locale === "id" ? "en" : "id";
-    cookieStore.set({
-      name: "NEXT_LOCALE",
-      value: newLocale,
-      expires: Date.now() + 31536000,
-    });
+    document.cookie = `NEXT_LOCALE=${newLocale}; path=/; max-age=31536000; SameSite=Lax`;
     startTransition(() => {
       router.refresh();
     });

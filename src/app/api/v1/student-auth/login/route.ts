@@ -23,7 +23,7 @@ export async function POST(request: NextRequest) {
     // Check rate limit (3 attempts per minute per NIS)
     const rateLimitResult = await checkRateLimit("login", nis);
     if (!rateLimitResult.success) {
-      return rateLimitErrorResponse(rateLimitResult);
+      return await rateLimitErrorResponse(rateLimitResult, request);
     }
 
     const result = await loginStudent({ nis, password });

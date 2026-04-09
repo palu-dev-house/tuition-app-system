@@ -20,7 +20,7 @@ export async function POST(request: NextRequest) {
       session.studentNis,
     );
     if (!rateLimitResult.success) {
-      return rateLimitErrorResponse(rateLimitResult);
+      return await rateLimitErrorResponse(rateLimitResult, request);
     }
 
     const body = await request.json();
