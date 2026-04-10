@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.5.1] - 2026-04-10
+
+### Other
+- chore: add i18next config and tuitions mass-update endpoint
+
+
+
 ## [2.5.0] - 2026-04-10
 
 ### Features
