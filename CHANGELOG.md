@@ -1,5 +1,19 @@
 # Changelog
 
+## [2.3.0] - 2026-04-10
+
+### Features
+- persist table pagination, search, and filters in URL query params
+- complete hardcoded string audit — all UI strings now translated
+- add stress test seed script with 250 students
+- migrate to pnpm, add column management, sidebar search, and React Virtuoso
+
+### Other
+- chore: lint fixes and cleanup
+- chore: remove online payment system (bank transfer, payment requests)
+
+
+
 ## [2.2.0] - 2026-04-09
 
 ### Features
