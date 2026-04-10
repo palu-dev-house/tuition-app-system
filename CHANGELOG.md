@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.5.0] - 2026-04-10
+
+### Features
+- add bulk operations, payment tabs, history filters, i18n fixes, and UI consistency
+
+
+
 ## [2.4.0] - 2026-04-10
 
 ### Features
