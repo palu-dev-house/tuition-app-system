@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.8.0] - 2026-04-13
+
+### Features
+- add database backup script with Supabase Storage upload
+
+
+
 ## [2.7.0] - 2026-04-13
 
 ### Features
