@@ -5,14 +5,17 @@ import {
   Badge,
   Button,
   Card,
+  Checkbox,
+  Divider,
   Group,
+  List,
+  Modal,
   NumberFormatter,
   NumberInput,
   Paper,
-  Progress,
   Select,
-  SimpleGrid,
   Stack,
+  Table,
   Text,
   Textarea,
 } from "@mantine/core";
@@ -21,153 +24,236 @@ import {
   IconAlertCircle,
   IconCash,
   IconCheck,
-  IconDiscount,
-  IconGift,
-  IconReceipt,
+  IconPrinter,
   IconUser,
 } from "@tabler/icons-react";
 import { useRouter } from "next/router";
 import { useTranslations } from "next-intl";
 import { useMemo, useState } from "react";
-import type { PaymentStatus } from "@/generated/prisma/client";
+import { useFeeBills } from "@/hooks/api/useFeeBills";
 import { useCreatePayment } from "@/hooks/api/usePayments";
+import { useServiceFeeBills } from "@/hooks/api/useServiceFeeBills";
 import { useStudents } from "@/hooks/api/useStudents";
 import { useTuitions } from "@/hooks/api/useTuitions";
-import { getPeriodDisplayName } from "@/lib/business-logic/tuition-generator";
 
-interface PaymentResult {
-  payment: {
+type ItemType = "TUITION" | "FEE" | "SERVICE_FEE";
+
+interface OutstandingRow {
+  key: string;
+  type: ItemType;
+  id: string;
+  description: string;
+  period: string;
+  year: number;
+  remaining: number;
+  maxScholarship: number;
+}
+
+interface ItemInput {
+  amount: number | "";
+  scholarshipAmount: number | "";
+}
+
+interface CreatePaymentResult {
+  transactionId: string;
+  payments: Array<{
     id: string;
     amount: string;
-  };
-  result: {
-    previousStatus: PaymentStatus;
-    newStatus: PaymentStatus;
-    previousPaidAmount: number;
-    newPaidAmount: number;
-    remainingAmount: number;
-    feeAmount: number;
-    scholarshipAmount: number;
-    discountAmount: number;
-    effectiveFeeAmount: number;
-  };
+    tuitionId?: string | null;
+    feeBillId?: string | null;
+    serviceFeeBillId?: string | null;
+  }>;
+  itemErrors?: Array<{ index: number; message: string }>;
 }
 
 export default function PaymentForm() {
   const t = useTranslations();
   const router = useRouter();
   const [studentNis, setStudentNis] = useState<string | null>(null);
-  const [tuitionId, setTuitionId] = useState<string | null>(null);
-  const [amount, setAmount] = useState<number | string>("");
   const [notes, setNotes] = useState("");
-  const [result, setResult] = useState<PaymentResult | null>(null);
+  const [selected, setSelected] = useState<Record<string, boolean>>({});
+  const [inputs, setInputs] = useState<Record<string, ItemInput>>({});
+  const [result, setResult] = useState<CreatePaymentResult | null>(null);
 
-  const { data: studentsData, isLoading: loadingStudents } = useStudents({
-    limit: 1000,
-  });
-
-  const { data: tuitionsData, isLoading: loadingTuitions } = useTuitions({
+  const { data: studentsData } = useStudents({ limit: 1000 });
+  const { data: tuitionsData } = useTuitions({
     limit: 100,
     studentNis: studentNis || undefined,
-    status: undefined, // Get all statuses, we'll filter in UI
+  });
+  const { data: feeBillsData } = useFeeBills({
+    limit: 100,
+    studentNis: studentNis || undefined,
+  });
+  const { data: serviceFeeBillsData } = useServiceFeeBills({
+    limit: 100,
+    studentNis: studentNis || undefined,
   });
 
   const createPayment = useCreatePayment();
 
-  // Filter to only show unpaid/partial tuitions
-  const unpaidTuitions = useMemo(() => {
-    if (!tuitionsData?.tuitions) return [];
-    return tuitionsData.tuitions.filter(
-      (t) => t.status === "UNPAID" || t.status === "PARTIAL",
-    );
-  }, [tuitionsData]);
+  const outstanding: OutstandingRow[] = useMemo(() => {
+    if (!studentNis) return [];
+    const rows: OutstandingRow[] = [];
 
-  // Get selected tuition details
-  const selectedTuition = useMemo(() => {
-    if (!tuitionId || !tuitionsData?.tuitions) return null;
-    return tuitionsData.tuitions.find((t) => t.id === tuitionId);
-  }, [tuitionId, tuitionsData]);
+    for (const tu of tuitionsData?.tuitions ?? []) {
+      if (tu.status !== "UNPAID" && tu.status !== "PARTIAL") continue;
+      const fee = Number(tu.feeAmount);
+      const scholarship = Number(
+        tu.scholarshipSummary?.totalAmount ?? tu.scholarshipAmount ?? 0,
+      );
+      const discount = Number(tu.discountAmount ?? 0);
+      const effective = Math.max(fee - scholarship - discount, 0);
+      const remaining = Math.max(effective - Number(tu.paidAmount), 0);
+      if (remaining <= 0) continue;
+      rows.push({
+        key: `tuition:${tu.id}`,
+        type: "TUITION",
+        id: tu.id,
+        description: `${t("payment.tuitionFee")}`,
+        period: tu.period,
+        year: tu.year,
+        remaining,
+        maxScholarship: 0, // scholarship already baked in, disable per-item scholarship entry here
+      });
+    }
 
-  // Calculate effective fee (considering scholarships AND discounts)
-  const effectiveFeeAmount = useMemo(() => {
-    if (!selectedTuition) return 0;
-    const fee = Number(selectedTuition.feeAmount);
-    const totalScholarship = selectedTuition.scholarshipSummary
-      ? Number(selectedTuition.scholarshipSummary.totalAmount)
-      : 0;
-    const discountAmount = Number(selectedTuition.discountAmount) || 0;
-    return Math.max(fee - totalScholarship - discountAmount, 0);
-  }, [selectedTuition]);
+    for (const b of feeBillsData?.feeBills ?? []) {
+      if (b.status !== "UNPAID" && b.status !== "PARTIAL") continue;
+      const remaining = Math.max(Number(b.amount) - Number(b.paidAmount), 0);
+      if (remaining <= 0) continue;
+      rows.push({
+        key: `fee:${b.id}`,
+        type: "FEE",
+        id: b.id,
+        description: b.feeService?.name ?? t("feeBill.label"),
+        period: b.period,
+        year: b.year,
+        remaining,
+        maxScholarship: 0,
+      });
+    }
 
-  // Remaining amount considers scholarship discount
-  const remainingAmount = useMemo(() => {
-    if (!selectedTuition) return 0;
-    return Math.max(effectiveFeeAmount - Number(selectedTuition.paidAmount), 0);
-  }, [selectedTuition, effectiveFeeAmount]);
+    for (const b of serviceFeeBillsData?.serviceFeeBills ?? []) {
+      if (b.status !== "UNPAID" && b.status !== "PARTIAL") continue;
+      const remaining = Math.max(Number(b.amount) - Number(b.paidAmount), 0);
+      if (remaining <= 0) continue;
+      rows.push({
+        key: `service:${b.id}`,
+        type: "SERVICE_FEE",
+        id: b.id,
+        description: b.serviceFee?.name ?? t("serviceFee.label"),
+        period: b.period,
+        year: b.year,
+        remaining,
+        maxScholarship: 0,
+      });
+    }
+
+    return rows;
+  }, [studentNis, tuitionsData, feeBillsData, serviceFeeBillsData, t]);
+
+  const toggle = (row: OutstandingRow) => {
+    setSelected((prev) => {
+      const next = { ...prev, [row.key]: !prev[row.key] };
+      return next;
+    });
+    setInputs((prev) => {
+      if (prev[row.key]) return prev;
+      return {
+        ...prev,
+        [row.key]: { amount: row.remaining, scholarshipAmount: "" },
+      };
+    });
+  };
+
+  const updateInput = (key: string, patch: Partial<ItemInput>) => {
+    setInputs((prev) => ({
+      ...prev,
+      [key]: {
+        ...(prev[key] ?? { amount: "", scholarshipAmount: "" }),
+        ...patch,
+      },
+    }));
+  };
+
+  const totalSelected = useMemo(() => {
+    return outstanding.reduce((sum, row) => {
+      if (!selected[row.key]) return sum;
+      const amt = Number(inputs[row.key]?.amount ?? 0);
+      return sum + (Number.isFinite(amt) ? amt : 0);
+    }, 0);
+  }, [outstanding, selected, inputs]);
+
+  const selectedCount = Object.values(selected).filter(Boolean).length;
 
   const handleSubmit = () => {
-    if (!tuitionId || !amount) {
+    if (!studentNis) return;
+    const items = outstanding
+      .filter((row) => selected[row.key])
+      .map((row) => {
+        const amt = Number(inputs[row.key]?.amount ?? 0);
+        const sch = Number(inputs[row.key]?.scholarshipAmount ?? 0);
+        const base: {
+          tuitionId?: string;
+          feeBillId?: string;
+          serviceFeeBillId?: string;
+          amount: string;
+          scholarshipAmount?: string;
+        } = { amount: String(amt) };
+        if (row.type === "TUITION") base.tuitionId = row.id;
+        else if (row.type === "FEE") base.feeBillId = row.id;
+        else base.serviceFeeBillId = row.id;
+        if (row.type === "TUITION" && sch > 0) {
+          base.scholarshipAmount = String(sch);
+        }
+        return base;
+      });
+
+    if (items.length === 0) {
       notifications.show({
-        title: t("common.validationError"),
-        message: t("payment.validationTuitionAmount"),
         color: "red",
+        title: t("common.validationError"),
+        message: t("payment.selectAtLeastOne"),
       });
       return;
     }
 
     createPayment.mutate(
       {
-        studentNis: studentNis as string,
+        studentNis,
         notes: notes || undefined,
-        items: [{ tuitionId, amount: String(amount) }],
+        items,
       },
       {
-        onSuccess: () => {
-          notifications.show({
-            title: t("payment.paymentSuccessful"),
-            message: t("payment.paymentSuccessMessage", {
-              amount: Number(amount).toLocaleString("id-ID"),
-            }),
-            color: "green",
-          });
-          // Reset form for next payment
-          setTuitionId(null);
-          setAmount("");
+        onSuccess: (data) => {
+          setResult(data as CreatePaymentResult);
+          setSelected({});
+          setInputs({});
           setNotes("");
-        },
-        onError: (error) => {
           notifications.show({
-            title: t("payment.paymentFailed"),
-            message: error.message,
+            color: "green",
+            title: t("payment.paymentSuccessful"),
+            message: t("payment.transactionCreated", {
+              id: (data as CreatePaymentResult).transactionId.slice(0, 8),
+            }),
+          });
+        },
+        onError: (err) => {
+          notifications.show({
             color: "red",
+            title: t("payment.paymentFailed"),
+            message: err.message,
           });
         },
       },
     );
   };
 
-  const handlePayFull = () => {
-    if (remainingAmount > 0) {
-      setAmount(remainingAmount);
-    }
-  };
-
   const studentOptions =
     studentsData?.students.map((s) => ({
       value: s.nis,
       label: `${s.nis} - ${s.name}`,
-    })) || [];
-
-  const tuitionOptions = unpaidTuitions.map((t) => ({
-    value: t.id,
-    label: `${getPeriodDisplayName(t.period)} ${t.year} - ${t.classAcademic?.className} (${t.status})`,
-  }));
-
-  // Calculate progress based on effective fee (after scholarship)
-  const paidPercentage =
-    selectedTuition && effectiveFeeAmount > 0
-      ? (Number(selectedTuition.paidAmount) / effectiveFeeAmount) * 100
-      : 0;
+    })) ?? [];
 
   return (
     <Paper withBorder p="lg">
@@ -178,275 +264,144 @@ export default function PaymentForm() {
           leftSection={<IconUser size={18} />}
           data={studentOptions}
           value={studentNis}
-          onChange={(value) => {
-            setStudentNis(value);
-            setTuitionId(null);
+          onChange={(v) => {
+            setStudentNis(v);
+            setSelected({});
+            setInputs({});
             setResult(null);
           }}
-          disabled={loadingStudents}
           searchable
           required
         />
 
-        {studentNis && (
-          <Select
-            label={t("payment.selectTuitionLabel")}
-            placeholder={t("payment.selectUnpaid")}
-            leftSection={<IconReceipt size={18} />}
-            data={tuitionOptions}
-            value={tuitionId}
-            onChange={(value) => {
-              setTuitionId(value);
-              setAmount("");
-              setResult(null);
-            }}
-            disabled={loadingTuitions || unpaidTuitions.length === 0}
-            searchable
-            required
-          />
-        )}
-
-        {unpaidTuitions.length === 0 && studentNis && !loadingTuitions && (
+        {studentNis && outstanding.length === 0 && (
           <Alert icon={<IconCheck size={18} />} color="green" variant="light">
-            <Text size="sm">{t("payment.allComplete")}</Text>
+            {t("payment.allComplete")}
           </Alert>
         )}
 
-        {selectedTuition && (
+        {studentNis && outstanding.length > 0 && (
           <Card withBorder>
             <Stack gap="sm">
-              <Text size="sm" fw={600}>
-                {t("payment.tuitionDetails")}
-              </Text>
-              <SimpleGrid cols={2}>
-                <div>
-                  <Text size="xs" c="dimmed">
-                    {t("payment.classLabel")}
-                  </Text>
-                  <Text size="sm">
-                    {selectedTuition.classAcademic?.className}
-                  </Text>
-                </div>
-                <div>
-                  <Text size="xs" c="dimmed">
-                    {t("payment.periodLabel")}
-                  </Text>
-                  <Text size="sm">
-                    {getPeriodDisplayName(selectedTuition.period)}{" "}
-                    {selectedTuition.year}
-                  </Text>
-                </div>
-                <div>
-                  <Text size="xs" c="dimmed">
-                    {t("payment.feeAmountLabel")}
-                  </Text>
-                  <Text size="sm" fw={600}>
-                    <NumberFormatter
-                      value={selectedTuition.feeAmount}
-                      prefix="Rp "
-                      thousandSeparator="."
-                      decimalSeparator=","
-                    />
-                  </Text>
-                </div>
-                <div>
-                  <Text size="xs" c="dimmed">
-                    {t("payment.alreadyPaid")}
-                  </Text>
-                  <Text size="sm" c="green">
-                    <NumberFormatter
-                      value={selectedTuition.paidAmount}
-                      prefix="Rp "
-                      thousandSeparator="."
-                      decimalSeparator=","
-                    />
-                  </Text>
-                </div>
-              </SimpleGrid>
-
-              {/* Scholarship Information */}
-              {selectedTuition.scholarshipSummary &&
-                selectedTuition.scholarships && (
-                  <Alert
-                    icon={<IconGift size={18} />}
-                    color="teal"
-                    variant="light"
-                    title={
-                      selectedTuition.scholarshipSummary.hasFullScholarship
-                        ? t("payment.fullScholarship")
-                        : t("payment.scholarshipsApplied", {
-                            count: selectedTuition.scholarshipSummary.count,
-                          })
-                    }
-                  >
-                    <Stack gap="xs">
-                      {/* List each scholarship */}
-                      {selectedTuition.scholarships.map(
-                        (scholarship, index) => (
-                          <Group key={scholarship.id} justify="space-between">
-                            <Text size="sm" c="dimmed">
-                              {index + 1}. {scholarship.name}:
-                            </Text>
-                            <Text size="sm" c="teal">
-                              -
-                              <NumberFormatter
-                                value={scholarship.nominal}
-                                prefix="Rp "
-                                thousandSeparator="."
-                                decimalSeparator=","
-                              />
-                            </Text>
-                          </Group>
-                        ),
-                      )}
-
-                      {/* Total discount if multiple scholarships */}
-                      {selectedTuition.scholarships.length > 1 && (
-                        <Group
-                          justify="space-between"
-                          style={{
-                            borderTop: "1px solid var(--mantine-color-teal-3)",
-                            paddingTop: 8,
-                          }}
-                        >
-                          <Text size="sm" fw={600}>
-                            {t("payment.totalScholarship")}
-                          </Text>
-                          <Text size="sm" fw={600} c="teal">
-                            -
-                            <NumberFormatter
-                              value={
-                                selectedTuition.scholarshipSummary.totalAmount
-                              }
-                              prefix="Rp "
-                              thousandSeparator="."
-                              decimalSeparator=","
-                            />
-                          </Text>
-                        </Group>
-                      )}
-                    </Stack>
-                  </Alert>
-                )}
-
-              {/* Discount Information */}
-              {selectedTuition.discount &&
-                Number(selectedTuition.discountAmount) > 0 && (
-                  <Alert
-                    icon={<IconDiscount size={18} />}
-                    color="green"
-                    variant="light"
-                    title={t("payment.discountAppliedTitle")}
-                  >
-                    <Stack gap="xs">
-                      <Group justify="space-between">
-                        <Text size="sm" c="dimmed">
-                          {selectedTuition.discount.name}
-                          {selectedTuition.discount.reason &&
-                            ` (${selectedTuition.discount.reason})`}
-                          :
-                        </Text>
-                        <Text size="sm" c="green">
-                          -
+              <Text fw={600}>{t("payment.outstandingItems")}</Text>
+              <Table striped highlightOnHover>
+                <Table.Thead>
+                  <Table.Tr>
+                    <Table.Th style={{ width: 36 }}></Table.Th>
+                    <Table.Th>{t("payment.type")}</Table.Th>
+                    <Table.Th>{t("payment.description")}</Table.Th>
+                    <Table.Th>{t("feeBill.period")}</Table.Th>
+                    <Table.Th>{t("payment.remaining")}</Table.Th>
+                    <Table.Th style={{ width: 180 }}>
+                      {t("payment.amountToPay")}
+                    </Table.Th>
+                    <Table.Th style={{ width: 180 }}>
+                      {t("payment.scholarship")}
+                    </Table.Th>
+                  </Table.Tr>
+                </Table.Thead>
+                <Table.Tbody>
+                  {outstanding.map((row) => {
+                    const isSelected = !!selected[row.key];
+                    const input = inputs[row.key] ?? {
+                      amount: "",
+                      scholarshipAmount: "",
+                    };
+                    return (
+                      <Table.Tr key={row.key}>
+                        <Table.Td>
+                          <Checkbox
+                            checked={isSelected}
+                            onChange={() => toggle(row)}
+                          />
+                        </Table.Td>
+                        <Table.Td>
+                          <Badge
+                            color={
+                              row.type === "TUITION"
+                                ? "blue"
+                                : row.type === "FEE"
+                                  ? "orange"
+                                  : "grape"
+                            }
+                            variant="light"
+                          >
+                            {t(`payment.itemType.${row.type}`)}
+                          </Badge>
+                        </Table.Td>
+                        <Table.Td>{row.description}</Table.Td>
+                        <Table.Td>
+                          {t(`months.${row.period}`)} {row.year}
+                        </Table.Td>
+                        <Table.Td>
                           <NumberFormatter
-                            value={selectedTuition.discountAmount}
+                            value={row.remaining}
                             prefix="Rp "
                             thousandSeparator="."
                             decimalSeparator=","
                           />
-                        </Text>
-                      </Group>
-                    </Stack>
-                  </Alert>
-                )}
+                        </Table.Td>
+                        <Table.Td>
+                          <NumberInput
+                            size="xs"
+                            disabled={!isSelected}
+                            min={0}
+                            max={row.remaining}
+                            value={input.amount}
+                            onChange={(v) =>
+                              updateInput(row.key, {
+                                amount: typeof v === "number" ? v : "",
+                              })
+                            }
+                            prefix="Rp "
+                            thousandSeparator="."
+                            decimalSeparator=","
+                          />
+                        </Table.Td>
+                        <Table.Td>
+                          <NumberInput
+                            size="xs"
+                            disabled={!isSelected || row.type !== "TUITION"}
+                            min={0}
+                            value={input.scholarshipAmount}
+                            onChange={(v) =>
+                              updateInput(row.key, {
+                                scholarshipAmount:
+                                  typeof v === "number" ? v : "",
+                              })
+                            }
+                            prefix="Rp "
+                            thousandSeparator="."
+                            decimalSeparator=","
+                          />
+                        </Table.Td>
+                      </Table.Tr>
+                    );
+                  })}
+                </Table.Tbody>
+              </Table>
 
-              {/* Summary when discounts/scholarships applied */}
-              {(Number(selectedTuition.discountAmount) > 0 ||
-                selectedTuition.scholarshipSummary) && (
-                <Card withBorder bg="gray.0" p="sm">
-                  <Stack gap="xs">
-                    <Group justify="space-between">
-                      <Text size="sm">{t("payment.originalFee")}</Text>
-                      <Text size="sm" td="line-through" c="dimmed">
-                        <NumberFormatter
-                          value={selectedTuition.feeAmount}
-                          prefix="Rp "
-                          thousandSeparator="."
-                          decimalSeparator=","
-                        />
-                      </Text>
-                    </Group>
-                    <Group justify="space-between">
-                      <Text size="sm" fw={600}>
-                        {t("payment.amountToPay")}
-                      </Text>
-                      <Text size="sm" fw={600} c="blue">
-                        <NumberFormatter
-                          value={effectiveFeeAmount}
-                          prefix="Rp "
-                          thousandSeparator="."
-                          decimalSeparator=","
-                        />
-                      </Text>
-                    </Group>
-                  </Stack>
-                </Card>
-              )}
-
-              <div>
-                <Group justify="space-between" mb={4}>
-                  <Text size="xs" c="dimmed">
-                    {t("payment.paymentProgress")}
-                  </Text>
-                  <Text size="xs" c="dimmed">
-                    {paidPercentage.toFixed(0)}%
-                  </Text>
-                </Group>
-                <Progress value={paidPercentage} color="green" size="sm" />
-              </div>
+              <Divider />
               <Group justify="space-between">
-                <Text size="sm" fw={600} c="red">
-                  {t("payment.remainingLabel")}{" "}
+                <Text>
+                  {t("payment.selectedCount", { count: selectedCount })}
+                </Text>
+                <Text fw={600}>
+                  {t("payment.total")}{" "}
                   <NumberFormatter
-                    value={remainingAmount}
+                    value={totalSelected}
                     prefix="Rp "
                     thousandSeparator="."
                     decimalSeparator=","
                   />
                 </Text>
-                <Badge
-                  color={
-                    selectedTuition.status === "PARTIAL" ? "yellow" : "red"
-                  }
-                >
-                  {t(`tuition.status.${selectedTuition.status.toLowerCase()}`)}
-                </Badge>
               </Group>
             </Stack>
           </Card>
         )}
 
-        {selectedTuition && (
+        {studentNis && outstanding.length > 0 && (
           <>
-            <Group align="flex-end">
-              <NumberInput
-                label={t("payment.paymentAmountLabel")}
-                placeholder={t("payment.paymentAmountPlaceholder")}
-                value={amount}
-                onChange={setAmount}
-                min={1}
-                max={remainingAmount}
-                prefix="Rp "
-                thousandSeparator="."
-                decimalSeparator=","
-                required
-                style={{ flex: 1 }}
-              />
-              <Button variant="light" onClick={handlePayFull}>
-                {t("payment.payFull")}
-              </Button>
-            </Group>
-
             <Textarea
               label={t("payment.notesOptional")}
               placeholder={t("payment.notesPlaceholder")}
@@ -460,13 +415,7 @@ export default function PaymentForm() {
               color="blue"
               variant="light"
             >
-              <Text size="sm">
-                {Number(amount) >= remainingAmount
-                  ? t("payment.willMarkPaid")
-                  : Number(amount) > 0
-                    ? t("payment.partialPaymentNote")
-                    : t("payment.enterAmountNote")}
-              </Text>
+              {t("payment.multiItemExplainer")}
             </Alert>
 
             <Group>
@@ -474,11 +423,14 @@ export default function PaymentForm() {
                 leftSection={<IconCash size={18} />}
                 onClick={handleSubmit}
                 loading={createPayment.isPending}
-                disabled={!amount || Number(amount) <= 0}
+                disabled={selectedCount === 0 || totalSelected <= 0}
               >
                 {t("payment.processPayment")}
               </Button>
-              <Button variant="light" onClick={() => router.push("/payments")}>
+              <Button
+                variant="light"
+                onClick={() => router.push("/admin/payments")}
+              >
                 {t("payment.viewPayments")}
               </Button>
             </Group>
@@ -486,99 +438,82 @@ export default function PaymentForm() {
         )}
 
         {result && (
-          <Alert
-            icon={<IconCheck size={18} />}
-            color="green"
+          <Modal
+            opened
+            onClose={() => setResult(null)}
             title={t("payment.paymentProcessed")}
+            size="lg"
           >
-            <Stack gap="xs">
-              <Group gap="md">
-                <Badge
-                  color={
-                    result.result.newStatus === "PAID" ? "green" : "yellow"
-                  }
-                  size="lg"
-                >
-                  {t(`tuition.status.${result.result.newStatus.toLowerCase()}`)}
+            <Stack gap="md">
+              <Group>
+                <Badge color="green" size="lg">
+                  {t("payment.transactionId")}:{" "}
+                  {result.transactionId.slice(0, 8).toUpperCase()}
                 </Badge>
-                {result.result.scholarshipAmount > 0 && (
-                  <Badge color="teal" variant="light" size="lg">
-                    {t("payment.scholarshipAppliedBadge")}
-                  </Badge>
-                )}
-                {result.result.discountAmount > 0 && (
-                  <Badge color="green" variant="light" size="lg">
-                    {t("payment.discountAppliedBadge")}
-                  </Badge>
-                )}
               </Group>
-              <SimpleGrid cols={2}>
-                <Text size="sm">
-                  {t("payment.totalPaidResult")}{" "}
-                  <NumberFormatter
-                    value={result.result.newPaidAmount}
-                    prefix="Rp "
-                    thousandSeparator="."
-                    decimalSeparator=","
-                  />
-                </Text>
-                <Text size="sm">
-                  {t("payment.remainingLabel")}{" "}
-                  <NumberFormatter
-                    value={result.result.remainingAmount}
-                    prefix="Rp "
-                    thousandSeparator="."
-                    decimalSeparator=","
-                  />
-                </Text>
-                {(result.result.scholarshipAmount > 0 ||
-                  result.result.discountAmount > 0) && (
-                  <>
-                    <Text size="sm" c="dimmed">
-                      {t("payment.originalFeeResult")}{" "}
-                      <NumberFormatter
-                        value={result.result.feeAmount}
-                        prefix="Rp "
-                        thousandSeparator="."
-                        decimalSeparator=","
-                      />
-                    </Text>
-                    <Text size="sm" c="dimmed">
-                      {t("payment.effectiveFee")}{" "}
-                      <NumberFormatter
-                        value={result.result.effectiveFeeAmount}
-                        prefix="Rp "
-                        thousandSeparator="."
-                        decimalSeparator=","
-                      />
-                    </Text>
-                    {result.result.scholarshipAmount > 0 && (
-                      <Text size="sm" c="teal">
-                        {t("payment.scholarshipDeduction")} -
+              <Table>
+                <Table.Thead>
+                  <Table.Tr>
+                    <Table.Th>{t("payment.type")}</Table.Th>
+                    <Table.Th>{t("payment.amount")}</Table.Th>
+                  </Table.Tr>
+                </Table.Thead>
+                <Table.Tbody>
+                  {result.payments.map((p) => (
+                    <Table.Tr key={p.id}>
+                      <Table.Td>
+                        {p.tuitionId
+                          ? t("payment.itemType.TUITION")
+                          : p.feeBillId
+                            ? t("payment.itemType.FEE")
+                            : t("payment.itemType.SERVICE_FEE")}
+                      </Table.Td>
+                      <Table.Td>
                         <NumberFormatter
-                          value={result.result.scholarshipAmount}
+                          value={p.amount}
                           prefix="Rp "
                           thousandSeparator="."
                           decimalSeparator=","
                         />
-                      </Text>
-                    )}
-                    {result.result.discountAmount > 0 && (
-                      <Text size="sm" c="green">
-                        {t("payment.discountDeduction")} -
-                        <NumberFormatter
-                          value={result.result.discountAmount}
-                          prefix="Rp "
-                          thousandSeparator="."
-                          decimalSeparator=","
-                        />
-                      </Text>
-                    )}
-                  </>
-                )}
-              </SimpleGrid>
+                      </Table.Td>
+                    </Table.Tr>
+                  ))}
+                </Table.Tbody>
+              </Table>
+
+              {result.itemErrors && result.itemErrors.length > 0 && (
+                <Alert color="red" icon={<IconAlertCircle size={18} />}>
+                  <Text fw={600} mb={4}>
+                    {t("payment.partialFailureTitle")}
+                  </Text>
+                  <List size="sm">
+                    {result.itemErrors.map((e, i) => (
+                      <List.Item key={i}>
+                        #{e.index + 1}: {e.message}
+                      </List.Item>
+                    ))}
+                  </List>
+                </Alert>
+              )}
+
+              <Group justify="flex-end">
+                <Button
+                  variant="light"
+                  leftSection={<IconPrinter size={16} />}
+                  onClick={() =>
+                    router.push(
+                      `/admin/payments/print?transactionId=${result.transactionId}`,
+                    )
+                  }
+                >
+                  {t("invoice.print")}
+                </Button>
+                <Button onClick={() => setResult(null)}>
+                  {t("common.close")}
+                </Button>
+              </Group>
             </Stack>
-          </Alert>
+          </Modal>
         )}
       </Stack>
     </Paper>
