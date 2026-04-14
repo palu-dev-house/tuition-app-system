@@ -16,8 +16,9 @@
 - Extend the student portal so subscribers can see and pay transport/accommodation/service fee bills alongside tuition via the existing Midtrans flow.
 - Seed the new tables so dev/staging reproduces realistic data.
 
+**Explicit design rule:** Scholarships and discounts **do not apply** to transport/accommodation fees or service fees. Both existing models (`Scholarship`, `Discount`) remain tuition-only. `FeeBill` and `ServiceFeeBill` therefore do **not** carry `scholarshipAmount` / `discountAmount` / `discountId` columns — amount owed is always the snapshotted fee amount. The cashier payment screen must not offer scholarship/discount options on non-tuition line items.
+
 Non-goals (deferred):
-- Discounts or scholarships applied to transport/accommodation/service fee bills.
 - Partial-month proration.
 - Multi-academic-year copy/duplicate helpers for services (admin creates per year).
 - Price history on the service fee model (single editable amount; can be added later).
@@ -547,6 +548,8 @@ Sidebar labels added to existing `admin.*` namespace.
 | 10 | Service fee amount changes mid-year | Update `ServiceFee.amount`; only future-generated bills reflect it. Existing bills keep their snapshot. |
 | 11 | `billingMonths` changes mid-year | Next generation respects the new list. Existing bills untouched. |
 | 12 | Student changes class mid-year | Existing service fee bills stay linked to original class; new class's service fee applies to future months. |
+| 13 | Student has a scholarship | Scholarship applies to tuition only. Transport, accommodation, and service fee bills are billed in full regardless of scholarship status. |
+| 14 | Active discount covers a period | Discount applies to tuition only. No discount_amount column exists on `FeeBill` / `ServiceFeeBill`. |
 
 ## 10. Seed data
 
