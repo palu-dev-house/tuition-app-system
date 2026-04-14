@@ -104,6 +104,52 @@ export interface RateLimitFilters {
   limit?: number;
 }
 
+export interface FeeServiceFilters {
+  page?: number;
+  limit?: number;
+  academicYearId?: string;
+  category?: "TRANSPORT" | "ACCOMMODATION";
+  isActive?: boolean;
+  search?: string;
+}
+
+export interface FeeSubscriptionFilters {
+  page?: number;
+  limit?: number;
+  studentNis?: string;
+  feeServiceId?: string;
+  active?: boolean;
+}
+
+export interface FeeBillFilters {
+  page?: number;
+  limit?: number;
+  studentNis?: string;
+  feeServiceId?: string;
+  period?: string;
+  year?: number;
+  status?: "UNPAID" | "PARTIAL" | "PAID" | "VOID";
+}
+
+export interface ServiceFeeFilters {
+  page?: number;
+  limit?: number;
+  classAcademicId?: string;
+  isActive?: boolean;
+  search?: string;
+}
+
+export interface ServiceFeeBillFilters {
+  page?: number;
+  limit?: number;
+  studentNis?: string;
+  classAcademicId?: string;
+  serviceFeeId?: string;
+  period?: string;
+  year?: number;
+  status?: "UNPAID" | "PARTIAL" | "PAID" | "VOID";
+}
+
 export const queryKeys = {
   auth: {
     all: ["auth"] as const,
@@ -198,6 +244,59 @@ export const queryKeys = {
       [...queryKeys.discounts.lists(), filters] as const,
     details: () => [...queryKeys.discounts.all, "detail"] as const,
     detail: (id: string) => [...queryKeys.discounts.details(), id] as const,
+  },
+
+  feeServices: {
+    all: ["fee-services"] as const,
+    lists: () => [...queryKeys.feeServices.all, "list"] as const,
+    list: (filters: FeeServiceFilters) =>
+      [...queryKeys.feeServices.lists(), filters] as const,
+    details: () => [...queryKeys.feeServices.all, "detail"] as const,
+    detail: (id: string) => [...queryKeys.feeServices.details(), id] as const,
+    prices: (id: string) =>
+      [...queryKeys.feeServices.detail(id), "prices"] as const,
+  },
+
+  feeSubscriptions: {
+    all: ["fee-subscriptions"] as const,
+    lists: () => [...queryKeys.feeSubscriptions.all, "list"] as const,
+    list: (filters: FeeSubscriptionFilters) =>
+      [...queryKeys.feeSubscriptions.lists(), filters] as const,
+    details: () => [...queryKeys.feeSubscriptions.all, "detail"] as const,
+    detail: (id: string) =>
+      [...queryKeys.feeSubscriptions.details(), id] as const,
+  },
+
+  feeBills: {
+    all: ["fee-bills"] as const,
+    lists: () => [...queryKeys.feeBills.all, "list"] as const,
+    list: (filters: FeeBillFilters) =>
+      [...queryKeys.feeBills.lists(), filters] as const,
+    details: () => [...queryKeys.feeBills.all, "detail"] as const,
+    detail: (id: string) => [...queryKeys.feeBills.details(), id] as const,
+    byStudent: (nis: string) =>
+      [...queryKeys.feeBills.all, "by-student", nis] as const,
+  },
+
+  serviceFees: {
+    all: ["service-fees"] as const,
+    lists: () => [...queryKeys.serviceFees.all, "list"] as const,
+    list: (filters: ServiceFeeFilters) =>
+      [...queryKeys.serviceFees.lists(), filters] as const,
+    details: () => [...queryKeys.serviceFees.all, "detail"] as const,
+    detail: (id: string) => [...queryKeys.serviceFees.details(), id] as const,
+  },
+
+  serviceFeeBills: {
+    all: ["service-fee-bills"] as const,
+    lists: () => [...queryKeys.serviceFeeBills.all, "list"] as const,
+    list: (filters: ServiceFeeBillFilters) =>
+      [...queryKeys.serviceFeeBills.lists(), filters] as const,
+    details: () => [...queryKeys.serviceFeeBills.all, "detail"] as const,
+    detail: (id: string) =>
+      [...queryKeys.serviceFeeBills.details(), id] as const,
+    byStudent: (nis: string) =>
+      [...queryKeys.serviceFeeBills.all, "by-student", nis] as const,
   },
 
   // Student Portal
