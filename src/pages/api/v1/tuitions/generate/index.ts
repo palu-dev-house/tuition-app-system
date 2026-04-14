@@ -65,7 +65,7 @@ async function POST(request: NextRequest) {
     if (studentNisList && studentNisList.length > 0) {
       students = await prisma.student.findMany({
         where: { nis: { in: studentNisList } },
-        select: { nis: true, startJoinDate: true },
+        select: { nis: true, startJoinDate: true, exitedAt: true },
       });
     } else {
       // Get students enrolled in this class
@@ -73,7 +73,7 @@ async function POST(request: NextRequest) {
         where: { classAcademicId },
         include: {
           student: {
-            select: { nis: true, startJoinDate: true },
+            select: { nis: true, startJoinDate: true, exitedAt: true },
           },
         },
       });
@@ -82,7 +82,7 @@ async function POST(request: NextRequest) {
       // Fallback: if no student classes, get all students
       if (students.length === 0) {
         students = await prisma.student.findMany({
-          select: { nis: true, startJoinDate: true },
+          select: { nis: true, startJoinDate: true, exitedAt: true },
         });
       }
     }
@@ -112,6 +112,7 @@ async function POST(request: NextRequest) {
           students: students.map((s) => ({
             nis: s.nis,
             startJoinDate: s.startJoinDate,
+            exitedAt: s.exitedAt,
           })),
           academicYear: {
             startDate: classAcademic.academicYear.startDate,

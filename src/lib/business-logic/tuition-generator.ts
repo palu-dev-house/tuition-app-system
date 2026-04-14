@@ -18,6 +18,7 @@ export interface TuitionGenerationParams {
   students: Array<{
     nis: string;
     startJoinDate: Date;
+    exitedAt: Date | null;
   }>;
   academicYear: {
     startDate: Date;
@@ -298,6 +299,27 @@ function getSemesterForMonth(month: Month): string {
   return "SEM2";
 }
 
+function getPeriodStartMonthIndex(
+  period: string,
+  frequency: PaymentFrequency,
+): number {
+  // Returns 0-indexed month for new Date(year, monthIndex, 1).
+  if (frequency === "MONTHLY") {
+    return MONTH_TO_NUMBER[period as Month] - 1;
+  }
+  if (frequency === "QUARTERLY") {
+    if (period === "Q1") return 6; // July
+    if (period === "Q2") return 9; // October
+    if (period === "Q3") return 0; // January
+    if (period === "Q4") return 3; // April
+  }
+  if (frequency === "SEMESTER") {
+    if (period === "SEM1") return 6; // July
+    if (period === "SEM2") return 0; // January
+  }
+  throw new Error(`Unknown period ${period} for frequency ${frequency}`);
+}
+
 /**
  * Get the starting period based on student join date
  */
@@ -388,6 +410,18 @@ export function generateTuitions(
     for (const period of periods) {
       if (shouldIncludePeriod(period, startPeriod, frequency)) {
         const year = getPeriodYear(period, academicYear);
+
+        if (
+          student.exitedAt &&
+          new Date(
+            year,
+            getPeriodStartMonthIndex(period, frequency),
+            1,
+          ).getTime() > student.exitedAt.getTime()
+        ) {
+          continue;
+        }
+
         // Use period-specific discounted fee if available, otherwise use default fee
         const periodFee = discountMap.get(period) ?? feeAmount;
 
@@ -423,6 +457,7 @@ export function generateMonthlyTuitions(params: {
   students: Array<{
     nis: string;
     startJoinDate: Date;
+    exitedAt: Date | null;
   }>;
   academicYear: {
     startDate: Date;
