@@ -25,6 +25,7 @@ import { useRouter } from "next/router";
 import { useTranslations } from "next-intl";
 import type { ReactElement } from "react";
 import { useState } from "react";
+import StudentExitSection from "@/components/forms/StudentExitSection";
 import StudentForm from "@/components/forms/StudentForm";
 import AdminLayout from "@/components/layouts/AdminLayout";
 import PageHeader from "@/components/ui/PageHeader/PageHeader";
@@ -209,6 +210,16 @@ const EditStudentPage: NextPageWithLayout = function EditStudentPage() {
             isEdit
           />
         </Paper>
+
+        {/* Exit Status */}
+        <StudentExitSection
+          nis={student.nis}
+          startJoinDate={student.startJoinDate}
+          exitedAt={student.exitedAt}
+          exitReason={student.exitReason}
+          exitedBy={student.exitedBy}
+          onChanged={() => refetch()}
+        />
 
         {/* Account Management */}
         <Card withBorder>
