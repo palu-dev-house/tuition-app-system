@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.10.0] - 2026-04-14
+
+### Features
+- print slip redesign, bilingual help, and UX polish
+
+
+
 ## [2.9.0] - 2026-04-14
 
 ### Features
