@@ -571,6 +571,7 @@ model FeeBill {
   @@index([studentNis])
   @@index([feeServiceId])
   @@index([status])
+  @@index([studentNis, status])
   @@index([dueDate])
   @@map("fee_bills")
 }
@@ -612,7 +613,7 @@ model ServiceFeeBill {
   createdAt       DateTime      @default(now()) @map("created_at")
   updatedAt       DateTime      @updatedAt @map("updated_at")
 
-  serviceFee         ServiceFee          @relation(fields: [serviceFeeId], references: [id], onDelete: Cascade)
+  serviceFee         ServiceFee          @relation(fields: [serviceFeeId], references: [id], onDelete: Restrict)
   student            Student             @relation(fields: [studentNis], references: [nis], onDelete: Cascade)
   classAcademic      ClassAcademic       @relation(fields: [classAcademicId], references: [id], onDelete: Restrict)
   payments           Payment[]
@@ -622,5 +623,6 @@ model ServiceFeeBill {
   @@index([studentNis])
   @@index([classAcademicId])
   @@index([status])
+  @@index([studentNis, status])
   @@map("service_fee_bills")
 }
