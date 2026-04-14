@@ -16,6 +16,7 @@ async function GET(request: NextRequest) {
   const page = Number(searchParams.get("page") || "1");
   const limit = Number(searchParams.get("limit") || "10");
   const search = searchParams.get("search") || undefined;
+  const statusParam = searchParams.get("status") || "active";
 
   const where: Record<string, unknown> = {};
 
@@ -25,6 +26,12 @@ async function GET(request: NextRequest) {
       { nik: { contains: search, mode: "insensitive" } },
       { name: { contains: search, mode: "insensitive" } },
     ];
+  }
+
+  if (statusParam === "active") {
+    where.exitedAt = null;
+  } else if (statusParam === "exited") {
+    where.exitedAt = { not: null };
   }
 
   const [students, total] = await Promise.all([
