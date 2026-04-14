@@ -30,9 +30,11 @@ import {
   IconCreditCard,
   IconDiscount,
   IconGift,
+  IconHelp,
   IconHome,
   IconKey,
   IconLogout,
+  IconPrinter,
   IconReceipt,
   IconReportAnalytics,
   IconSchool,
@@ -139,6 +141,11 @@ export default function Sidebar() {
     { icon: IconDiscount, label: t("discounts"), href: "/admin/discounts" },
     { icon: IconReceipt, label: t("payments"), href: "/admin/payments" },
     {
+      icon: IconPrinter,
+      label: t("printReceipts"),
+      href: "/admin/payments/print",
+    },
+    {
       icon: IconCreditCard,
       label: t("onlinePayments"),
       href: "/admin/online-payments",
@@ -169,12 +176,18 @@ export default function Sidebar() {
         },
       ],
     },
+    { icon: IconHelp, label: t("help"), href: "/admin/help" },
   ];
 
   const cashierLinks: NavItem[] = [
     { icon: IconHome, label: t("dashboard"), href: "/admin/dashboard" },
     { icon: IconSchool, label: t("students"), href: "/admin/students" },
     { icon: IconReceipt, label: t("payments"), href: "/admin/payments" },
+    {
+      icon: IconPrinter,
+      label: t("printReceipts"),
+      href: "/admin/payments/print",
+    },
     {
       icon: IconReportAnalytics,
       label: t("reports"),
@@ -191,6 +204,7 @@ export default function Sidebar() {
         },
       ],
     },
+    { icon: IconHelp, label: t("help"), href: "/admin/help" },
   ];
 
   const links = user?.role === "ADMIN" ? adminLinks : cashierLinks;

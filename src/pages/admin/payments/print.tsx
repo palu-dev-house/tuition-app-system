@@ -2,23 +2,27 @@ import {
   Alert,
   Button,
   Card,
+  Checkbox,
   Group,
   Loader,
   SegmentedControl,
   Select,
   Stack,
   Text,
+  TextInput,
 } from "@mantine/core";
 import {
   IconAlertCircle,
   IconFilter,
   IconPrinter,
   IconReceipt,
+  IconSearch,
 } from "@tabler/icons-react";
 import dayjs from "dayjs";
 import { useTranslations } from "next-intl";
 import type { ReactElement } from "react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
+import { flushSync } from "react-dom";
 import AdminLayout from "@/components/layouts/AdminLayout";
 import PageHeader from "@/components/ui/PageHeader/PageHeader";
 import { useAcademicYears } from "@/hooks/api/useAcademicYears";
@@ -26,14 +30,138 @@ import {
   type PrintPayment,
   usePrintPayments,
 } from "@/hooks/api/usePrintPayments";
+import { useStudents } from "@/hooks/api/useStudents";
 import type { NextPageWithLayout } from "@/lib/page-types";
+
+type PrintMode = "today" | "all" | "student";
+type LayoutMode = "compact" | "full";
+
+const MAX_ITEMS_PER_SLIP = 6;
+const SLIPS_PER_PAGE = 8;
 
 function formatRp(value: string | number): string {
   const num = typeof value === "string" ? parseFloat(value) : value;
   return `Rp ${num.toLocaleString("id-ID", { minimumFractionDigits: 0 })}`;
 }
 
-function InvoiceSlot({ payment }: { payment: PrintPayment }) {
+interface StudentGroup {
+  nis: string;
+  name: string;
+  className: string;
+  academicYear: string;
+  payments: PrintPayment[];
+  total: number;
+  latestDate: string;
+  kasirName: string | null;
+}
+
+function groupByStudent(payments: PrintPayment[]): StudentGroup[] {
+  const groups = new Map<string, StudentGroup>();
+
+  for (const p of payments) {
+    const nis = p.tuition.student.nis;
+    const existing = groups.get(nis);
+    const amount = parseFloat(p.amount);
+    if (existing) {
+      existing.payments.push(p);
+      existing.total += amount;
+      if (p.paymentDate > existing.latestDate) {
+        existing.latestDate = p.paymentDate;
+        existing.kasirName = p.employee?.name ?? existing.kasirName;
+      }
+    } else {
+      groups.set(nis, {
+        nis,
+        name: p.tuition.student.name,
+        className: p.tuition.classAcademic.className,
+        academicYear: p.tuition.classAcademic.academicYear.year,
+        payments: [p],
+        total: amount,
+        latestDate: p.paymentDate,
+        kasirName: p.employee?.name ?? null,
+      });
+    }
+  }
+
+  return Array.from(groups.values()).sort((a, b) =>
+    a.name.localeCompare(b.name),
+  );
+}
+
+function CompactSlip({
+  group,
+  formatPeriod,
+  t,
+  selected,
+  onToggle,
+}: {
+  group: StudentGroup;
+  formatPeriod: (period: string) => string;
+  t: ReturnType<typeof useTranslations>;
+  selected: boolean;
+  onToggle: (nis: string) => void;
+}) {
+  const visibleItems = group.payments.slice(0, MAX_ITEMS_PER_SLIP);
+  const overflow = group.payments.length - visibleItems.length;
+
+  return (
+    <div className="slip-compact">
+      <div className="slip-select">
+        <Checkbox
+          size="xs"
+          checked={selected}
+          onChange={() => onToggle(group.nis)}
+          aria-label={group.name}
+        />
+      </div>
+      <div className="slip-header">
+        <div className="slip-name">{group.name}</div>
+        <div className="slip-class">{group.className}</div>
+      </div>
+      <div className="slip-sub">
+        <span>NIS: {group.nis}</span>
+        <span>{group.academicYear}</span>
+      </div>
+
+      <div className="slip-items">
+        {visibleItems.map((p) => (
+          <div className="slip-item-row" key={p.id}>
+            <span className="slip-item-label">
+              {formatPeriod(p.tuition.period)} {p.tuition.year}
+            </span>
+            <span className="slip-item-amount">
+              {formatRp(parseFloat(p.amount))}
+            </span>
+          </div>
+        ))}
+        {overflow > 0 && (
+          <div className="slip-more">
+            +{overflow} {t("invoice.moreItems")}
+          </div>
+        )}
+      </div>
+
+      <div className="slip-footer">
+        <span className="slip-total-label">{t("invoice.total")}</span>
+        <span className="slip-total-value">{formatRp(group.total)}</span>
+      </div>
+      <div className="slip-meta">
+        <span>{dayjs(group.latestDate).format("DD/MM/YYYY")}</span>
+        <span>{group.kasirName ?? t("invoice.admin")}</span>
+      </div>
+    </div>
+  );
+}
+
+function FullInvoice({
+  payment,
+  selected,
+  onToggle,
+}: {
+  payment: PrintPayment;
+  selected: boolean;
+  onToggle: (id: string) => void;
+}) {
   const t = useTranslations();
   const tu = payment.tuition;
   const fee = parseFloat(tu.feeAmount);
@@ -44,11 +172,17 @@ function InvoiceSlot({ payment }: { payment: PrintPayment }) {
 
   return (
     <div className="invoice-slot">
+      <div className="slip-select">
+        <Checkbox
+          size="xs"
+          checked={selected}
+          onChange={() => onToggle(payment.id)}
+          aria-label={tu.student.name}
+        />
+      </div>
       {tu.status === "PAID" && (
         <div className="inv-stamp">{t("invoice.paid")}</div>
       )}
-
-      {/* Header */}
       <div className="inv-header">
         <div>
           <div className="inv-school">{t("invoice.schoolName")}</div>
@@ -65,7 +199,6 @@ function InvoiceSlot({ payment }: { payment: PrintPayment }) {
         </div>
       </div>
 
-      {/* Student Info */}
       <div className="inv-student-row">
         <div className="inv-field">
           <span className="inv-field-label">{t("invoice.studentName")}</span>
@@ -87,7 +220,6 @@ function InvoiceSlot({ payment }: { payment: PrintPayment }) {
         </div>
       </div>
 
-      {/* Detail Table */}
       <table className="inv-table">
         <thead>
           <tr>
@@ -125,7 +257,6 @@ function InvoiceSlot({ payment }: { payment: PrintPayment }) {
         </tbody>
       </table>
 
-      {/* Footer */}
       <div className="inv-footer">
         <div className="inv-footer-left">
           {payment.notes && (
@@ -149,17 +280,51 @@ function InvoiceSlot({ payment }: { payment: PrintPayment }) {
 const PrintInvoicePage: NextPageWithLayout = function PrintInvoicePage() {
   const t = useTranslations();
   const [academicYearId, setAcademicYearId] = useState<string | null>(null);
-  const [mode, setMode] = useState<"today" | "all">("today");
+  const [mode, setMode] = useState<PrintMode>("today");
+  const [layout, setLayout] = useState<LayoutMode>("compact");
+  const [studentNis, setStudentNis] = useState<string | null>(null);
+  const [studentSearch, setStudentSearch] = useState("");
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+
+  const toggleSelected = (id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
 
   const { data: academicYearsData } = useAcademicYears({ limit: 100 });
   const activeYear = academicYearsData?.academicYears.find((ay) => ay.isActive);
   const effectiveYearId = academicYearId || activeYear?.id;
 
-  const { data: payments, isLoading } = usePrintPayments({
-    academicYearId: effectiveYearId,
-    mode,
-    enabled: !!effectiveYearId,
+  const { data: studentsData } = useStudents({
+    search: studentSearch,
+    limit: 20,
+    status: "all",
   });
+
+  const { data: payments, isLoading } = usePrintPayments({
+    academicYearId: mode === "student" ? undefined : effectiveYearId,
+    mode,
+    studentNis: mode === "student" ? (studentNis ?? undefined) : undefined,
+    enabled: mode === "student" ? !!studentNis : !!effectiveYearId,
+  });
+
+  const formatPeriod = (period: string): string => {
+    const monthKey = `months.${period}` as const;
+    const monthTranslation = t.raw(monthKey);
+    if (monthTranslation !== monthKey) {
+      return (monthTranslation as string).slice(0, 3);
+    }
+    const periodKey = `periods.${period}` as const;
+    const periodTranslation = t.raw(periodKey);
+    if (periodTranslation !== periodKey) {
+      return periodTranslation as string;
+    }
+    return period;
+  };
 
   const academicYearOptions =
     academicYearsData?.academicYears.map((ay) => ({
@@ -167,17 +332,88 @@ const PrintInvoicePage: NextPageWithLayout = function PrintInvoicePage() {
       label: `${ay.year}${ay.isActive ? ` (${t("common.active")})` : ""}`,
     })) || [];
 
-  // Chunk payments into groups of 3 (3 per A4 page)
-  const pages: PrintPayment[][] = [];
-  if (payments) {
-    for (let i = 0; i < payments.length; i += 3) {
-      pages.push(payments.slice(i, i + 3));
-    }
-  }
+  const studentOptions = useMemo(
+    () =>
+      studentsData?.students.map((s) => ({
+        value: s.nis,
+        label: `${s.nis} — ${s.name}`,
+      })) || [],
+    [studentsData],
+  );
 
-  const handlePrint = () => {
+  const selectedStudentName = useMemo(() => {
+    if (!studentNis) return null;
+    const found = studentsData?.students.find((s) => s.nis === studentNis);
+    return found?.name ?? null;
+  }, [studentNis, studentsData]);
+
+  // Group payments by student for compact layout
+  const studentGroups = useMemo(
+    () => (payments ? groupByStudent(payments) : []),
+    [payments],
+  );
+
+  const [isPrintingSelected, setIsPrintingSelected] = useState(false);
+  const hasSelection = selectedIds.size > 0;
+
+  // Filter for print when "Cetak Terpilih" is active
+  const renderedGroups = useMemo(() => {
+    if (isPrintingSelected && hasSelection) {
+      return studentGroups.filter((g) => selectedIds.has(g.nis));
+    }
+    return studentGroups;
+  }, [isPrintingSelected, hasSelection, studentGroups, selectedIds]);
+
+  const renderedPayments = useMemo(() => {
+    if (!payments) return [];
+    if (isPrintingSelected && hasSelection) {
+      return payments.filter((p) => selectedIds.has(p.id));
+    }
+    return payments;
+  }, [isPrintingSelected, hasSelection, payments, selectedIds]);
+
+  // Chunk slips into pages
+  const slipPages: StudentGroup[][] = useMemo(() => {
+    const pages: StudentGroup[][] = [];
+    for (let i = 0; i < renderedGroups.length; i += SLIPS_PER_PAGE) {
+      pages.push(renderedGroups.slice(i, i + SLIPS_PER_PAGE));
+    }
+    return pages;
+  }, [renderedGroups]);
+
+  // Chunk full invoices 3 per page (existing layout)
+  const fullPages: PrintPayment[][] = useMemo(() => {
+    const pages: PrintPayment[][] = [];
+    for (let i = 0; i < renderedPayments.length; i += 3) {
+      pages.push(renderedPayments.slice(i, i + 3));
+    }
+    return pages;
+  }, [renderedPayments]);
+
+  const handlePrintAll = () => {
+    setSelectedIds(new Set());
     window.print();
   };
+
+  const handlePrintSelected = () => {
+    flushSync(() => setIsPrintingSelected(true));
+    window.print();
+    setIsPrintingSelected(false);
+  };
+
+  const handleSelectAll = () => {
+    if (layout === "compact") {
+      setSelectedIds(new Set(studentGroups.map((g) => g.nis)));
+    } else {
+      setSelectedIds(new Set((payments ?? []).map((p) => p.id)));
+    }
+  };
+
+  const handleClearSelection = () => setSelectedIds(new Set());
+
+  const totalCount =
+    layout === "compact" ? studentGroups.length : payments?.length || 0;
+  const selectedCount = selectedIds.size;
 
   return (
     <>
@@ -189,38 +425,124 @@ const PrintInvoicePage: NextPageWithLayout = function PrintInvoicePage() {
         />
 
         <Card withBorder mb="md">
-          <Group gap="md" align="flex-end">
-            <Select
-              label={t("invoice.academicYear")}
-              placeholder={t("invoice.selectYear")}
-              leftSection={<IconFilter size={16} />}
-              data={academicYearOptions}
-              value={academicYearId}
-              onChange={setAcademicYearId}
-              clearable
-              w={250}
-            />
-            <Stack gap={4}>
-              <Text size="sm" fw={500}>
-                {t("invoice.printMode")}
-              </Text>
-              <SegmentedControl
-                data={[
-                  { value: "today", label: t("invoice.today") },
-                  { value: "all", label: t("invoice.allPaid") },
-                ]}
-                value={mode}
-                onChange={(v) => setMode(v as "today" | "all")}
-              />
-            </Stack>
-            <Button
-              leftSection={<IconPrinter size={18} />}
-              onClick={handlePrint}
-              disabled={!payments || payments.length === 0}
-            >
-              {t("invoice.print")} ({payments?.length || 0})
-            </Button>
-          </Group>
+          <Stack gap="md">
+            <Group gap="md" align="flex-end" wrap="wrap">
+              <Stack gap={4}>
+                <Text size="sm" fw={500}>
+                  {t("invoice.layoutMode")}
+                </Text>
+                <SegmentedControl
+                  data={[
+                    { value: "compact", label: t("invoice.layoutCompact") },
+                    { value: "full", label: t("invoice.layoutFull") },
+                  ]}
+                  value={layout}
+                  onChange={(v) => setLayout(v as LayoutMode)}
+                />
+              </Stack>
+
+              <Stack gap={4}>
+                <Text size="sm" fw={500}>
+                  {t("invoice.printMode")}
+                </Text>
+                <SegmentedControl
+                  data={[
+                    { value: "today", label: t("invoice.today") },
+                    { value: "all", label: t("invoice.allPaid") },
+                    { value: "student", label: t("invoice.perStudent") },
+                  ]}
+                  value={mode}
+                  onChange={(v) => {
+                    setMode(v as PrintMode);
+                    if (v !== "student") setStudentNis(null);
+                  }}
+                />
+              </Stack>
+            </Group>
+
+            <Group gap="md" align="flex-end" wrap="wrap">
+              {mode !== "student" && (
+                <Select
+                  label={t("invoice.academicYear")}
+                  placeholder={t("invoice.selectYear")}
+                  leftSection={<IconFilter size={16} />}
+                  data={academicYearOptions}
+                  value={academicYearId}
+                  onChange={setAcademicYearId}
+                  clearable
+                  w={250}
+                />
+              )}
+
+              {mode === "student" && (
+                <>
+                  <TextInput
+                    label={t("invoice.searchStudent")}
+                    placeholder={t("invoice.searchStudentPlaceholder")}
+                    leftSection={<IconSearch size={16} />}
+                    value={studentSearch}
+                    onChange={(e) => setStudentSearch(e.currentTarget.value)}
+                    w={260}
+                  />
+                  <Select
+                    label={t("invoice.selectStudent")}
+                    placeholder={t("invoice.selectStudentPlaceholder")}
+                    data={studentOptions}
+                    value={studentNis}
+                    onChange={setStudentNis}
+                    searchable
+                    clearable
+                    w={320}
+                    nothingFoundMessage={t("invoice.noStudentFound")}
+                  />
+                </>
+              )}
+
+              <Button
+                leftSection={<IconPrinter size={18} />}
+                onClick={handlePrintAll}
+                disabled={!payments || payments.length === 0}
+              >
+                {t("invoice.printAll")} ({totalCount})
+              </Button>
+
+              <Button
+                leftSection={<IconPrinter size={18} />}
+                variant="light"
+                onClick={handlePrintSelected}
+                disabled={selectedCount === 0}
+              >
+                {t("invoice.printSelected")} ({selectedCount})
+              </Button>
+
+              <Button
+                variant="subtle"
+                onClick={handleSelectAll}
+                disabled={totalCount === 0}
+              >
+                {t("invoice.selectAll")}
+              </Button>
+
+              <Button
+                variant="subtle"
+                color="gray"
+                onClick={handleClearSelection}
+                disabled={selectedCount === 0}
+              >
+                {t("invoice.clearSelection")}
+              </Button>
+            </Group>
+
+            {mode === "student" && selectedStudentName && (
+              <Alert
+                color="blue"
+                variant="light"
+                icon={<IconReceipt size={16} />}
+              >
+                {t("invoice.reprintingFor", { name: selectedStudentName })}
+              </Alert>
+            )}
+          </Stack>
         </Card>
 
         {isLoading && (
@@ -229,28 +551,72 @@ const PrintInvoicePage: NextPageWithLayout = function PrintInvoicePage() {
           </Stack>
         )}
 
-        {!isLoading && payments && payments.length === 0 && (
-          <Alert
-            icon={<IconAlertCircle size={18} />}
-            color="gray"
-            variant="light"
-          >
-            {mode === "today"
-              ? t("invoice.noPaymentsToday")
-              : t("invoice.noPayments")}
+        {!isLoading && mode === "student" && !studentNis && (
+          <Alert color="gray" variant="light" icon={<IconSearch size={18} />}>
+            {t("invoice.selectStudentFirst")}
           </Alert>
         )}
+
+        {!isLoading &&
+          (mode !== "student" || studentNis) &&
+          payments &&
+          payments.length === 0 && (
+            <Alert
+              icon={<IconAlertCircle size={18} />}
+              color="gray"
+              variant="light"
+            >
+              {mode === "today"
+                ? t("invoice.noPaymentsToday")
+                : mode === "student"
+                  ? t("invoice.noPaymentsForStudent")
+                  : t("invoice.noPayments")}
+            </Alert>
+          )}
       </div>
 
-      {/* Print Area */}
-      {payments && payments.length > 0 && (
-        <div className="print-area">
-          {pages.map((pagePayments, pageIdx) => (
-            <div className="print-page" key={pageIdx}>
-              {pagePayments.map((payment) => (
-                <InvoiceSlot key={payment.id} payment={payment} />
+      {/* Compact Layout (grouped by student) */}
+      {layout === "compact" && renderedGroups.length > 0 && (
+        <div className={`print-area${hasSelection ? " has-selection" : ""}`}>
+          {slipPages.map((pageGroups, pageIdx) => (
+            <div className="slip-page" key={`slip-${pageIdx}`}>
+              {pageGroups.map((group) => (
+                <CompactSlip
+                  key={group.nis}
+                  group={group}
+                  formatPeriod={formatPeriod}
+                  t={t}
+                  selected={selectedIds.has(group.nis)}
+                  onToggle={toggleSelected}
+                />
               ))}
-              {/* Fill empty slots so page height is always 297mm */}
+              {Array.from({ length: SLIPS_PER_PAGE - pageGroups.length }).map(
+                (_, i) => (
+                  <div
+                    key={`empty-${i}`}
+                    className="slip-compact"
+                    style={{ visibility: "hidden" }}
+                  />
+                ),
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Full Invoice Layout (1 per slot, 3 per page) */}
+      {layout === "full" && renderedPayments.length > 0 && (
+        <div className={`print-area${hasSelection ? " has-selection" : ""}`}>
+          {fullPages.map((pagePayments, pageIdx) => (
+            <div className="print-page" key={`full-${pageIdx}`}>
+              {pagePayments.map((payment) => (
+                <FullInvoice
+                  key={payment.id}
+                  payment={payment}
+                  selected={selectedIds.has(payment.id)}
+                  onToggle={toggleSelected}
+                />
+              ))}
               {Array.from({ length: 3 - pagePayments.length }).map((_, i) => (
                 <div
                   className="invoice-slot"
@@ -263,14 +629,18 @@ const PrintInvoicePage: NextPageWithLayout = function PrintInvoicePage() {
         </div>
       )}
 
-      {/* Screen-only: summary count */}
+      {/* Screen-only summary */}
       {payments && payments.length > 0 && (
         <div className="print-controls">
           <Group justify="center" py="md">
             <IconReceipt size={16} color="gray" />
             <Text size="sm" c="dimmed">
-              {t("invoice.totalInvoices", { count: payments.length })} &middot;{" "}
-              {t("invoice.totalPages", { count: pages.length })}
+              {layout === "compact"
+                ? t("invoice.totalSlips", {
+                    count: studentGroups.length,
+                    pages: slipPages.length,
+                  })
+                : `${t("invoice.totalInvoices", { count: payments.length })} · ${t("invoice.totalPages", { count: fullPages.length })}`}
             </Text>
           </Group>
         </div>

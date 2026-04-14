@@ -260,6 +260,194 @@
   }
 }
 
+/* ============================================
+   COMPACT SLIP - name, class, items list only
+   Fixed: 100mm × 70mm per slip
+   Grid: 2 cols × 4 rows = 8 slips per A4 portrait
+   ============================================ */
+.slip-page {
+  width: 210mm;
+  margin: 0 auto 24px;
+  background: white;
+  box-shadow: 0 1px 8px rgba(0, 0, 0, 0.08);
+  padding: 8.5mm 5mm;
+  display: grid;
+  grid-template-columns: repeat(2, 100mm);
+  grid-template-rows: repeat(4, 70mm);
+  gap: 0;
+  justify-content: center;
+  box-sizing: border-box;
+}
+
+.slip-compact {
+  width: 100mm;
+  height: 70mm;
+  box-sizing: border-box;
+  padding: 4mm 5mm;
+  border: 0.5px dashed #999;
+  font-family: "Helvetica", "Arial", sans-serif;
+  color: #111;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  position: relative;
+}
+
+.slip-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding-bottom: 1.5mm;
+  border-bottom: 1px solid #333;
+  margin-bottom: 1.5mm;
+}
+
+.slip-name {
+  font-size: 10pt;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  line-height: 1.15;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+  min-width: 0;
+}
+
+.slip-class {
+  font-size: 7pt;
+  color: #555;
+  margin-left: 3mm;
+  font-family: "Courier New", "Courier", monospace;
+  white-space: nowrap;
+}
+
+.slip-sub {
+  font-size: 6.5pt;
+  color: #777;
+  margin-bottom: 1.5mm;
+  display: flex;
+  justify-content: space-between;
+}
+
+.slip-items {
+  flex: 1;
+  overflow: hidden;
+  font-size: 7.5pt;
+  line-height: 1.35;
+  font-family: "Courier New", "Courier", monospace;
+}
+
+.slip-item-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.3mm 0;
+}
+
+.slip-item-label {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  padding-right: 2mm;
+}
+
+.slip-item-amount {
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.slip-more {
+  font-size: 6.5pt;
+  color: #888;
+  font-style: italic;
+  margin-top: 0.5mm;
+}
+
+.slip-footer {
+  border-top: 1.5px solid #333;
+  padding-top: 1mm;
+  margin-top: 1mm;
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+
+.slip-total-label {
+  font-size: 7pt;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.slip-total-value {
+  font-size: 10pt;
+  font-weight: 700;
+  font-family: "Courier New", "Courier", monospace;
+}
+
+.slip-meta {
+  font-size: 6pt;
+  color: #666;
+  margin-top: 1mm;
+  display: flex;
+  justify-content: space-between;
+}
+
+@media print {
+  .slip-page {
+    width: 210mm;
+    height: 297mm;
+    margin: 0;
+    padding: 8.5mm 5mm;
+    box-shadow: none;
+    page-break-after: always;
+    overflow: hidden;
+  }
+
+  .slip-page:last-child {
+    page-break-after: auto;
+  }
+
+  .slip-compact {
+    page-break-inside: avoid;
+    border: 0.5px dashed #666;
+  }
+}
+
+/* ---------- Slip selection (screen only) ---------- */
+.slip-select {
+  position: absolute;
+  top: 3mm;
+  right: 3mm;
+  z-index: 10;
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 2px;
+  padding: 1px;
+}
+
+.print-area.has-selection .slip-compact,
+.print-area.has-selection .invoice-slot {
+  opacity: 0.35;
+  transition: opacity 0.15s;
+}
+
+.print-area.has-selection .slip-compact:has(.slip-select input:checked),
+.print-area.has-selection .invoice-slot:has(.slip-select input:checked) {
+  opacity: 1;
+}
+
+@media print {
+  .slip-select {
+    display: none !important;
+  }
+  .print-area.has-selection .slip-compact,
+  .print-area.has-selection .invoice-slot {
+    opacity: 1;
+  }
+}
+
 /* ---------- Empty state ---------- */
 .print-empty {
   display: flex;

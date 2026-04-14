@@ -1,9 +1,11 @@
 import {
   Alert,
   Badge,
+  Box,
   Button,
   Card,
   Divider,
+  Grid,
   Group,
   LoadingOverlay,
   Modal,
@@ -200,94 +202,108 @@ const EditStudentPage: NextPageWithLayout = function EditStudentPage() {
         description={`${t("student.edit")} ${student.name}`}
       />
 
-      <Stack gap="lg">
-        {/* Student Form */}
-        <Paper withBorder p="lg">
-          <StudentForm
-            initialData={student}
-            onSubmit={handleSubmit}
-            isLoading={updateStudent.isPending}
-            isEdit
-          />
-        </Paper>
+      <Grid gutter="lg">
+        {/* Main Column - Student Form */}
+        <Grid.Col span={{ base: 12, lg: 8 }}>
+          <Paper withBorder p="lg">
+            <StudentForm
+              initialData={student}
+              onSubmit={handleSubmit}
+              isLoading={updateStudent.isPending}
+              isEdit
+            />
+          </Paper>
+        </Grid.Col>
 
-        {/* Exit Status */}
-        <StudentExitSection
-          nis={student.nis}
-          startJoinDate={student.startJoinDate}
-          exitedAt={student.exitedAt}
-          exitReason={student.exitReason}
-          exitedBy={student.exitedBy}
-          onChanged={() => refetch()}
-        />
+        {/* Sidebar Column - Status & Account (sticky on desktop) */}
+        <Grid.Col span={{ base: 12, lg: 4 }}>
+          <Box
+            style={{
+              position: "sticky",
+              top: 76,
+            }}
+          >
+            <Stack gap="md">
+              <StudentExitSection
+                nis={student.nis}
+                startJoinDate={student.startJoinDate}
+                exitedAt={student.exitedAt}
+                exitReason={student.exitReason}
+                exitedBy={student.exitedBy}
+                onChanged={() => refetch()}
+              />
 
-        {/* Account Management */}
-        <Card withBorder>
-          <Stack gap="md">
-            <Title order={5}>{t("studentAccount.portalAccount")}</Title>
+              <Card withBorder>
+                <Stack gap="md">
+                  <Title order={5}>{t("studentAccount.portalAccount")}</Title>
 
-            {!hasAccount ? (
-              <>
-                <Alert icon={<IconAlertCircle size={18} />} color="gray">
-                  {t("studentAccount.noAccountMsg")}
-                </Alert>
-                <Button
-                  leftSection={<IconUserPlus size={18} />}
-                  onClick={openCreateModal}
-                >
-                  {t("studentAccount.createAccount")}
-                </Button>
-              </>
-            ) : isDeleted ? (
-              <>
-                <Alert icon={<IconAlertCircle size={18} />} color="red">
-                  {t("studentAccount.accountDeletedMsg")}
-                </Alert>
-                <Button
-                  variant="outline"
-                  onClick={handleRestoreAccount}
-                  loading={restoreAccount.isPending}
-                >
-                  {t("studentAccount.restore")}
-                </Button>
-              </>
-            ) : (
-              <>
-                <Group>
-                  <Badge color="green" variant="light">
-                    {t("studentAccount.status.active")}
-                  </Badge>
-                  {student.mustChangePassword && (
-                    <Badge color="yellow" variant="light">
-                      {t("studentAccount.status.mustChangePassword")}
-                    </Badge>
+                  {!hasAccount ? (
+                    <>
+                      <Alert icon={<IconAlertCircle size={18} />} color="gray">
+                        {t("studentAccount.noAccountMsg")}
+                      </Alert>
+                      <Button
+                        leftSection={<IconUserPlus size={18} />}
+                        onClick={openCreateModal}
+                      >
+                        {t("studentAccount.createAccount")}
+                      </Button>
+                    </>
+                  ) : isDeleted ? (
+                    <>
+                      <Alert icon={<IconAlertCircle size={18} />} color="red">
+                        {t("studentAccount.accountDeletedMsg")}
+                      </Alert>
+                      <Button
+                        variant="outline"
+                        onClick={handleRestoreAccount}
+                        loading={restoreAccount.isPending}
+                      >
+                        {t("studentAccount.restore")}
+                      </Button>
+                    </>
+                  ) : (
+                    <>
+                      <Group gap="xs">
+                        <Badge color="green" variant="light">
+                          {t("studentAccount.status.active")}
+                        </Badge>
+                        {student.mustChangePassword && (
+                          <Badge color="yellow" variant="light">
+                            {t("studentAccount.status.mustChangePassword")}
+                          </Badge>
+                        )}
+                      </Group>
+
+                      <Divider />
+
+                      <Stack gap="xs">
+                        <Button
+                          variant="outline"
+                          leftSection={<IconKey size={18} />}
+                          onClick={openResetModal}
+                          fullWidth
+                        >
+                          {t("studentAccount.resetPassword")}
+                        </Button>
+                        <Button
+                          variant="outline"
+                          color="red"
+                          leftSection={<IconTrash size={18} />}
+                          onClick={openDeleteModal}
+                          fullWidth
+                        >
+                          {t("studentAccount.deleteAccount")}
+                        </Button>
+                      </Stack>
+                    </>
                   )}
-                </Group>
-
-                <Divider />
-
-                <Group>
-                  <Button
-                    variant="outline"
-                    leftSection={<IconKey size={18} />}
-                    onClick={openResetModal}
-                  >
-                    {t("studentAccount.resetPassword")}
-                  </Button>
-                  <Button
-                    variant="outline"
-                    color="red"
-                    leftSection={<IconTrash size={18} />}
-                    onClick={openDeleteModal}
-                  >
-                    {t("studentAccount.deleteAccount")}
-                  </Button>
-                </Group>
-              </>
-            )}
-          </Stack>
-        </Card>
-      </Stack>
+                </Stack>
+              </Card>
+            </Stack>
+          </Box>
+        </Grid.Col>
+      </Grid>
 
       {/* Create Account Modal */}
       <Modal

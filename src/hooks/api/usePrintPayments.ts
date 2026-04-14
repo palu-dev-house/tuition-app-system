@@ -42,11 +42,18 @@ interface PrintPaymentsResponse {
 
 export function usePrintPayments(params: {
   academicYearId?: string;
-  mode: "today" | "all";
+  mode: "today" | "all" | "student";
+  studentNis?: string;
   enabled?: boolean;
 }) {
   return useQuery({
-    queryKey: ["payments", "print", params.academicYearId, params.mode],
+    queryKey: [
+      "payments",
+      "print",
+      params.academicYearId,
+      params.mode,
+      params.studentNis,
+    ],
     queryFn: async () => {
       const { data } = await apiClient.get<PrintPaymentsResponse>(
         "/payments/print",
@@ -54,6 +61,7 @@ export function usePrintPayments(params: {
           params: {
             academicYearId: params.academicYearId,
             mode: params.mode,
+            studentNis: params.studentNis,
           },
         },
       );

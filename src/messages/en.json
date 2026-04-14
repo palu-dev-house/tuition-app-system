@@ -459,7 +459,11 @@
     "classSummary": "Class Summary",
     "searchMenu": "Search menu...",
     "onlinePayments": "Online Payments",
-    "paymentSettings": "Payment Settings"
+    "paymentSettings": "Payment Settings",
+    "help": "Help",
+    "helpDescription": "User guide and application documentation",
+    "print": "Print",
+    "printReceipts": "Print Receipts"
   },
   "employee": {
     "title": "Employees",
@@ -1242,6 +1246,24 @@
     "notes": "Notes",
     "thankYou": "Thank you for your payment.",
     "admin": "Admin",
-    "paid": "PAID"
+    "paid": "PAID",
+    "layoutMode": "Layout",
+    "layoutCompact": "Compact",
+    "layoutFull": "Full",
+    "perStudent": "Per Student",
+    "searchStudent": "Search Student",
+    "searchStudentPlaceholder": "Type NIS or name...",
+    "selectStudent": "Select Student",
+    "selectStudentPlaceholder": "Pick a student to reprint",
+    "noStudentFound": "Student not found",
+    "reprintingFor": "Reprinting for: {name}",
+    "selectStudentFirst": "Select a student first to reprint their payment receipts.",
+    "noPaymentsForStudent": "This student has no payment history yet.",
+    "moreItems": "more items",
+    "totalSlips": "{count} slips · {pages} pages",
+    "printAll": "Print All",
+    "printSelected": "Print Selected",
+    "selectAll": "Select All",
+    "clearSelection": "Clear"
   }
 }

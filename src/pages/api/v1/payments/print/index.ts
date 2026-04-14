@@ -2,7 +2,7 @@ import type { NextRequest } from "next/server";
 import type { Prisma } from "@/generated/prisma/client";
 import { createApiHandler } from "@/lib/api-adapter";
 import { requireAuth } from "@/lib/api-auth";
-import { errorResponse, successResponse } from "@/lib/api-response";
+import { successResponse } from "@/lib/api-response";
 import { prisma } from "@/lib/prisma";
 
 async function GET(request: NextRequest) {
@@ -11,12 +11,19 @@ async function GET(request: NextRequest) {
 
   const searchParams = request.nextUrl.searchParams;
   const academicYearId = searchParams.get("academicYearId");
-  const mode = searchParams.get("mode") || "today"; // "today" | "all"
+  const mode = searchParams.get("mode") || "today"; // "today" | "all" | "student"
+  const studentNis = searchParams.get("studentNis");
 
   const where: Prisma.PaymentWhereInput = {};
 
-  // Filter by academic year through tuition -> classAcademic
-  if (academicYearId) {
+  // Student filter takes precedence (for reprint of lost slip)
+  if (mode === "student" && studentNis) {
+    where.tuition = {
+      studentNis,
+      ...(academicYearId ? { classAcademic: { academicYearId } } : {}),
+    };
+  } else if (academicYearId) {
+    // Filter by academic year through tuition -> classAcademic
     where.tuition = {
       classAcademic: {
         academicYearId,
@@ -24,7 +31,7 @@ async function GET(request: NextRequest) {
     };
   }
 
-  // Filter for today only
+  // Filter for today only (not applicable in student mode)
   if (mode === "today") {
     const todayStart = new Date();
     todayStart.setHours(0, 0, 0, 0);

@@ -459,7 +459,11 @@
     "classSummary": "Ringkasan Kelas",
     "searchMenu": "Cari menu...",
     "onlinePayments": "Pembayaran Online",
-    "paymentSettings": "Pengaturan Pembayaran"
+    "paymentSettings": "Pengaturan Pembayaran",
+    "help": "Bantuan",
+    "helpDescription": "Panduan pengguna dan dokumentasi aplikasi",
+    "print": "Cetak",
+    "printReceipts": "Cetak Kuitansi"
   },
   "employee": {
     "title": "Karyawan",
@@ -1242,6 +1246,24 @@
     "notes": "Catatan",
     "thankYou": "Terima kasih atas pembayarannya.",
     "admin": "Admin",
-    "paid": "LUNAS"
+    "paid": "LUNAS",
+    "layoutMode": "Tata Letak",
+    "layoutCompact": "Kompak",
+    "layoutFull": "Lengkap",
+    "perStudent": "Per Siswa",
+    "searchStudent": "Cari Siswa",
+    "searchStudentPlaceholder": "Ketik NIS atau nama...",
+    "selectStudent": "Pilih Siswa",
+    "selectStudentPlaceholder": "Pilih siswa untuk cetak ulang",
+    "noStudentFound": "Siswa tidak ditemukan",
+    "reprintingFor": "Cetak ulang untuk: {name}",
+    "selectStudentFirst": "Pilih siswa terlebih dahulu untuk mencetak ulang bukti pembayaran.",
+    "noPaymentsForStudent": "Siswa ini belum memiliki riwayat pembayaran.",
+    "moreItems": "item lainnya",
+    "totalSlips": "{count} slip · {pages} halaman",
+    "printAll": "Cetak Semua",
+    "printSelected": "Cetak Terpilih",
+    "selectAll": "Pilih Semua",
+    "clearSelection": "Kosongkan"
   }
 }
