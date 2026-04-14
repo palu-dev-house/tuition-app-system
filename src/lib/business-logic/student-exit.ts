@@ -195,3 +195,78 @@ export async function recordStudentExit(
     return { voidedCount: toVoid.length, partialWarnings };
   });
 }
+
+export interface UndoExitParams {
+  nis: string;
+  employeeId: string; // reserved for future audit; not persisted today
+}
+
+export interface UndoExitResult {
+  restoredCount: number;
+}
+
+export async function undoStudentExit(
+  params: UndoExitParams,
+): Promise<UndoExitResult> {
+  const { nis } = params;
+
+  return prisma.$transaction(async (tx) => {
+    const student = await tx.student.findUnique({ where: { nis } });
+    if (!student) {
+      throw new StudentExitError("NOT_FOUND", `Student ${nis} not found`);
+    }
+    if (!student.exitedAt) {
+      throw new StudentExitError(
+        "ALREADY_EXITED", // re-used: caller maps to 400
+        `Student ${nis} is not currently exited`,
+      );
+    }
+
+    // Find tuitions auto-voided by this exit, with their class fee config.
+    const voided = await tx.tuition.findMany({
+      where: { studentNis: nis, voidedByExit: true },
+      select: {
+        id: true,
+        classAcademic: {
+          select: {
+            paymentFrequency: true,
+            monthlyFee: true,
+            quarterlyFee: true,
+            semesterFee: true,
+          },
+        },
+      },
+    });
+
+    let restoredCount = 0;
+    for (const t of voided) {
+      const c = t.classAcademic;
+      const fee =
+        c.paymentFrequency === "MONTHLY"
+          ? c.monthlyFee
+          : c.paymentFrequency === "QUARTERLY"
+            ? c.quarterlyFee
+            : c.semesterFee;
+      if (fee == null) {
+        // Class has no configured fee for its frequency — skip restore (data is inconsistent).
+        continue;
+      }
+      await tx.tuition.update({
+        where: { id: t.id },
+        data: {
+          status: "UNPAID",
+          voidedByExit: false,
+          feeAmount: fee,
+        },
+      });
+      restoredCount += 1;
+    }
+
+    await tx.student.update({
+      where: { nis },
+      data: { exitedAt: null, exitReason: null, exitedBy: null },
+    });
+
+    return { restoredCount };
+  });
+}
