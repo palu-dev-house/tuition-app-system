@@ -108,6 +108,11 @@ model Student {
   accountCreatedAt   DateTime? @map("account_created_at")
   accountCreatedBy   String?   @map("account_created_by")
 
+  // ========== Exit Tracking ==========
+  exitedAt    DateTime? @map("exited_at")
+  exitReason  String?   @map("exit_reason")
+  exitedBy    String?   @map("exited_by")
+
   // Account Soft Delete
   accountDeleted       Boolean   @default(false) @map("account_deleted")
   accountDeletedAt     DateTime? @map("account_deleted_at")
@@ -121,6 +126,7 @@ model Student {
   onlinePayments  OnlinePayment[]
 
   // Indexes
+  @@index([exitedAt])
   @@index([hasAccount])
   @@index([hasAccount, accountDeleted])
   @@index([lastPaymentAt])
@@ -214,6 +220,7 @@ model Tuition {
   status            PaymentStatus @default(UNPAID)
   dueDate           DateTime      @map("due_date")
   generatedAt       DateTime      @default(now()) @map("generated_at")
+  voidedByExit      Boolean       @default(false) @map("voided_by_exit")
   createdAt         DateTime      @default(now()) @map("created_at")
   updatedAt         DateTime      @updatedAt @map("updated_at")
 
