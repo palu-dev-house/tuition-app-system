@@ -107,33 +107,33 @@ export async function recordStudentExit(
 ): Promise<RecordExitResult> {
   const { nis, exitDate, reason, employeeId } = params;
 
-  const student = await prisma.student.findUnique({ where: { nis } });
-  if (!student) {
-    throw new StudentExitError("NOT_FOUND", `Student ${nis} not found`);
-  }
-  if (student.exitedAt) {
-    throw new StudentExitError(
-      "ALREADY_EXITED",
-      `Student ${nis} is already exited`,
-    );
-  }
-  if (exitDate < student.startJoinDate) {
-    throw new StudentExitError(
-      "DATE_BEFORE_JOIN",
-      "Exit date cannot be before student's join date",
-    );
-  }
-  // Compare only the date (ignore time) so "today" is allowed.
-  const today = new Date();
-  today.setHours(23, 59, 59, 999);
-  if (exitDate > today) {
-    throw new StudentExitError(
-      "DATE_IN_FUTURE",
-      "Exit date cannot be in the future",
-    );
-  }
-
   return prisma.$transaction(async (tx) => {
+    const student = await tx.student.findUnique({ where: { nis } });
+    if (!student) {
+      throw new StudentExitError("NOT_FOUND", `Student ${nis} not found`);
+    }
+    if (student.exitedAt) {
+      throw new StudentExitError(
+        "ALREADY_EXITED",
+        `Student ${nis} is already exited`,
+      );
+    }
+    if (exitDate < student.startJoinDate) {
+      throw new StudentExitError(
+        "DATE_BEFORE_JOIN",
+        "Exit date cannot be before student's join date",
+      );
+    }
+    // Compare only the date (ignore time) so "today" is allowed.
+    const today = new Date();
+    today.setHours(23, 59, 59, 999);
+    if (exitDate > today) {
+      throw new StudentExitError(
+        "DATE_IN_FUTURE",
+        "Exit date cannot be in the future",
+      );
+    }
+
     await tx.student.update({
       where: { nis },
       data: { exitedAt: exitDate, exitReason: reason, exitedBy: employeeId },
