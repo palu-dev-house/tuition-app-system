@@ -1,4 +1,7 @@
 import type { PaymentStatus, PrismaClient } from "@/generated/prisma/client";
+import type { prisma as prismaClient } from "@/lib/prisma";
+
+type TxClient = Parameters<Parameters<typeof prismaClient.$transaction>[0]>[0];
 
 export interface PaymentParams {
   tuitionId: string;
@@ -26,7 +29,7 @@ export interface PaymentResult {
  */
 export async function processPayment(
   params: PaymentParams,
-  prisma: PrismaClient,
+  prisma: PrismaClient | TxClient,
 ): Promise<PaymentResult> {
   const { tuitionId, amount, employeeId, notes } = params;
 
@@ -122,7 +125,7 @@ export async function processPayment(
  */
 export async function reversePayment(
   paymentId: string,
-  prisma: PrismaClient,
+  prisma: PrismaClient | TxClient,
 ): Promise<{
   tuitionId: string;
   newStatus: PaymentStatus;
@@ -139,6 +142,12 @@ export async function reversePayment(
   }
 
   const tuition = payment.tuition;
+
+  if (!tuition) {
+    throw new Error(
+      "Payment is not linked to a tuition and cannot be reversed via this function",
+    );
+  }
 
   // Check for all scholarships (student can have multiple)
   const scholarships = await prisma.scholarship.findMany({

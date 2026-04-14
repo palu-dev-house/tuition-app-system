@@ -219,6 +219,30 @@ export async function generateFeeBillsForSubscription(
   return { created, skipped, priceWarnings };
 }
 
+/**
+ * Apply a cash payment to a FeeBill: update paidAmount and status.
+ * Called inside a transaction.
+ */
+export async function applyFeeBillPayment(
+  tx: TxClient,
+  feeBillId: string,
+  amount: Prisma.Decimal,
+): Promise<void> {
+  const bill = await tx.feeBill.findUnique({
+    where: { id: feeBillId },
+    select: { amount: true, paidAmount: true },
+  });
+  if (!bill) throw new Error(`FeeBill ${feeBillId} not found`);
+
+  const newPaidAmount = new Prisma.Decimal(bill.paidAmount).add(amount);
+  const newStatus = newPaidAmount.gte(bill.amount) ? "PAID" : "PARTIAL";
+
+  await tx.feeBill.update({
+    where: { id: feeBillId },
+    data: { paidAmount: newPaidAmount, status: newStatus },
+  });
+}
+
 export interface GenerateAllFeeBillsResult {
   created: number;
   skipped: number;

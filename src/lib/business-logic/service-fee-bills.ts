@@ -89,6 +89,30 @@ export async function generateServiceFeeBillsForFee(
   return { created, skipped, exitSkipped };
 }
 
+/**
+ * Apply a cash payment to a ServiceFeeBill: update paidAmount and status.
+ * Called inside a transaction.
+ */
+export async function applyServiceFeeBillPayment(
+  tx: TxClient,
+  serviceFeeBillId: string,
+  amount: Prisma.Decimal,
+): Promise<void> {
+  const bill = await tx.serviceFeeBill.findUnique({
+    where: { id: serviceFeeBillId },
+    select: { amount: true, paidAmount: true },
+  });
+  if (!bill) throw new Error(`ServiceFeeBill ${serviceFeeBillId} not found`);
+
+  const newPaidAmount = new Prisma.Decimal(bill.paidAmount).add(amount);
+  const newStatus = newPaidAmount.gte(bill.amount) ? "PAID" : "PARTIAL";
+
+  await tx.serviceFeeBill.update({
+    where: { id: serviceFeeBillId },
+    data: { paidAmount: newPaidAmount, status: newStatus },
+  });
+}
+
 export interface GenerateAllServiceFeeBillsResult {
   created: number;
   skipped: number;
