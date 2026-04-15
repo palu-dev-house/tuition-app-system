@@ -24,7 +24,7 @@ import { IconEdit, IconPlus } from "@tabler/icons-react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import type { ReactElement } from "react";
-import { useState } from "react";
+import { z } from "zod";
 import AdminLayout from "@/components/layouts/AdminLayout";
 import PageHeader from "@/components/ui/PageHeader/PageHeader";
 import TablePagination from "@/components/ui/TablePagination";
@@ -34,8 +34,15 @@ import {
   useCreateServiceFee,
   useServiceFees,
 } from "@/hooks/api/useServiceFees";
+import { useQueryFilters } from "@/hooks/useQueryFilters";
 import { PERIODS } from "@/lib/business-logic/tuition-generator";
 import type { NextPageWithLayout } from "@/lib/page-types";
+
+const filterSchema = z.object({
+  academicYearId: z.string().optional(),
+  classAcademicId: z.string().optional(),
+  activeOnly: z.enum(["true", "false"]).optional(),
+});
 
 function formatRp(v: string | number) {
   const n = typeof v === "string" ? parseFloat(v) : v;
@@ -44,10 +51,13 @@ function formatRp(v: string | number) {
 
 const ServiceFeesPage: NextPageWithLayout = function ServiceFeesPage() {
   const t = useTranslations();
-  const [page, setPage] = useState(1);
-  const [academicYearId, setAcademicYearId] = useState<string | null>(null);
-  const [classAcademicId, setClassAcademicId] = useState<string | null>(null);
-  const [activeOnly, setActiveOnly] = useState(true);
+  const { filters, page, setFilter, setPage } = useQueryFilters({
+    schema: filterSchema,
+    defaultLimit: 10,
+  });
+  const academicYearId = filters.academicYearId ?? null;
+  const classAcademicId = filters.classAcademicId ?? null;
+  const activeOnly = filters.activeOnly !== "false";
 
   const { data: ayData } = useAcademicYears({ limit: 100 });
   const activeYear = ayData?.academicYears.find((ay) => ay.isActive);
@@ -142,7 +152,7 @@ const ServiceFeesPage: NextPageWithLayout = function ServiceFeesPage() {
             placeholder={t("feeService.academicYear")}
             data={yearOptions}
             value={academicYearId}
-            onChange={setAcademicYearId}
+            onChange={(v) => setFilter("academicYearId", v || null)}
             clearable
             w={220}
           />
@@ -150,7 +160,7 @@ const ServiceFeesPage: NextPageWithLayout = function ServiceFeesPage() {
             placeholder={t("class.title")}
             data={classOptions}
             value={classAcademicId}
-            onChange={setClassAcademicId}
+            onChange={(v) => setFilter("classAcademicId", v || null)}
             clearable
             searchable
             w={240}
@@ -158,7 +168,9 @@ const ServiceFeesPage: NextPageWithLayout = function ServiceFeesPage() {
           <Switch
             label={t("feeService.activeOnly")}
             checked={activeOnly}
-            onChange={(e) => setActiveOnly(e.currentTarget.checked)}
+            onChange={(e) =>
+              setFilter("activeOnly", e.currentTarget.checked ? null : "false")
+            }
           />
         </Group>
       </Paper>
