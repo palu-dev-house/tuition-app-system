@@ -24,21 +24,30 @@ import dayjs from "dayjs";
 import { useTranslations } from "next-intl";
 import { useState } from "react";
 import { Virtuoso } from "react-virtuoso";
+import { z } from "zod";
 import { useAcademicYears } from "@/hooks/api/useAcademicYears";
 import { useClassAcademics } from "@/hooks/api/useClassAcademics";
 import { useOverdueFeeBillReport } from "@/hooks/api/useReports";
-import { useQueryParams } from "@/hooks/useQueryParams";
+import { useQueryFilters } from "@/hooks/useQueryFilters";
 import { getMonthDisplayName } from "@/lib/business-logic/tuition-generator";
+
+const filterSchema = z.object({
+  classAcademicId: z.string().optional(),
+  grade: z.string().optional(),
+  academicYearId: z.string().optional(),
+});
 
 export default function OverdueFeeBillReportTable() {
   const t = useTranslations("report");
   const tClass = useTranslations("class");
   const tAcademicYear = useTranslations("academicYear");
-  const { setParams, getParam } = useQueryParams();
+  const { filters, setFilter, setFilters } = useQueryFilters({
+    schema: filterSchema,
+  });
   const [openedItem, setOpenedItem] = useState<string | null>(null);
-  const classAcademicId = getParam("classAcademicId") ?? null;
-  const grade = getParam("grade") ?? null;
-  const academicYearId = getParam("academicYearId") ?? null;
+  const classAcademicId = filters.classAcademicId ?? null;
+  const grade = filters.grade ?? null;
+  const academicYearId = filters.academicYearId ?? null;
 
   const grades = Array.from({ length: 12 }, (_, i) => ({
     value: String(i + 1),
@@ -125,7 +134,10 @@ export default function OverdueFeeBillReportTable() {
             data={yearOptions}
             value={academicYearId}
             onChange={(value) => {
-              setParams({ academicYearId: value, classAcademicId: null });
+              setFilters({
+                academicYearId: value ?? undefined,
+                classAcademicId: undefined,
+              });
             }}
             clearable
           />
@@ -134,7 +146,10 @@ export default function OverdueFeeBillReportTable() {
             data={grades}
             value={grade}
             onChange={(value) => {
-              setParams({ grade: value, classAcademicId: null });
+              setFilters({
+                grade: value ?? undefined,
+                classAcademicId: undefined,
+              });
             }}
             clearable
           />
@@ -142,7 +157,7 @@ export default function OverdueFeeBillReportTable() {
             placeholder={t("filterByClass")}
             data={classOptions}
             value={classAcademicId}
-            onChange={(value) => setParams({ classAcademicId: value })}
+            onChange={(value) => setFilter("classAcademicId", value || null)}
             clearable
             searchable
           />
