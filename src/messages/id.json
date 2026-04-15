@@ -1146,7 +1146,7 @@
     "serviceFee": "Uang Perlengkapan"
   },
   "header": {
-    "title": "School Tuition"
+    "title": "SkolFi"
   },
   "table": {
     "showing": "Menampilkan {from} - {to} dari {total}",

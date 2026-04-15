@@ -1,8 +1,8 @@
-# Panduan Pengguna — Sistem SPP Sekolah
+# Panduan Pengguna — SkolFi
 
-Panduan ini menjelaskan cara menggunakan aplikasi SPP sekolah untuk kegiatan sehari-hari. Dokumen ini ditujukan untuk staf sekolah (Admin dan Kasir) serta siswa/orang tua yang menggunakan portal.
+Panduan ini menjelaskan cara menggunakan **SkolFi**, aplikasi SPP sekolah, untuk kegiatan sehari-hari. Dokumen ini ditujukan untuk staf sekolah (Admin dan Kasir) serta siswa/orang tua yang menggunakan portal.
 
-**Versi aplikasi:** 2.13.2
+**Versi aplikasi:** 2.14.0
 **Bahasa UI:** Tersedia dalam Bahasa Indonesia dan English (dapat diubah lewat tombol bendera di bagian atas).
 
 ---
@@ -31,6 +31,10 @@ Panduan ini menjelaskan cara menggunakan aplikasi SPP sekolah untuk kegiatan seh
 9. [Pembayaran Online](#9-pembayaran-online)
 10. [Status Keluar Siswa](#10-status-keluar-siswa)
 11. [Laporan](#11-laporan)
+    - [11.1 Laporan Tunggakan](#111-laporan-tunggakan-overdue)
+    - [11.2 Laporan Ringkasan Kelas](#112-laporan-ringkasan-kelas)
+    - [11.3 Laporan Ringkasan Fee Service](#113-laporan-ringkasan-fee-service)
+    - [11.4 Filter yang dapat dibagikan](#114-filter-yang-dapat-dibagikan)
 12. [Portal Siswa / Orang Tua](#12-portal-siswa--orang-tua)
 13. [Pengaturan Akun](#13-pengaturan-akun)
 14. [Pertanyaan Umum](#14-pertanyaan-umum)
@@ -528,6 +532,41 @@ Menampilkan per kelas:
 - Tingkat kolekti­bilitas (persentase).
 
 Berguna untuk rapat bulanan/kuartal dengan kepala sekolah.
+
+### 11.3 Laporan Ringkasan Fee Service
+
+**Menu:** `Laporan → Fee Services`
+
+Tampilan terpadu untuk layanan **transport dan akomodasi**, dikelompokkan per layanan. Gunakan laporan ini untuk melihat kinerja tiap rute bus atau paket asrama tanpa harus menelusuri daftar tagihan satu per satu.
+
+**Kartu ringkasan (atas):** total keseluruhan *Ditagihkan*, *Dibayar*, dan *Tunggakan* untuk layanan yang sedang difilter.
+
+**Info per baris:**
+- Nama layanan dan badge kategori (Transport / Akomodasi).
+- Jumlah siswa aktif yang berlangganan.
+- Total ditagihkan, total dibayar, tunggakan.
+- Jumlah tagihan yang jatuh tempo.
+
+**Filter tersedia:**
+- Tahun ajaran
+- Kategori (Transport / Akomodasi)
+- Layanan tertentu
+- Status tagihan (Belum Bayar / Sebagian / Lunas / Void)
+- Kelas
+- Rentang bulan tagihan (dari / sampai)
+- Cari berdasarkan nama layanan
+
+**Ekspor:** klik **Export Excel** untuk mengunduh tampilan yang sedang difilter sebagai file `.xlsx`.
+
+### 11.4 Filter yang dapat dibagikan
+
+Semua filter dan nomor halaman di halaman daftar admin dan laporan **disimpan di URL**. Artinya Anda dapat:
+
+- **Bookmark** tampilan tertentu (misalnya "Tunggakan, Kelas 8, TA 2025/2026") dan kembali sekali klik.
+- **Bagikan tautan** ke rekan kerja — mereka membukanya dengan filter yang sama.
+- Gunakan tombol **back / forward** browser untuk menelusuri perubahan filter.
+
+Mengubah filter apa pun otomatis mereset tabel kembali ke halaman 1 sehingga Anda tidak mendarat di halaman kosong.
 
 ---
 

@@ -1,8 +1,8 @@
-# User Guide — School Tuition System
+# User Guide — SkolFi
 
-This guide explains how to use the school tuition (SPP) application for day-to-day operations. It is intended for school staff (Admins and Cashiers) as well as students/parents who use the portal.
+This guide explains how to use **SkolFi**, the school tuition (SPP) application, for day-to-day operations. It is intended for school staff (Admins and Cashiers) as well as students/parents who use the portal.
 
-**App version:** 2.13.2
+**App version:** 2.14.0
 **UI language:** Available in Bahasa Indonesia and English (switchable via the flag button at the top of the page).
 
 ---
@@ -31,6 +31,10 @@ This guide explains how to use the school tuition (SPP) application for day-to-d
 9. [Online Payments](#9-online-payments)
 10. [Student Exit Status](#10-student-exit-status)
 11. [Reports](#11-reports)
+    - [11.1 Overdue Report](#111-overdue-report)
+    - [11.2 Class Summary Report](#112-class-summary-report)
+    - [11.3 Fee Service Summary Report](#113-fee-service-summary-report)
+    - [11.4 Shareable filters](#114-shareable-filters)
 12. [Student / Parent Portal](#12-student--parent-portal)
 13. [Account Settings](#13-account-settings)
 14. [FAQ](#14-faq)
@@ -528,6 +532,41 @@ Shows per-class:
 - Collection rate (percentage).
 
 Useful for monthly/quarterly meetings with the principal.
+
+### 11.3 Fee Service Summary Report
+
+**Menu:** `Reports → Fee Services`
+
+A unified view of **transport and accommodation** fee services, grouped by service. Use this when you want to see how each bus route or boarding package is performing without digging through the bill list.
+
+**Summary cards (top):** grand totals for *Billed*, *Paid*, and *Outstanding* across the currently filtered services.
+
+**Per-row info:**
+- Fee service name and category badge (Transport / Accommodation).
+- Active students subscribed to the service.
+- Total billed, total paid, outstanding.
+- Count of overdue bills.
+
+**Available filters:**
+- Academic year
+- Category (Transport / Accommodation)
+- Specific fee service
+- Bill status (Unpaid / Partial / Paid / Void)
+- Class
+- Billing month range (from / to)
+- Search by fee-service name
+
+**Export:** click **Export Excel** to download the current filtered view as an `.xlsx` file.
+
+### 11.4 Shareable filters
+
+Every filter and page number on the admin list and report pages is **saved in the URL**. This means you can:
+
+- **Bookmark** a specific filtered view (e.g. "Overdue, Grade 8, AY 2025/2026") and return to it with one click.
+- **Share links** with colleagues — they open with the same filter state.
+- Use the browser **back / forward** buttons to step through filter changes.
+
+Changing any filter automatically resets the table back to page 1 so you never land on an empty page.
 
 ---
 

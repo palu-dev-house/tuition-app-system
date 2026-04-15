@@ -1146,7 +1146,7 @@
     "serviceFee": "Service Fee"
   },
   "header": {
-    "title": "School Tuition"
+    "title": "SkolFi"
   },
   "table": {
     "showing": "Showing {from} - {to} of {total}",

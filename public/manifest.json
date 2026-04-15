@@ -1,6 +1,6 @@
 {
-  "name": "School Tuition App",
-  "short_name": "Tuition App",
+  "name": "SkolFi",
+  "short_name": "SkolFi",
   "description": "Check your tuition payment status",
   "start_url": "/",
   "display": "standalone",
