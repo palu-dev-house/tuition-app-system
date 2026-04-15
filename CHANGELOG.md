@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.15.0] - 2026-04-15
+
+### Features
+- feat(online-payments): live status polling with toast notifications
+
+
+
 ## [2.14.0] - 2026-04-15
 
 ### Features
