@@ -274,7 +274,32 @@ Ada dua cara mencetak kuitansi:
 - Simpan salinan digital (Save as PDF) untuk arsip.
 - Jika printer tidak tersedia, kuitansi bisa di-PDF-kan dan dikirim via WhatsApp.
 
-### 7.3 Riwayat Pembayaran
+### 7.3 Kartu Bukti Pembayaran (A5)
+
+Untuk sekolah yang masih menggunakan **kartu SPP fisik pra-cetak** sebagai bukti pembayaran siswa, sistem menyediakan fitur cetak khusus yang menempatkan data pembayaran tepat pada grid kartu.
+
+**Cara membuka:**
+1. Buka menu **Siswa** → klik NIS siswa yang dituju.
+2. Pada halaman detail siswa, klik tombol **Kartu Bukti Pembayaran** di pojok kanan atas.
+3. Pilih **Tahun Ajaran** (otomatis memakai tahun aktif).
+
+**Tiga mode cetak:**
+- **Header saja** — hanya mencetak judul, identitas siswa, dan kerangka tabel 12 bulan. Gunakan untuk menyiapkan kartu kosong yang nanti diisi tangan.
+- **Bulan terpilih** — pilih bulan mana saja yang ingin dicetak. Sistem otomatis mencentang semua bulan yang sudah pernah dibayar (autofill). Tersedia tombol **Pilih Lunas**, **Pilih Semua**, dan **Kosongkan**.
+- **Semua bulan** — mencetak seluruh 12 bulan yang ada data bayarnya.
+
+**Kolom pada kartu:** No, Bulan, SPP, Transport & Asrama, Perlengkapan, Total, Tanggal Bayar, No. Kuitansi. Baris total di bawah menjumlahkan semua bulan yang sedang ditampilkan.
+
+**Format cetak:**
+- Ukuran kertas: **A5 portrait** (148 mm × 210 mm).
+- Tiap baris bulan tingginya tepat **12 px** agar pas di grid kartu pra-cetak.
+- Di dialog browser, pastikan skala cetak **100%** dan margin **none/default** agar posisi baris tidak bergeser.
+
+**Catatan:**
+- Pilih **Bulan terpilih** jika orang tua meminta bukti untuk bulan-bulan tertentu saja.
+- Fitur ini independen dari cetak kuitansi A4 di bagian 7.2 — keduanya bisa dipakai bersamaan sesuai kebutuhan sekolah.
+
+### 7.4 Riwayat Pembayaran
 
 Filter pada halaman pembayaran untuk melihat:
 - Semua pembayaran siswa tertentu
@@ -466,7 +491,13 @@ Jika Anda menjalankan **Generate Tagihan** setelah menandai siswa keluar, sistem
 
 ### 11.1 Laporan Tunggakan (Overdue)
 
-Menampilkan daftar tagihan yang **lewat jatuh tempo** dan belum lunas.
+Menampilkan daftar tagihan yang **lewat jatuh tempo** dan belum lunas. Laporan dipisah menjadi tiga tab sesuai jenis tagihan:
+
+- **SPP** — tagihan SPP bulanan (tuition).
+- **Transport & Asrama** — tagihan layanan berlangganan (fee bills).
+- **Uang Perlengkapan** — tagihan one-time per kelas (service fee bills).
+
+Setiap tab menggunakan filter dan format tabel yang sama, jadi Anda bisa beralih antar jenis tagihan tanpa kehilangan konteks.
 
 **Filter yang tersedia:**
 - Kelas akademik
@@ -478,7 +509,7 @@ Menampilkan daftar tagihan yang **lewat jatuh tempo** dan belum lunas.
 - Sisa tagihan.
 - Jumlah hari keterlambatan.
 
-Gunakan laporan ini sebagai dasar penagihan WhatsApp ke orang tua.
+Gunakan laporan ini sebagai dasar penagihan WhatsApp ke orang tua. Cek ketiga tab secara rutin agar tidak ada jenis tunggakan yang terlewat.
 
 ### 11.2 Laporan Ringkasan Kelas
 

@@ -274,7 +274,32 @@ There are two ways to print receipts:
 - Save a digital copy (Save as PDF) for archival.
 - If no printer is available, export to PDF and send via WhatsApp.
 
-### 7.3 Payment History
+### 7.3 Payment Card (A5)
+
+For schools that still use **pre-printed physical payment cards** as proof of payment, the system provides a dedicated print feature that places payment data onto the card's printed grid.
+
+**How to open:**
+1. Go to **Students** → click the NIS of the target student.
+2. On the student detail page, click the **Payment Card** button in the top right.
+3. Pick an **Academic Year** (defaults to the active year).
+
+**Three print modes:**
+- **Header only** — prints the title, student identity, and an empty 12-month table frame. Use this to prepare blank cards that will be filled in by hand.
+- **Selected months** — pick which months to print. The system auto-checks every month that has been paid (autofill). Helper buttons **Select Paid**, **Select All**, and **Clear** are provided.
+- **All months** — prints every month that has payment data.
+
+**Card columns:** No, Month, Tuition, Transport & Boarding, Supplies, Total, Pay Date, Receipt No. A totals row at the bottom sums the currently visible months.
+
+**Print format:**
+- Paper size: **A5 portrait** (148 mm × 210 mm).
+- Each month row is exactly **12 px** tall to align with the pre-printed card grid.
+- In the browser dialog, ensure the scale is **100%** and margins are **none/default** so the rows do not shift.
+
+**Notes:**
+- Use **Selected months** when a parent asks for proof of specific months only.
+- This feature is independent from the A4 receipt print in section 7.2 — both can be used together as needed.
+
+### 7.4 Payment History
 
 Use the filters on the payments page to see:
 - All payments for a specific student
@@ -466,7 +491,13 @@ If you run **Generate Bills** after marking a student as exited, the system auto
 
 ### 11.1 Overdue Report
 
-Shows a list of bills that are **past due** and still unpaid.
+Shows a list of bills that are **past due** and still unpaid. The report is split into three tabs by bill type:
+
+- **Tuition (SPP)** — monthly tuition bills.
+- **Transport & Boarding** — subscription service fee bills.
+- **Supplies Fee** — one-time service fee bills per class.
+
+Each tab uses the same filters and table format, so you can switch between bill types without losing context.
 
 **Available filters:**
 - Academic class
@@ -478,7 +509,7 @@ Shows a list of bills that are **past due** and still unpaid.
 - Outstanding amount.
 - Days overdue.
 
-Use this report as the basis for WhatsApp collections with parents.
+Use this report as the basis for WhatsApp collections with parents. Check all three tabs regularly so no bill type slips through.
 
 ### 11.2 Class Summary Report
 
