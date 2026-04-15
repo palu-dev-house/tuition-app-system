@@ -406,11 +406,19 @@ async function seedPayments(cashierId: string) {
 
       await prisma.$transaction(async (tx) => {
         for (const item of group) {
+          // ~25% of groups pay partial (half the amount), rest pay in full.
+          const isPartial = rand() < 0.25;
+          const payAmount = isPartial
+            ? Math.floor(item.amount / 2)
+            : item.amount;
+          if (payAmount <= 0) continue;
+          const status = isPartial ? PaymentStatus.PARTIAL : PaymentStatus.PAID;
+
           await tx.payment.create({
             data: {
               transactionId: txId,
               employeeId: cashierId,
-              amount: item.amount,
+              amount: payAmount,
               paymentDate,
               notes: `[SEED] tx ${txId.slice(0, 8)}`,
               tuitionId: item.kind === "tuition" ? item.id : null,
@@ -423,24 +431,24 @@ async function seedPayments(cashierId: string) {
             await tx.tuition.update({
               where: { id: item.id },
               data: {
-                paidAmount: { increment: item.amount },
-                status: PaymentStatus.PAID,
+                paidAmount: { increment: payAmount },
+                status,
               },
             });
           } else if (item.kind === "feeBill") {
             await tx.feeBill.update({
               where: { id: item.id },
               data: {
-                paidAmount: { increment: item.amount },
-                status: PaymentStatus.PAID,
+                paidAmount: { increment: payAmount },
+                status,
               },
             });
           } else {
             await tx.serviceFeeBill.update({
               where: { id: item.id },
               data: {
-                paidAmount: { increment: item.amount },
-                status: PaymentStatus.PAID,
+                paidAmount: { increment: payAmount },
+                status,
               },
             });
           }

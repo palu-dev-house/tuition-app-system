@@ -112,6 +112,117 @@ export function useOverdueReport(filters: OverdueFilters = {}) {
   });
 }
 
+interface OverdueFeeBillPeriod {
+  feeBillId: string;
+  feeServiceName: string;
+  category: "TRANSPORT" | "ACCOMMODATION";
+  period: Month;
+  year: number;
+  amount: number;
+  paidAmount: number;
+  outstandingAmount: number;
+  dueDate: string;
+  daysOverdue: number;
+}
+
+export interface OverdueFeeBillByStudent {
+  student: {
+    nis: string;
+    name: string;
+    parentName: string;
+    parentPhone: string;
+  };
+  class: {
+    className: string;
+    grade: number;
+    section: string;
+  };
+  overdueBills: OverdueFeeBillPeriod[];
+  totalOverdue: number;
+  overdueCount: number;
+}
+
+interface OverdueServiceFeeBillPeriod {
+  serviceFeeBillId: string;
+  serviceFeeName: string;
+  period: Month;
+  year: number;
+  amount: number;
+  paidAmount: number;
+  outstandingAmount: number;
+  dueDate: string;
+  daysOverdue: number;
+}
+
+export interface OverdueServiceFeeBillByStudent {
+  student: {
+    nis: string;
+    name: string;
+    parentName: string;
+    parentPhone: string;
+  };
+  class: {
+    className: string;
+    grade: number;
+    section: string;
+  };
+  overdueBills: OverdueServiceFeeBillPeriod[];
+  totalOverdue: number;
+  overdueCount: number;
+}
+
+interface OverdueFeeBillResponse {
+  success: boolean;
+  data: {
+    overdue: OverdueFeeBillByStudent[];
+    summary: OverdueSummary;
+  };
+}
+
+interface OverdueServiceFeeBillResponse {
+  success: boolean;
+  data: {
+    overdue: OverdueServiceFeeBillByStudent[];
+    summary: OverdueSummary;
+  };
+}
+
+export function useOverdueFeeBillReport(filters: OverdueFilters = {}) {
+  return useQuery({
+    queryKey: queryKeys.reports.overdueFeeBills(filters),
+    queryFn: async () => {
+      const { data } = await apiClient.get<OverdueFeeBillResponse>(
+        "/reports/overdue-fee-bills",
+        {
+          params: filters as Record<
+            string,
+            string | number | boolean | undefined
+          >,
+        },
+      );
+      return data.data;
+    },
+  });
+}
+
+export function useOverdueServiceFeeBillReport(filters: OverdueFilters = {}) {
+  return useQuery({
+    queryKey: queryKeys.reports.overdueServiceFeeBills(filters),
+    queryFn: async () => {
+      const { data } = await apiClient.get<OverdueServiceFeeBillResponse>(
+        "/reports/overdue-service-fee-bills",
+        {
+          params: filters as Record<
+            string,
+            string | number | boolean | undefined
+          >,
+        },
+      );
+      return data.data;
+    },
+  });
+}
+
 export function useClassSummary(filters: ClassSummaryFilters = {}) {
   return useQuery({
     queryKey: queryKeys.reports.classSummary(filters),

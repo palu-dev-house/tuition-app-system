@@ -1049,7 +1049,12 @@
       "export": "Export to Excel",
       "noOverdue": "No overdue payments",
       "filterByClass": "Filter by Class",
-      "filterByGrade": "Filter by Grade"
+      "filterByGrade": "Filter by Grade",
+      "tabs": {
+        "tuition": "Tuition",
+        "feeBill": "Transport & Accommodation",
+        "serviceFeeBill": "Service Fees"
+      }
     },
     "classSummary": {
       "title": "Class Summary",
@@ -1103,7 +1108,9 @@
     "paidAmount": "Paid Amount",
     "outstanding": "Outstanding",
     "daysOverdue": "Days Overdue",
-    "days": "days"
+    "days": "days",
+    "feeService": "Transport & Accommodation",
+    "serviceFee": "Service Fee"
   },
   "header": {
     "title": "School Tuition"

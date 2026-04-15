@@ -239,6 +239,321 @@ export function calculateOverdueSummary(items: OverdueItem[]): OverdueSummary {
   };
 }
 
+export interface OverdueFeeBillItem {
+  feeBillId: string;
+  studentNis: string;
+  studentName: string;
+  parentPhone: string;
+  parentName: string;
+  className: string;
+  grade: number;
+  section: string;
+  feeServiceName: string;
+  category: "TRANSPORT" | "ACCOMMODATION";
+  period: string;
+  year: number;
+  amount: number;
+  paidAmount: number;
+  outstandingAmount: number;
+  dueDate: Date;
+  daysOverdue: number;
+}
+
+export interface OverdueServiceFeeBillItem {
+  serviceFeeBillId: string;
+  studentNis: string;
+  studentName: string;
+  parentPhone: string;
+  parentName: string;
+  className: string;
+  grade: number;
+  section: string;
+  serviceFeeName: string;
+  period: string;
+  year: number;
+  amount: number;
+  paidAmount: number;
+  outstandingAmount: number;
+  dueDate: Date;
+  daysOverdue: number;
+}
+
+export interface OverdueFeeBillByStudent {
+  student: {
+    nis: string;
+    name: string;
+    parentName: string;
+    parentPhone: string;
+  };
+  class: {
+    className: string;
+    grade: number;
+    section: string;
+  };
+  overdueBills: Array<{
+    feeBillId: string;
+    feeServiceName: string;
+    category: "TRANSPORT" | "ACCOMMODATION";
+    period: string;
+    year: number;
+    amount: number;
+    paidAmount: number;
+    outstandingAmount: number;
+    dueDate: Date;
+    daysOverdue: number;
+  }>;
+  totalOverdue: number;
+  overdueCount: number;
+}
+
+export interface OverdueServiceFeeBillByStudent {
+  student: {
+    nis: string;
+    name: string;
+    parentName: string;
+    parentPhone: string;
+  };
+  class: {
+    className: string;
+    grade: number;
+    section: string;
+  };
+  overdueBills: Array<{
+    serviceFeeBillId: string;
+    serviceFeeName: string;
+    period: string;
+    year: number;
+    amount: number;
+    paidAmount: number;
+    outstandingAmount: number;
+    dueDate: Date;
+    daysOverdue: number;
+  }>;
+  totalOverdue: number;
+  overdueCount: number;
+}
+
+export async function getOverdueFeeBills(
+  filters: {
+    classAcademicId?: string;
+    grade?: number;
+    academicYearId?: string;
+  },
+  prisma: PrismaClient,
+): Promise<OverdueFeeBillItem[]> {
+  const today = new Date();
+  const where: Record<string, unknown> = {
+    status: { in: ["UNPAID", "PARTIAL"] as PaymentStatus[] },
+    voidedByExit: false,
+    dueDate: { lt: today },
+  };
+  if (filters.academicYearId) {
+    where.feeService = { academicYearId: filters.academicYearId };
+  }
+
+  const bills = await prisma.feeBill.findMany({
+    where,
+    include: {
+      student: {
+        include: {
+          studentClasses: { include: { classAcademic: true } },
+        },
+      },
+      feeService: true,
+    },
+    orderBy: [{ dueDate: "asc" }, { student: { name: "asc" } }],
+  });
+
+  return bills
+    .map((b) => {
+      const cls =
+        b.student.studentClasses.find(
+          (sc) =>
+            sc.classAcademic.academicYearId === b.feeService.academicYearId,
+        )?.classAcademic ?? b.student.studentClasses[0]?.classAcademic;
+      if (!cls) return null;
+      if (filters.classAcademicId && cls.id !== filters.classAcademicId)
+        return null;
+      if (filters.grade && cls.grade !== filters.grade) return null;
+      const amount = Number(b.amount);
+      const paidAmount = Number(b.paidAmount);
+      return {
+        feeBillId: b.id,
+        studentNis: b.studentNis,
+        studentName: b.student.name,
+        parentPhone: b.student.parentPhone,
+        parentName: b.student.parentName,
+        className: cls.className,
+        grade: cls.grade,
+        section: cls.section,
+        feeServiceName: b.feeService.name,
+        category: b.feeService.category as "TRANSPORT" | "ACCOMMODATION",
+        period: b.period,
+        year: b.year,
+        amount,
+        paidAmount,
+        outstandingAmount: Math.max(amount - paidAmount, 0),
+        dueDate: b.dueDate,
+        daysOverdue: calculateDaysOverdue(b.dueDate),
+      } satisfies OverdueFeeBillItem;
+    })
+    .filter((b): b is OverdueFeeBillItem => b !== null);
+}
+
+export async function getOverdueServiceFeeBills(
+  filters: {
+    classAcademicId?: string;
+    grade?: number;
+    academicYearId?: string;
+  },
+  prisma: PrismaClient,
+): Promise<OverdueServiceFeeBillItem[]> {
+  const today = new Date();
+  const where: Record<string, unknown> = {
+    status: { in: ["UNPAID", "PARTIAL"] as PaymentStatus[] },
+    voidedByExit: false,
+    dueDate: { lt: today },
+  };
+  if (filters.classAcademicId) where.classAcademicId = filters.classAcademicId;
+  if (filters.grade || filters.academicYearId) {
+    where.classAcademic = {};
+    if (filters.grade)
+      (where.classAcademic as Record<string, unknown>).grade = filters.grade;
+    if (filters.academicYearId)
+      (where.classAcademic as Record<string, unknown>).academicYearId =
+        filters.academicYearId;
+  }
+
+  const bills = await prisma.serviceFeeBill.findMany({
+    where,
+    include: {
+      student: true,
+      serviceFee: true,
+      classAcademic: true,
+    },
+    orderBy: [{ dueDate: "asc" }, { student: { name: "asc" } }],
+  });
+
+  return bills.map((b) => {
+    const amount = Number(b.amount);
+    const paidAmount = Number(b.paidAmount);
+    return {
+      serviceFeeBillId: b.id,
+      studentNis: b.studentNis,
+      studentName: b.student.name,
+      parentPhone: b.student.parentPhone,
+      parentName: b.student.parentName,
+      className: b.classAcademic.className,
+      grade: b.classAcademic.grade,
+      section: b.classAcademic.section,
+      serviceFeeName: b.serviceFee.name,
+      period: b.period,
+      year: b.year,
+      amount,
+      paidAmount,
+      outstandingAmount: Math.max(amount - paidAmount, 0),
+      dueDate: b.dueDate,
+      daysOverdue: calculateDaysOverdue(b.dueDate),
+    } satisfies OverdueServiceFeeBillItem;
+  });
+}
+
+export function groupFeeBillsByStudent(
+  items: OverdueFeeBillItem[],
+): OverdueFeeBillByStudent[] {
+  const grouped = new Map<string, OverdueFeeBillByStudent>();
+  for (const item of items) {
+    const key = `${item.studentNis}-${item.className}`;
+    if (!grouped.has(key)) {
+      grouped.set(key, {
+        student: {
+          nis: item.studentNis,
+          name: item.studentName,
+          parentName: item.parentName,
+          parentPhone: item.parentPhone,
+        },
+        class: {
+          className: item.className,
+          grade: item.grade,
+          section: item.section,
+        },
+        overdueBills: [],
+        totalOverdue: 0,
+        overdueCount: 0,
+      });
+    }
+    const s = grouped.get(key)!;
+    s.overdueBills.push({
+      feeBillId: item.feeBillId,
+      feeServiceName: item.feeServiceName,
+      category: item.category,
+      period: item.period,
+      year: item.year,
+      amount: item.amount,
+      paidAmount: item.paidAmount,
+      outstandingAmount: item.outstandingAmount,
+      dueDate: item.dueDate,
+      daysOverdue: item.daysOverdue,
+    });
+    s.totalOverdue += item.outstandingAmount;
+    s.overdueCount++;
+  }
+  return Array.from(grouped.values());
+}
+
+export function groupServiceFeeBillsByStudent(
+  items: OverdueServiceFeeBillItem[],
+): OverdueServiceFeeBillByStudent[] {
+  const grouped = new Map<string, OverdueServiceFeeBillByStudent>();
+  for (const item of items) {
+    const key = `${item.studentNis}-${item.className}`;
+    if (!grouped.has(key)) {
+      grouped.set(key, {
+        student: {
+          nis: item.studentNis,
+          name: item.studentName,
+          parentName: item.parentName,
+          parentPhone: item.parentPhone,
+        },
+        class: {
+          className: item.className,
+          grade: item.grade,
+          section: item.section,
+        },
+        overdueBills: [],
+        totalOverdue: 0,
+        overdueCount: 0,
+      });
+    }
+    const s = grouped.get(key)!;
+    s.overdueBills.push({
+      serviceFeeBillId: item.serviceFeeBillId,
+      serviceFeeName: item.serviceFeeName,
+      period: item.period,
+      year: item.year,
+      amount: item.amount,
+      paidAmount: item.paidAmount,
+      outstandingAmount: item.outstandingAmount,
+      dueDate: item.dueDate,
+      daysOverdue: item.daysOverdue,
+    });
+    s.totalOverdue += item.outstandingAmount;
+    s.overdueCount++;
+  }
+  return Array.from(grouped.values());
+}
+
+export function calculateGenericOverdueSummary(
+  items: { studentNis: string; outstandingAmount: number }[],
+): OverdueSummary {
+  const unique = new Set(items.map((i) => i.studentNis));
+  return {
+    totalStudents: unique.size,
+    totalOverdueAmount: items.reduce((sum, i) => sum + i.outstandingAmount, 0),
+    totalOverdueRecords: items.length,
+  };
+}
+
 /**
  * Get class summary statistics
  */

@@ -1049,7 +1049,12 @@
       "export": "Export ke Excel",
       "noOverdue": "Tidak ada tunggakan",
       "filterByClass": "Filter berdasarkan Kelas",
-      "filterByGrade": "Filter berdasarkan Tingkat"
+      "filterByGrade": "Filter berdasarkan Tingkat",
+      "tabs": {
+        "tuition": "SPP",
+        "feeBill": "Transport & Asrama",
+        "serviceFeeBill": "Uang Perlengkapan"
+      }
     },
     "classSummary": {
       "title": "Ringkasan per Kelas",
@@ -1103,7 +1108,9 @@
     "paidAmount": "Jumlah Dibayar",
     "outstanding": "Sisa Tagihan",
     "daysOverdue": "Hari Tunggakan",
-    "days": "hari"
+    "days": "hari",
+    "feeService": "Transport & Asrama",
+    "serviceFee": "Uang Perlengkapan"
   },
   "header": {
     "title": "School Tuition"
