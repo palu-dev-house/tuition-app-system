@@ -274,7 +274,7 @@ Ada dua cara mencetak kuitansi:
 - Simpan salinan digital (Save as PDF) untuk arsip.
 - Jika printer tidak tersedia, kuitansi bisa di-PDF-kan dan dikirim via WhatsApp.
 
-### 7.3 Kartu Bukti Pembayaran (A5)
+### 7.3 Kartu Bukti Pembayaran (A4)
 
 Untuk sekolah yang masih menggunakan **kartu SPP fisik pra-cetak** sebagai bukti pembayaran siswa, sistem menyediakan fitur cetak khusus yang menempatkan data pembayaran tepat pada grid kartu.
 
@@ -291,13 +291,13 @@ Untuk sekolah yang masih menggunakan **kartu SPP fisik pra-cetak** sebagai bukti
 **Kolom pada kartu:** No, Bulan, SPP, Transport & Asrama, Perlengkapan, Total, Tanggal Bayar, No. Kuitansi. Baris total di bawah menjumlahkan semua bulan yang sedang ditampilkan.
 
 **Format cetak:**
-- Ukuran kertas: **A5 portrait** (148 mm × 210 mm).
+- Ukuran kertas: **A4 portrait** (210 mm × 297 mm).
 - Tiap baris bulan tingginya tepat **12 px** agar pas di grid kartu pra-cetak.
 - Di dialog browser, pastikan skala cetak **100%** dan margin **none/default** agar posisi baris tidak bergeser.
 
 **Catatan:**
 - Pilih **Bulan terpilih** jika orang tua meminta bukti untuk bulan-bulan tertentu saja.
-- Fitur ini independen dari cetak kuitansi A4 di bagian 7.2 — keduanya bisa dipakai bersamaan sesuai kebutuhan sekolah.
+- Fitur ini independen dari cetak kuitansi di bagian 7.2 — keduanya bisa dipakai bersamaan sesuai kebutuhan sekolah.
 
 ### 7.4 Riwayat Pembayaran
 

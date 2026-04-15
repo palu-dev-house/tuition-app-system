@@ -274,7 +274,7 @@ There are two ways to print receipts:
 - Save a digital copy (Save as PDF) for archival.
 - If no printer is available, export to PDF and send via WhatsApp.
 
-### 7.3 Payment Card (A5)
+### 7.3 Payment Card (A4)
 
 For schools that still use **pre-printed physical payment cards** as proof of payment, the system provides a dedicated print feature that places payment data onto the card's printed grid.
 
@@ -291,13 +291,13 @@ For schools that still use **pre-printed physical payment cards** as proof of pa
 **Card columns:** No, Month, Tuition, Transport & Boarding, Supplies, Total, Pay Date, Receipt No. A totals row at the bottom sums the currently visible months.
 
 **Print format:**
-- Paper size: **A5 portrait** (148 mm × 210 mm).
+- Paper size: **A4 portrait** (210 mm × 297 mm).
 - Each month row is exactly **12 px** tall to align with the pre-printed card grid.
 - In the browser dialog, ensure the scale is **100%** and margins are **none/default** so the rows do not shift.
 
 **Notes:**
 - Use **Selected months** when a parent asks for proof of specific months only.
-- This feature is independent from the A4 receipt print in section 7.2 — both can be used together as needed.
+- This feature is independent from the receipt print in section 7.2 — both can be used together as needed.
 
 ### 7.4 Payment History
 

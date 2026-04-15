@@ -471,10 +471,10 @@
    Each month row must be exactly 12px tall.
    ============================================ */
 .pc-page {
-  width: 148mm;
-  min-height: 210mm;
+  width: 210mm;
+  min-height: 297mm;
   margin: 0 auto 24px;
-  padding: 10mm 8mm;
+  padding: 15mm 12mm;
   background: white;
   box-shadow: 0 1px 8px rgba(0, 0, 0, 0.08);
   box-sizing: border-box;

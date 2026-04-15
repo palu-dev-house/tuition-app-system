@@ -63,7 +63,7 @@ const PaymentCardPage: NextPageWithLayout = function PaymentCardPage() {
   useEffect(() => {
     const style = document.createElement("style");
     style.setAttribute("data-pc-page", "1");
-    style.textContent = "@page { size: A5 portrait; margin: 0; }";
+    style.textContent = "@page { size: A4 portrait; margin: 0; }";
     document.head.appendChild(style);
     return () => {
       style.remove();
