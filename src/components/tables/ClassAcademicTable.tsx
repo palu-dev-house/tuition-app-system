@@ -28,6 +28,7 @@ import {
 import { useRouter } from "next/router";
 import { useTranslations } from "next-intl";
 import { useState } from "react";
+import { z } from "zod";
 import ColumnSettingsDrawer, {
   useColumnSettings,
 } from "@/components/ui/ColumnSettingsDrawer";
@@ -38,15 +39,21 @@ import {
   useClassAcademics,
   useDeleteClassAcademic,
 } from "@/hooks/api/useClassAcademics";
-import { useQueryParams } from "@/hooks/useQueryParams";
+import { useQueryFilters } from "@/hooks/useQueryFilters";
+
+const filtersSchema = z.object({
+  search: z.string().optional(),
+  academicYearId: z.string().optional(),
+});
 
 export default function ClassAcademicTable() {
   const t = useTranslations();
   const router = useRouter();
-  const { setParams, getParam, getNumParam } = useQueryParams();
-  const page = getNumParam("page", 1)!;
-  const search = getParam("search", "") ?? "";
-  const academicYearFilter = getParam("academicYearId") ?? null;
+  const { filters, page, drafts, setFilter, setPage } = useQueryFilters({
+    schema: filtersSchema,
+  });
+  const search = filters.search ?? "";
+  const academicYearFilter = filters.academicYearId ?? null;
 
   const columnDefs = [
     { key: "name", label: t("class.name") },
@@ -189,19 +196,15 @@ export default function ClassAcademicTable() {
         <TextInput
           placeholder={t("class.searchPlaceholder")}
           leftSection={<IconSearch size={16} />}
-          value={search}
-          onChange={(e) => {
-            setParams({ search: e.currentTarget.value, page: 1 });
-          }}
+          value={drafts.search}
+          onChange={(e) => setFilter("search", e.currentTarget.value || null)}
           style={{ flex: 1 }}
         />
         <Select
           placeholder={t("class.filterByYear")}
           data={academicYearOptions}
           value={academicYearFilter}
-          onChange={(value) => {
-            setParams({ academicYearId: value, page: 1 });
-          }}
+          onChange={(value) => setFilter("academicYearId", value || null)}
           clearable
           searchable
           w={200}
@@ -427,7 +430,7 @@ export default function ClassAcademicTable() {
         <TablePagination
           total={data.pagination.totalPages}
           value={page}
-          onChange={(p) => setParams({ page: p })}
+          onChange={setPage}
         />
       )}
     </Stack>
