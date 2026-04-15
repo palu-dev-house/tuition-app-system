@@ -459,9 +459,9 @@
     "scholarships": "Beasiswa",
     "discounts": "Diskon",
     "payments": "Pembayaran",
-    "feesAndServices": "Biaya & Layanan",
-    "feeServices": "Layanan Biaya",
-    "serviceFees": "Biaya Layanan",
+    "feesAndServices": "Layanan & Perlengkapan",
+    "feeServices": "Transport & Asrama",
+    "serviceFees": "Uang Perlengkapan",
     "feeBills": "Semua Tagihan",
     "studentAccounts": "Akun Siswa",
     "reports": "Laporan",
@@ -1278,12 +1278,13 @@
     "printAll": "Cetak Semua",
     "printSelected": "Cetak Terpilih",
     "selectAll": "Pilih Semua",
-    "clearSelection": "Kosongkan"
+    "clearSelection": "Kosongkan",
+    "tuitionShort": "SPP"
   },
   "feeService": {
-    "title": "Layanan Biaya",
+    "title": "Transport & Asrama",
     "description": "Kelola layanan transportasi dan akomodasi",
-    "label": "Layanan Biaya",
+    "label": "Transport & Asrama",
     "name": "Nama Layanan",
     "namePlaceholder": "mis. Bus Sekolah Rute A",
     "amount": "Jumlah",
@@ -1346,9 +1347,9 @@
     "deleteConfirm": "Hapus tagihan belum dibayar ini?"
   },
   "serviceFee": {
-    "title": "Biaya Layanan",
-    "description": "Kelola biaya layanan per kelas (uang perlengkapan)",
-    "label": "Biaya Layanan",
+    "title": "Uang Perlengkapan",
+    "description": "Kelola uang perlengkapan per kelas",
+    "label": "Uang Perlengkapan",
     "name": "Nama Layanan",
     "amount": "Jumlah",
     "active": "Aktif",

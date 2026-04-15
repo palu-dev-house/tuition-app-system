@@ -263,12 +263,26 @@ export default function Sidebar() {
     }, []);
   }, [links, search]);
 
-  const isActive = (href: string) => {
-    if (href === "/admin/dashboard") {
-      return pathname === "/admin" || pathname === "/admin/dashboard";
+  const activeHref = useMemo(() => {
+    const candidates: string[] = [];
+    for (const item of links) {
+      if (item.href) candidates.push(item.href);
+      if (item.children)
+        for (const c of item.children) if (c.href) candidates.push(c.href);
     }
-    return pathname.startsWith(href);
-  };
+    const matching = candidates.filter(
+      (href) => pathname === href || pathname.startsWith(`${href}/`),
+    );
+    if (matching.length === 0) {
+      if (pathname === "/admin" || pathname === "/admin/dashboard") {
+        return "/admin/dashboard";
+      }
+      return null;
+    }
+    return matching.reduce((a, b) => (b.length > a.length ? b : a));
+  }, [links, pathname]);
+
+  const isActive = (href: string) => href === activeHref;
 
   const hasActiveChild = (children?: NavItem[]) => {
     return children?.some((child) => child.href && isActive(child.href));

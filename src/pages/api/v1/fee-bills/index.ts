@@ -57,7 +57,7 @@ async function GET(request: NextRequest) {
   ]);
 
   return successResponse({
-    bills,
+    feeBills: bills,
     pagination: {
       page,
       limit,

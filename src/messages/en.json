@@ -1278,7 +1278,8 @@
     "printAll": "Print All",
     "printSelected": "Print Selected",
     "selectAll": "Select All",
-    "clearSelection": "Clear"
+    "clearSelection": "Clear",
+    "tuitionShort": "Tuition"
   },
   "feeService": {
     "title": "Fee Services",

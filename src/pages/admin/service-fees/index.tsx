@@ -147,7 +147,7 @@ const ServiceFeesPage: NextPageWithLayout = function ServiceFeesPage() {
             w={220}
           />
           <Select
-            placeholder={t("classAcademic.label")}
+            placeholder={t("class.title")}
             data={classOptions}
             value={classAcademicId}
             onChange={setClassAcademicId}
@@ -168,7 +168,7 @@ const ServiceFeesPage: NextPageWithLayout = function ServiceFeesPage() {
           <Table.Thead>
             <Table.Tr>
               <Table.Th>{t("serviceFee.name")}</Table.Th>
-              <Table.Th>{t("classAcademic.label")}</Table.Th>
+              <Table.Th>{t("class.title")}</Table.Th>
               <Table.Th>{t("serviceFee.amount")}</Table.Th>
               <Table.Th>{t("serviceFee.billingMonths")}</Table.Th>
               <Table.Th>{t("common.status")}</Table.Th>
@@ -254,7 +254,7 @@ const ServiceFeesPage: NextPageWithLayout = function ServiceFeesPage() {
         <form onSubmit={handleCreate}>
           <Stack gap="md">
             <Select
-              label={t("classAcademic.label")}
+              label={t("class.title")}
               required
               data={classOptions}
               searchable
