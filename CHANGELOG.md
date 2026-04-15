@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.14.0] - 2026-04-15
+
+### Features
+- class summary breakdowns, docs refresh, remove Cetak Kuitansi
+
+
+
 ## [2.13.3] - 2026-04-15
 
 ### Fixes
