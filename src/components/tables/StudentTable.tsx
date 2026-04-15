@@ -31,6 +31,7 @@ import Link from "next/link";
 import { useRouter } from "next/router";
 import { useTranslations } from "next-intl";
 import { useState } from "react";
+import { z } from "zod";
 import ColumnSettingsDrawer, {
   useColumnSettings,
 } from "@/components/ui/ColumnSettingsDrawer";
@@ -41,17 +42,22 @@ import {
   useDeleteStudent,
   useStudents,
 } from "@/hooks/api/useStudents";
-import { useQueryParams } from "@/hooks/useQueryParams";
+import { useQueryFilters } from "@/hooks/useQueryFilters";
+
+const filterSchema = z.object({
+  search: z.string().optional(),
+  status: z.enum(["active", "exited", "all"]).default("active"),
+});
 
 export default function StudentTable() {
   const t = useTranslations();
   const router = useRouter();
-  const { setParams, getParam, getNumParam } = useQueryParams();
-  const page = getNumParam("page", 1)!;
-  const search = getParam("search", "") ?? "";
-  const statusRaw = getParam("status", "active") ?? "active";
-  const status: "active" | "exited" | "all" =
-    statusRaw === "exited" || statusRaw === "all" ? statusRaw : "active";
+  const { filters, page, drafts, setFilter, setPage } = useQueryFilters({
+    schema: filterSchema,
+    defaultLimit: 10,
+  });
+  const search = filters.search ?? "";
+  const status = filters.status ?? "active";
 
   const [selectedNis, setSelectedNis] = useState<Set<string>>(new Set());
 
@@ -215,16 +221,16 @@ export default function StudentTable() {
         <TextInput
           placeholder={t("student.searchPlaceholder")}
           leftSection={<IconSearch size={16} />}
-          value={search}
-          onChange={(e) => {
-            setParams({ search: e.currentTarget.value, page: 1 });
-          }}
+          value={drafts.search ?? ""}
+          onChange={(e) => setFilter("search", e.currentTarget.value || null)}
           style={{ flex: 1 }}
         />
         <Select
           aria-label={t("student.exit.filterStatusLabel")}
           value={status}
-          onChange={(v) => setParams({ status: v ?? "active", page: 1 })}
+          onChange={(v) =>
+            setFilter("status", (v as "active" | "exited" | "all") ?? "active")
+          }
           data={[
             { value: "active", label: t("student.exit.filterActive") },
             { value: "exited", label: t("student.exit.filterExited") },
@@ -474,7 +480,7 @@ export default function StudentTable() {
         <TablePagination
           total={data.pagination.totalPages}
           value={page}
-          onChange={(p) => setParams({ page: p })}
+          onChange={setPage}
         />
       )}
     </Stack>
