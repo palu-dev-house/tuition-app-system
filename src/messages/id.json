@@ -31,6 +31,8 @@
     "active": "Aktif",
     "inactive": "Tidak Aktif",
     "date": "Tanggal",
+    "createdAt": "Dibuat Pada",
+    "updatedAt": "Diperbarui Pada",
     "amount": "Jumlah",
     "total": "Total",
     "notes": "Catatan",
@@ -1233,7 +1235,11 @@
     "items": "Item",
     "history": "Riwayat Pembayaran",
     "allPaid": "Semua tagihan sudah lunas!",
-    "maintenance": "Pembayaran online sedang dalam pemeliharaan. Silakan coba lagi nanti."
+    "maintenance": "Pembayaran online sedang dalam pemeliharaan. Silakan coba lagi nanti.",
+    "statusChanged": "Status Pembayaran Diperbarui",
+    "statusChangedMessage": "{student}: {from} → {to}",
+    "newPayment": "Pembayaran Online Baru",
+    "newPaymentMessage": "{student} — {status}"
   },
   "history": {
     "totalFee": "Total Tagihan",

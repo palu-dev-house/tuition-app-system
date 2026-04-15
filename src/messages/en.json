@@ -31,6 +31,8 @@
     "active": "Active",
     "inactive": "Inactive",
     "date": "Date",
+    "createdAt": "Created At",
+    "updatedAt": "Updated At",
     "amount": "Amount",
     "total": "Total",
     "notes": "Notes",
@@ -1233,7 +1235,11 @@
     "items": "Items",
     "history": "Payment History",
     "allPaid": "All tuitions are paid!",
-    "maintenance": "Online payment is currently under maintenance. Please try again later."
+    "maintenance": "Online payment is currently under maintenance. Please try again later.",
+    "statusChanged": "Payment Status Updated",
+    "statusChangedMessage": "{student}: {from} → {to}",
+    "newPayment": "New Online Payment",
+    "newPaymentMessage": "{student} — {status}"
   },
   "history": {
     "totalFee": "Total Fee",

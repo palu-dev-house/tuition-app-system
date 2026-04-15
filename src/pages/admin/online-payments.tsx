@@ -9,11 +9,17 @@ import {
   TextInput,
 } from "@mantine/core";
 import { useDebouncedValue } from "@mantine/hooks";
-import { IconSearch } from "@tabler/icons-react";
+import { notifications } from "@mantine/notifications";
+import {
+  IconCheck,
+  IconClockHour4,
+  IconSearch,
+  IconX,
+} from "@tabler/icons-react";
 import dayjs from "dayjs";
 import { useTranslations } from "next-intl";
 import type { ReactElement } from "react";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import AdminLayout from "@/components/layouts/AdminLayout";
 import PageHeader from "@/components/ui/PageHeader/PageHeader";
 import TablePagination from "@/components/ui/TablePagination";
@@ -50,6 +56,23 @@ function getStatusColor(status: string) {
   }
 }
 
+function statusNotificationMeta(status: string) {
+  switch (status) {
+    case "SETTLEMENT":
+      return { color: "green", icon: <IconCheck size={18} /> };
+    case "PENDING":
+      return { color: "yellow", icon: <IconClockHour4 size={18} /> };
+    case "EXPIRE":
+    case "CANCEL":
+      return { color: "gray", icon: <IconX size={18} /> };
+    case "DENY":
+    case "FAILURE":
+      return { color: "red", icon: <IconX size={18} /> };
+    default:
+      return { color: "blue", icon: <IconClockHour4 size={18} /> };
+  }
+}
+
 const OnlinePaymentsPage: NextPageWithLayout = function OnlinePaymentsPage() {
   const t = useTranslations();
   const [page, setPage] = useState(1);
@@ -57,12 +80,52 @@ const OnlinePaymentsPage: NextPageWithLayout = function OnlinePaymentsPage() {
   const [status, setStatus] = useState("");
   const [debouncedSearch] = useDebouncedValue(search, 300);
 
-  const { data, isLoading } = useAdminOnlinePayments({
-    page,
-    limit: 10,
-    search: debouncedSearch || undefined,
-    status: status || undefined,
-  });
+  const { data, isLoading } = useAdminOnlinePayments(
+    {
+      page,
+      limit: 10,
+      search: debouncedSearch || undefined,
+      status: status || undefined,
+    },
+    { refetchInterval: 15_000 },
+  );
+
+  const seenStatusRef = useRef<Map<string, string>>(new Map());
+
+  useEffect(() => {
+    if (!data?.payments) return;
+    const seen = seenStatusRef.current;
+    const isFirstRun = seen.size === 0;
+    for (const p of data.payments) {
+      const prev = seen.get(p.id);
+      seen.set(p.id, p.status);
+      if (isFirstRun) continue;
+      if (prev && prev !== p.status) {
+        const meta = statusNotificationMeta(p.status);
+        notifications.show({
+          color: meta.color,
+          icon: meta.icon,
+          title: t("onlinePayment.statusChanged"),
+          message: t("onlinePayment.statusChangedMessage", {
+            student: p.student.name,
+            from: prev,
+            to: p.status,
+          }),
+        });
+      } else if (!prev) {
+        const meta = statusNotificationMeta(p.status);
+        notifications.show({
+          color: meta.color,
+          icon: meta.icon,
+          title: t("onlinePayment.newPayment"),
+          message: t("onlinePayment.newPaymentMessage", {
+            student: p.student.name,
+            status: p.status,
+          }),
+        });
+      }
+    }
+  }, [data, t]);
 
   return (
     <>

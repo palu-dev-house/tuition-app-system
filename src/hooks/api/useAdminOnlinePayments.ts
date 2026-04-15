@@ -52,7 +52,10 @@ interface PaymentSettingsResponse {
   };
 }
 
-export function useAdminOnlinePayments(filters: OnlinePaymentFilters) {
+export function useAdminOnlinePayments(
+  filters: OnlinePaymentFilters,
+  options: { refetchInterval?: number } = {},
+) {
   return useQuery({
     queryKey: queryKeys.adminOnlinePayments.list(filters),
     queryFn: async () => {
@@ -67,6 +70,8 @@ export function useAdminOnlinePayments(filters: OnlinePaymentFilters) {
       );
       return data.data;
     },
+    refetchInterval: options.refetchInterval,
+    refetchOnWindowFocus: true,
   });
 }
 
