@@ -3,9 +3,19 @@ import type { Month } from "@/generated/prisma/client";
 import { createApiHandler } from "@/lib/api-adapter";
 import { requireRole } from "@/lib/api-auth";
 import { errorResponse, successResponse } from "@/lib/api-response";
-import { ACADEMIC_MONTH_ORDER } from "@/lib/business-logic/tuition-generator";
+import {
+  ACADEMIC_MONTH_ORDER,
+  getPeriodDisplayName,
+  PERIOD_MONTHS,
+} from "@/lib/business-logic/tuition-generator";
 import { getServerT } from "@/lib/i18n-server";
 import { prisma } from "@/lib/prisma";
+
+function firstMonthOfPeriod(period: string): Month {
+  const months = PERIOD_MONTHS[period];
+  if (months?.length) return months[0];
+  return period as Month;
+}
 
 function yearForMonth(startYear: number, month: Month): number {
   const firstHalf: Month[] = [
@@ -18,6 +28,19 @@ function yearForMonth(startYear: number, month: Month): number {
   ];
   return firstHalf.includes(month) ? startYear : startYear + 1;
 }
+
+const MONTHLY_FALLBACK: Month[] = [
+  "SEPTEMBER",
+  "OCTOBER",
+  "NOVEMBER",
+  "DECEMBER",
+  "JANUARY",
+  "FEBRUARY",
+  "MARCH",
+  "APRIL",
+  "MAY",
+  "JUNE",
+];
 
 async function GET(
   request: NextRequest,
@@ -74,7 +97,10 @@ async function GET(
           classAcademic: { academicYearId: academicYear.id },
         },
         include: {
-          payments: { orderBy: { paymentDate: "desc" } },
+          payments: {
+            orderBy: { paymentDate: "desc" },
+            include: { employee: { select: { name: true } } },
+          },
         },
       }),
       prisma.feeBill.findMany({
@@ -85,7 +111,10 @@ async function GET(
         },
         include: {
           feeService: true,
-          payments: { orderBy: { paymentDate: "desc" } },
+          payments: {
+            orderBy: { paymentDate: "desc" },
+            include: { employee: { select: { name: true } } },
+          },
         },
       }),
       prisma.serviceFeeBill.findMany({
@@ -96,22 +125,50 @@ async function GET(
         },
         include: {
           serviceFee: true,
-          payments: { orderBy: { paymentDate: "desc" } },
+          payments: {
+            orderBy: { paymentDate: "desc" },
+            include: { employee: { select: { name: true } } },
+          },
         },
       }),
     ]);
 
-    const months = ACADEMIC_MONTH_ORDER.map((month, idx) => {
-      const year = yearForMonth(startYear, month);
+    const tuitionKeys = Array.from(
+      new Set(tuitions.map((tt) => `${tt.period}|${tt.year}`)),
+    );
 
+    let periodList: Array<{ period: string; year: number }> =
+      tuitionKeys.length > 0
+        ? tuitionKeys.map((k) => {
+            const [period, year] = k.split("|");
+            return { period, year: Number(year) };
+          })
+        : MONTHLY_FALLBACK.map((m) => ({
+            period: m,
+            year: yearForMonth(startYear, m),
+          }));
+
+    periodList = periodList.filter(
+      (p) => p.period !== "JULY" && p.period !== "AUGUST",
+    );
+
+    periodList.sort((a, b) => {
+      const yearDiff = a.year - b.year;
+      if (yearDiff !== 0) return yearDiff;
+      const ai = ACADEMIC_MONTH_ORDER.indexOf(firstMonthOfPeriod(a.period));
+      const bi = ACADEMIC_MONTH_ORDER.indexOf(firstMonthOfPeriod(b.period));
+      return ai - bi;
+    });
+
+    const months = periodList.map(({ period, year }, idx) => {
       const tuition = tuitions.find(
-        (tt) => tt.period === month && tt.year === year,
+        (tt) => tt.period === period && tt.year === year,
       );
       const feeRows = feeBills.filter(
-        (b) => b.period === month && b.year === year,
+        (b) => b.period === period && b.year === year,
       );
       const svcRows = serviceFeeBills.filter(
-        (b) => b.period === month && b.year === year,
+        (b) => b.period === period && b.year === year,
       );
 
       const tuitionAmount = tuition
@@ -132,10 +189,11 @@ async function GET(
         ...feeRows.flatMap((b) => b.payments),
         ...svcRows.flatMap((b) => b.payments),
       ];
-      const lastPayment = allPayments.reduce<Date | null>((latest, p) => {
-        const d = new Date(p.paymentDate);
-        return !latest || d > latest ? d : latest;
-      }, null);
+      const sortedPayments = [...allPayments].sort(
+        (a, b) =>
+          new Date(b.paymentDate).getTime() - new Date(a.paymentDate).getTime(),
+      );
+      const latestPayment = sortedPayments[0] ?? null;
 
       const receiptNos = Array.from(
         new Set(allPayments.map((p) => p.id.slice(0, 8).toUpperCase())),
@@ -143,7 +201,8 @@ async function GET(
 
       return {
         index: idx + 1,
-        month,
+        period,
+        periodLabel: getPeriodDisplayName(period),
         year,
         tuition: tuition
           ? { amount: tuitionAmount, paidAmount: tuitionPaid }
@@ -169,8 +228,11 @@ async function GET(
         },
         totalAmount: tuitionAmount + feeAmount + svcAmount,
         totalPaid: tuitionPaid + feePaid + svcPaid,
-        lastPaymentDate: lastPayment ? lastPayment.toISOString() : null,
+        lastPaymentDate: latestPayment
+          ? new Date(latestPayment.paymentDate).toISOString()
+          : null,
         receiptNos,
+        cashierName: latestPayment?.employee?.name ?? null,
       };
     });
 

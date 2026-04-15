@@ -1,12 +1,13 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import type { FeeServiceCategory, Month } from "@/generated/prisma/client";
+import type { FeeServiceCategory } from "@/generated/prisma/client";
 import { apiClient } from "@/lib/api-client";
 
 export interface PaymentCardMonth {
   index: number;
-  month: Month;
+  period: string;
+  periodLabel: string;
   year: number;
   tuition: { amount: number; paidAmount: number } | null;
   feeBills: {
@@ -28,6 +29,7 @@ export interface PaymentCardMonth {
   totalPaid: number;
   lastPaymentDate: string | null;
   receiptNos: string[];
+  cashierName: string | null;
 }
 
 export interface PaymentCardData {

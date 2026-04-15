@@ -20,12 +20,14 @@ import { notifications } from "@mantine/notifications";
 import {
   IconCalendar,
   IconEdit,
+  IconPrinter,
   IconRefresh,
   IconSearch,
   IconTrash,
   IconX,
 } from "@tabler/icons-react";
 import dayjs from "dayjs";
+import Link from "next/link";
 import { useRouter } from "next/router";
 import { useTranslations } from "next-intl";
 import { useState } from "react";
@@ -430,8 +432,18 @@ export default function StudentTable() {
                                       `/admin/students/${student.nis}`,
                                     )
                                   }
+                                  title={t("common.edit")}
                                 >
                                   <IconEdit size={18} />
+                                </ActionIcon>
+                                <ActionIcon
+                                  component={Link}
+                                  href={`/admin/students/${student.nis}/payment-card`}
+                                  variant="subtle"
+                                  color="grape"
+                                  title={t("paymentCard.title")}
+                                >
+                                  <IconPrinter size={18} />
                                 </ActionIcon>
                                 <ActionIcon
                                   variant="subtle"
@@ -439,6 +451,7 @@ export default function StudentTable() {
                                   onClick={() =>
                                     handleDelete(student.nis, student.name)
                                   }
+                                  title={t("common.delete")}
                                 >
                                   <IconTrash size={18} />
                                 </ActionIcon>

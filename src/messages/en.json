@@ -399,7 +399,13 @@
       "TUITION": "Tuition",
       "FEE": "Fee",
       "SERVICE_FEE": "Service Fee"
-    }
+    },
+    "outstandingItems": "Outstanding Items",
+    "tuitionFee": "Tuition",
+    "remaining": "Remaining",
+    "selectedCount": "{count} items selected",
+    "total": "Total:",
+    "multiItemExplainer": "One payment will be created and allocated across every selected item. A single receipt is generated per transaction."
   },
   "nav": {
     "home": "Home",
@@ -1313,6 +1319,7 @@
     "total": "Total",
     "payDate": "Pay Date",
     "receiptNo": "Receipt No.",
+    "cashier": "Cashier",
     "totalRow": "TOTAL",
     "notes": "Notes",
     "note1": "Payment is valid only if recorded on this card",

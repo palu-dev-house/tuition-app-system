@@ -21,7 +21,6 @@ import PageHeader from "@/components/ui/PageHeader/PageHeader";
 import { useAcademicYears } from "@/hooks/api/useAcademicYears";
 import { usePaymentCard } from "@/hooks/api/usePaymentCard";
 import { useStudent } from "@/hooks/api/useStudents";
-import { getMonthDisplayName } from "@/lib/business-logic/tuition-generator";
 import type { NextPageWithLayout } from "@/lib/page-types";
 
 type PrintMode = "header" | "selected" | "all";
@@ -54,7 +53,7 @@ const PaymentCardPage: NextPageWithLayout = function PaymentCardPage() {
       new Set(
         card.months
           .filter((m) => m.totalPaid > 0)
-          .map((m) => `${m.month}-${m.year}`),
+          .map((m) => `${m.period}-${m.year}`),
       ),
     );
   }, [card]);
@@ -97,14 +96,14 @@ const PaymentCardPage: NextPageWithLayout = function PaymentCardPage() {
       new Set(
         card.months
           .filter((m) => m.totalPaid > 0)
-          .map((m) => `${m.month}-${m.year}`),
+          .map((m) => `${m.period}-${m.year}`),
       ),
     );
   };
 
   const selectAllMonths = () => {
     if (!card) return;
-    setSelectedMonths(new Set(card.months.map((m) => `${m.month}-${m.year}`)));
+    setSelectedMonths(new Set(card.months.map((m) => `${m.period}-${m.year}`)));
   };
 
   const clearSelection = () => setSelectedMonths(new Set());
@@ -114,7 +113,7 @@ const PaymentCardPage: NextPageWithLayout = function PaymentCardPage() {
     const visible = card.months.filter((m) => {
       if (mode === "all") return true;
       if (mode === "selected")
-        return selectedMonths.has(`${m.month}-${m.year}`);
+        return selectedMonths.has(`${m.period}-${m.year}`);
       return false;
     });
     return {
@@ -209,12 +208,12 @@ const PaymentCardPage: NextPageWithLayout = function PaymentCardPage() {
                 </Group>
                 <div className="pc-select-bar">
                   {card.months.map((m) => {
-                    const key = `${m.month}-${m.year}`;
+                    const key = `${m.period}-${m.year}`;
                     const hasData = m.totalPaid > 0;
                     return (
                       <Checkbox
                         key={key}
-                        label={`${getMonthDisplayName(m.month).slice(0, 3)} ${m.year % 100}${hasData ? " ✓" : ""}`}
+                        label={`${m.periodLabel} ${m.year % 100}${hasData ? " ✓" : ""}`}
                         checked={selectedMonths.has(key)}
                         onChange={() => toggleMonth(key)}
                         size="xs"
@@ -243,48 +242,54 @@ const PaymentCardPage: NextPageWithLayout = function PaymentCardPage() {
       </div>
 
       {card && (
-        <div className="pc-page">
-          <div className="pc-title">{t("paymentCard.cardTitle")}</div>
+        <div className={`pc-page pc-mode-${mode}`}>
+          {mode !== "selected" && (
+            <>
+              <div className="pc-title">{t("paymentCard.cardTitle")}</div>
 
-          <div className="pc-student">
-            <div className="pc-student-label">NIS</div>
-            <div>: {card.student.nis}</div>
-            <div className="pc-student-label">{t("paymentCard.name")}</div>
-            <div>: {card.student.name}</div>
-            <div className="pc-student-label">{t("paymentCard.class")}</div>
-            <div>: {card.class?.className ?? "-"}</div>
-            <div className="pc-student-label">
-              {t("paymentCard.academicYearLabel")}
-            </div>
-            <div>: {card.academicYear.year}</div>
-          </div>
+              <div className="pc-student">
+                <div className="pc-student-label">NIS</div>
+                <div>: {card.student.nis}</div>
+                <div className="pc-student-label">{t("paymentCard.name")}</div>
+                <div>: {card.student.name}</div>
+                <div className="pc-student-label">{t("paymentCard.class")}</div>
+                <div>: {card.class?.className ?? "-"}</div>
+                <div className="pc-student-label">
+                  {t("paymentCard.academicYearLabel")}
+                </div>
+                <div>: {card.academicYear.year}</div>
+              </div>
+            </>
+          )}
 
           <table className="pc-table">
-            <thead>
-              <tr>
-                <th style={{ width: "7%" }}>No</th>
-                <th style={{ width: "15%" }}>{t("paymentCard.month")}</th>
-                <th style={{ width: "13%" }}>{t("paymentCard.tuition")}</th>
-                <th style={{ width: "14%" }}>{t("paymentCard.transport")}</th>
-                <th style={{ width: "13%" }}>{t("paymentCard.service")}</th>
-                <th style={{ width: "13%" }}>{t("paymentCard.total")}</th>
-                <th style={{ width: "13%" }}>{t("paymentCard.payDate")}</th>
-                <th style={{ width: "12%" }}>{t("paymentCard.receiptNo")}</th>
-              </tr>
-            </thead>
+            {mode !== "selected" && (
+              <thead>
+                <tr>
+                  <th style={{ width: "5%" }}>No</th>
+                  <th style={{ width: "13%" }}>{t("paymentCard.month")}</th>
+                  <th style={{ width: "11%" }}>{t("paymentCard.tuition")}</th>
+                  <th style={{ width: "11%" }}>{t("paymentCard.transport")}</th>
+                  <th style={{ width: "11%" }}>{t("paymentCard.service")}</th>
+                  <th style={{ width: "11%" }}>{t("paymentCard.total")}</th>
+                  <th style={{ width: "10%" }}>{t("paymentCard.payDate")}</th>
+                  <th style={{ width: "13%" }}>{t("paymentCard.receiptNo")}</th>
+                  <th style={{ width: "15%" }}>{t("paymentCard.cashier")}</th>
+                </tr>
+              </thead>
+            )}
             <tbody>
               {card.months.map((m) => {
-                const key = `${m.month}-${m.year}`;
+                const key = `${m.period}-${m.year}`;
                 const visible = monthIsVisible(key);
+                if (mode === "selected" && !visible) return null;
                 return (
                   <tr
                     key={key}
                     className={visible ? undefined : "pc-row-empty"}
                   >
                     <td className="center pc-label-col">{m.index}</td>
-                    <td className="pc-label-col">
-                      {getMonthDisplayName(m.month)}
-                    </td>
+                    <td className="pc-label-col">{m.periodLabel}</td>
                     <td className="num">
                       {visible && m.tuition
                         ? formatRp(m.tuition.paidAmount)
@@ -307,37 +312,49 @@ const PaymentCardPage: NextPageWithLayout = function PaymentCardPage() {
                     <td className="center">
                       {visible ? (m.receiptNos[0] ?? "") : ""}
                     </td>
+                    <td className="pc-cashier">
+                      {visible ? (m.cashierName ?? "") : ""}
+                    </td>
                   </tr>
                 );
               })}
-              <tr>
-                <td className="center pc-label-col" colSpan={2}>
-                  {t("paymentCard.totalRow")}
-                </td>
-                <td className="num">
-                  {mode === "header" ? "" : formatRp(totalsRow.tuition)}
-                </td>
-                <td className="num">
-                  {mode === "header" ? "" : formatRp(totalsRow.fee)}
-                </td>
-                <td className="num">
-                  {mode === "header" ? "" : formatRp(totalsRow.svc)}
-                </td>
-                <td className="num">
-                  {mode === "header" ? "" : formatRp(totalsRow.grand)}
-                </td>
-                <td />
-                <td />
-              </tr>
+              {mode !== "selected" && (
+                <tr>
+                  <td className="center pc-label-col" colSpan={2}>
+                    {t("paymentCard.totalRow")}
+                  </td>
+                  <td className="num">
+                    {mode === "header" ? "" : formatRp(totalsRow.tuition)}
+                  </td>
+                  <td className="num">
+                    {mode === "header" ? "" : formatRp(totalsRow.fee)}
+                  </td>
+                  <td className="num">
+                    {mode === "header" ? "" : formatRp(totalsRow.svc)}
+                  </td>
+                  <td className="num">
+                    {mode === "header" ? "" : formatRp(totalsRow.grand)}
+                  </td>
+                  <td />
+                  <td />
+                  <td />
+                </tr>
+              )}
             </tbody>
           </table>
 
-          <div className="pc-notes">
-            <div className="pc-notes-title">{t("paymentCard.notes")}:</div>
-            <div>1. {t("paymentCard.note1")}</div>
-            <div>2. {t("paymentCard.note2")}</div>
-            <div>3. {t("paymentCard.note3")}</div>
-          </div>
+          {mode !== "selected" && (
+            <>
+              <div className="pc-spacer" />
+
+              <div className="pc-notes">
+                <div className="pc-notes-title">{t("paymentCard.notes")}:</div>
+                <div>1. {t("paymentCard.note1")}</div>
+                <div>2. {t("paymentCard.note2")}</div>
+                <div>3. {t("paymentCard.note3")}</div>
+              </div>
+            </>
+          )}
         </div>
       )}
     </>

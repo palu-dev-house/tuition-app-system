@@ -399,7 +399,13 @@
       "TUITION": "SPP",
       "FEE": "Biaya",
       "SERVICE_FEE": "Biaya Layanan"
-    }
+    },
+    "outstandingItems": "Tagihan Belum Lunas",
+    "tuitionFee": "SPP",
+    "remaining": "Sisa",
+    "selectedCount": "{count} tagihan dipilih",
+    "total": "Total:",
+    "multiItemExplainer": "Pembayaran akan dibuat dan dialokasikan ke setiap tagihan terpilih. Satu kuitansi dihasilkan per transaksi."
   },
   "nav": {
     "home": "Beranda",
@@ -1308,11 +1314,12 @@
     "class": "Kelas",
     "month": "Bulan",
     "tuition": "SPP",
-    "transport": "Transport & Asrama",
+    "transport": "Transport",
     "service": "Perlengkapan",
     "total": "Total",
     "payDate": "Tgl Bayar",
     "receiptNo": "No. Kuitansi",
+    "cashier": "Kasir",
     "totalRow": "TOTAL",
     "notes": "Catatan",
     "note1": "Pembayaran dianggap sah jika tercatat di kartu ini",
