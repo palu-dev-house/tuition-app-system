@@ -71,11 +71,11 @@ function useQueryFilters<TSchema extends z.ZodObject<any>>(options: {
 
 ### 2. Service Fee Summary report
 
-**Page:** `src/pages/admin/reports/service-fees.tsx`
+**Page:** `src/pages/admin/reports/fee-services.tsx`
 
-**Component:** `src/components/reports/ServiceFeeSummaryTable.tsx` (new; follows the structure of `ClassSummaryCards.tsx` but as a paginated table).
+**Component:** `src/components/reports/FeeServiceSummaryTable.tsx` (new; follows the structure of `ClassSummaryCards.tsx` but as a paginated table).
 
-**API route:** `src/pages/api/v1/reports/service-fee-summary/index.ts`
+**API route:** `src/pages/api/v1/reports/fee-service-summary/index.ts`
 - Method: GET
 - Query schema (Zod, shared with frontend):
   ```ts
@@ -113,20 +113,20 @@ function useQueryFilters<TSchema extends z.ZodObject<any>>(options: {
   }
   ```
 
-**Business logic:** `src/lib/business-logic/service-fee-summary.ts`
-- `getServiceFeeSummary(filters)` — aggregates from `ServiceFeeBill` joined to `FeeService`, `FeeSubscription`, `Student`, `StudentClass`.
+**Business logic:** `src/lib/business-logic/fee-service-summary.ts`
+- `getFeeServiceSummary(filters)` — aggregates from `ServiceFeeBill` joined to `FeeService`, `FeeSubscription`, `Student`, `StudentClass`.
 - Returns both per-row aggregates and the grand totals used by summary cards.
 
-**Excel export:** `src/pages/api/v1/reports/service-fee-summary/export/index.ts`
+**Excel export:** `src/pages/api/v1/reports/fee-service-summary/export/index.ts`
 - Same query schema (no `page`/`limit`).
 - Honors the filters currently applied (Option A).
 - Streams an xlsx using the existing `exceljs` helper pattern from `export-class-summary`.
 
 **Frontend hook:** `src/hooks/api/useReports.ts` gains:
-- `useServiceFeeSummary(filters)` — React Query, key: `queryKeys.reports.serviceFeeSummary(filters)`.
-- `useExportServiceFeeSummary()` — mirrors `useExportClassSummary`.
+- `useFeeServiceSummary(filters)` — React Query, key: `queryKeys.reports.feeServiceSummary(filters)`.
+- `useExportFeeServiceSummary()` — mirrors `useExportClassSummary`.
 
-**Query keys:** extend `src/lib/query-keys.ts` with `reports.serviceFeeSummary(filters)`.
+**Query keys:** extend `src/lib/query-keys.ts` with `reports.feeServiceSummary(filters)`.
 
 **UI layout (top → bottom):**
 1. `PageHeader` — title, description, actions: "Export Excel" button, back-to-class-summary link.
@@ -135,9 +135,9 @@ function useQueryFilters<TSchema extends z.ZodObject<any>>(options: {
 4. Paginated table — columns as listed above; row click navigates to filtered service-fee-bills page if useful (nice-to-have, not required).
 5. `TablePagination` footer.
 
-**Navigation:** add a button on `class-summary.tsx` next to the existing "Overdue" button: "Service Fees" → `/admin/reports/service-fees`. Add a matching link in the admin sidebar under the Reports group.
+**Navigation:** add a button on `class-summary.tsx` next to the existing "Overdue" button: "Service Fees" → `/admin/reports/fee-services`. Add a matching link in the admin sidebar under the Reports group.
 
-**i18n:** new keys under `report.serviceFeeSummary.*` in `src/messages/id.json` and `src/messages/en.json`.
+**i18n:** new keys under `report.feeServiceSummary.*` in `src/messages/id.json` and `src/messages/en.json`.
 
 ### 3. Retrofit existing pages
 
@@ -184,14 +184,14 @@ Pages (filter state at page level):
 - **Back/forward navigation:** clicking back restores the previous URL and therefore previous filter state; React Query refetches against the new key automatically.
 - **Multiple rapid filter changes:** only the final state is written to URL (via the debounce for search; other filters write immediately but are coalesced by React batching).
 - **Excel export with no matching rows:** returns an xlsx with header row only (existing helper already does this).
-- **Permissions:** service-fee-summary endpoint requires the same auth scope as existing `class-summary` (admin/cashier). Reuse `requireAuth` pattern.
+- **Permissions:** fee-service-summary endpoint requires the same auth scope as existing `class-summary` (admin/cashier). Reuse `requireAuth` pattern.
 
 ## Testing Strategy
 
 - **Hook unit tests:** exhaustive as listed above.
 - **Report page integration test:** render with `?academicYearId=X&category=TRANSPORT&page=2`, assert request query and rendered filter values match; change category, assert URL updates and `page=1`.
 - **Retrofit smoke tests:** one per migrated page — load with a filter + `page=2`, assert filter applied; change the filter, assert `page=1` in URL.
-- **API tests:** service-fee-summary route with each filter combination + pagination + export.
+- **API tests:** fee-service-summary route with each filter combination + pagination + export.
 
 ## Rollout
 

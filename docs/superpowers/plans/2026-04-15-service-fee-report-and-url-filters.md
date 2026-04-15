@@ -249,10 +249,10 @@ git commit -m "feat(hooks): add useQueryFilters for URL-persisted filters"
 
 ## Phase 2 — Service Fee Summary Report
 
-### Task 2: Add business-logic function `getServiceFeeSummary`
+### Task 2: Add business-logic function `getFeeServiceSummary`
 
 **Files:**
-- Create: `src/lib/business-logic/service-fee-summary.ts`
+- Create: `src/lib/business-logic/fee-service-summary.ts`
 
 - [ ] **Step 1: Inspect neighbor logic for conventions**
 
@@ -260,13 +260,13 @@ Read `src/lib/business-logic/overdue-calculator.ts` (source for `getClassSummary
 
 - [ ] **Step 2: Write the module**
 
-Create `src/lib/business-logic/service-fee-summary.ts`:
+Create `src/lib/business-logic/fee-service-summary.ts`:
 
 ```ts
 import type { PrismaClient } from "@prisma/client";
 import { Prisma } from "@prisma/client";
 
-export interface ServiceFeeSummaryFilters {
+export interface FeeServiceSummaryFilters {
   academicYearId?: string;
   category?: "TRANSPORT" | "ACCOMMODATION";
   feeServiceId?: string;
@@ -279,7 +279,7 @@ export interface ServiceFeeSummaryFilters {
   limit?: number;
 }
 
-export interface ServiceFeeSummaryRow {
+export interface FeeServiceSummaryRow {
   feeServiceId: string;
   feeServiceName: string;
   category: "TRANSPORT" | "ACCOMMODATION";
@@ -290,8 +290,8 @@ export interface ServiceFeeSummaryRow {
   overdueBills: number;
 }
 
-export interface ServiceFeeSummaryResult {
-  data: ServiceFeeSummaryRow[];
+export interface FeeServiceSummaryResult {
+  data: FeeServiceSummaryRow[];
   total: number;
   totalPages: number;
   page: number;
@@ -305,10 +305,10 @@ function monthToDate(ym: string, end = false): Date {
   return end ? new Date(y, m, 0, 23, 59, 59, 999) : new Date(y, m - 1, 1);
 }
 
-export async function getServiceFeeSummary(
-  filters: ServiceFeeSummaryFilters,
+export async function getFeeServiceSummary(
+  filters: FeeServiceSummaryFilters,
   prisma: PrismaClient,
-): Promise<ServiceFeeSummaryResult> {
+): Promise<FeeServiceSummaryResult> {
   const page = Math.max(1, filters.page ?? 1);
   const limit = Math.min(100, Math.max(1, filters.limit ?? 20));
 
@@ -341,7 +341,7 @@ export async function getServiceFeeSummary(
   });
 
   const today = new Date();
-  const rows: ServiceFeeSummaryRow[] = [];
+  const rows: FeeServiceSummaryRow[] = [];
   let grandBilled = new Prisma.Decimal(0);
   let grandPaid = new Prisma.Decimal(0);
 
@@ -411,16 +411,16 @@ If any field name is wrong (e.g. `feeSubscription.active` vs `isActive`), fix to
 - [ ] **Step 4: Commit**
 
 ```bash
-git add src/lib/business-logic/service-fee-summary.ts
+git add src/lib/business-logic/fee-service-summary.ts
 git commit -m "feat(reports): add service fee summary business logic"
 ```
 
 ---
 
-### Task 3: Add API route `GET /api/v1/reports/service-fee-summary`
+### Task 3: Add API route `GET /api/v1/reports/fee-service-summary`
 
 **Files:**
-- Create: `src/pages/api/v1/reports/service-fee-summary/index.ts`
+- Create: `src/pages/api/v1/reports/fee-service-summary/index.ts`
 
 - [ ] **Step 1: Write the route**
 
@@ -429,7 +429,7 @@ import type { NextRequest } from "next/server";
 import { createApiHandler } from "@/lib/api-adapter";
 import { requireAuth } from "@/lib/api-auth";
 import { errorResponse, successResponse } from "@/lib/api-response";
-import { getServiceFeeSummary } from "@/lib/business-logic/service-fee-summary";
+import { getFeeServiceSummary } from "@/lib/business-logic/fee-service-summary";
 import { getServerT } from "@/lib/i18n-server";
 import { prisma } from "@/lib/prisma";
 
@@ -442,7 +442,7 @@ async function GET(request: NextRequest) {
     const sp = request.nextUrl.searchParams;
     const category = sp.get("category");
     const billStatus = sp.get("billStatus");
-    const result = await getServiceFeeSummary(
+    const result = await getFeeServiceSummary(
       {
         academicYearId: sp.get("academicYearId") ?? undefined,
         category:
@@ -481,14 +481,14 @@ export default createApiHandler({ GET });
 Start dev server: `pnpm dev`
 In another terminal, curl (replace cookie with a real admin session cookie or use the browser):
 ```bash
-curl "http://localhost:3000/api/v1/reports/service-fee-summary?category=TRANSPORT&page=1&limit=5"
+curl "http://localhost:3000/api/v1/reports/fee-service-summary?category=TRANSPORT&page=1&limit=5"
 ```
 Expected: JSON with `data`, `totals`, `page`, `totalPages`.
 
 - [ ] **Step 3: Commit**
 
 ```bash
-git add src/pages/api/v1/reports/service-fee-summary/index.ts
+git add src/pages/api/v1/reports/fee-service-summary/index.ts
 git commit -m "feat(api): add service fee summary report endpoint"
 ```
 
@@ -498,7 +498,7 @@ git commit -m "feat(api): add service fee summary report endpoint"
 
 **Files:**
 - Read first: `src/pages/api/v1/reports/class-summary/export/index.ts` (copy the ExcelJS pattern)
-- Create: `src/pages/api/v1/reports/service-fee-summary/export/index.ts`
+- Create: `src/pages/api/v1/reports/fee-service-summary/export/index.ts`
 
 - [ ] **Step 1: Read the neighbor export**
 
@@ -512,7 +512,7 @@ import type { NextRequest } from "next/server";
 import { createApiHandler } from "@/lib/api-adapter";
 import { requireAuth } from "@/lib/api-auth";
 import { errorResponse } from "@/lib/api-response";
-import { getServiceFeeSummary } from "@/lib/business-logic/service-fee-summary";
+import { getFeeServiceSummary } from "@/lib/business-logic/fee-service-summary";
 import { getServerT } from "@/lib/i18n-server";
 import { prisma } from "@/lib/prisma";
 
@@ -525,7 +525,7 @@ async function GET(request: NextRequest) {
     const category = sp.get("category");
     const billStatus = sp.get("billStatus");
     // Export: no pagination — request a large limit.
-    const result = await getServiceFeeSummary(
+    const result = await getFeeServiceSummary(
       {
         academicYearId: sp.get("academicYearId") ?? undefined,
         category:
@@ -588,7 +588,7 @@ async function GET(request: NextRequest) {
         "Content-Type":
           "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         "Content-Disposition":
-          'attachment; filename="service-fee-summary.xlsx"',
+          'attachment; filename="fee-service-summary.xlsx"',
       },
     });
   } catch (error) {
@@ -608,7 +608,7 @@ Expected: clean.
 - [ ] **Step 3: Commit**
 
 ```bash
-git add src/pages/api/v1/reports/service-fee-summary/export/index.ts
+git add src/pages/api/v1/reports/fee-service-summary/export/index.ts
 git commit -m "feat(api): add service fee summary xlsx export"
 ```
 
@@ -625,8 +625,8 @@ git commit -m "feat(api): add service fee summary xlsx export"
 Open `src/lib/query-keys.ts`. Inside the `reports` namespace, add:
 
 ```ts
-serviceFeeSummary: (filters: Record<string, unknown>) =>
-  [...queryKeys.reports.all, "service-fee-summary", filters] as const,
+feeServiceSummary: (filters: Record<string, unknown>) =>
+  [...queryKeys.reports.all, "fee-service-summary", filters] as const,
 ```
 
 If the `reports` namespace does not exist yet, add it next to the other namespaces, following the existing factory style in the file. The `all` tuple should be `["reports"] as const`.
@@ -636,18 +636,18 @@ If the `reports` namespace does not exist yet, add it next to the other namespac
 Open `src/hooks/api/useReports.ts`. Read the existing `useExportClassSummary` and follow its conventions exactly. Add:
 
 ```ts
-import type { ServiceFeeSummaryFilters, ServiceFeeSummaryResult } from "@/lib/business-logic/service-fee-summary";
+import type { FeeServiceSummaryFilters, FeeServiceSummaryResult } from "@/lib/business-logic/fee-service-summary";
 
-export function useServiceFeeSummary(filters: ServiceFeeSummaryFilters) {
+export function useFeeServiceSummary(filters: FeeServiceSummaryFilters) {
   return useQuery({
-    queryKey: queryKeys.reports.serviceFeeSummary(filters as Record<string, unknown>),
+    queryKey: queryKeys.reports.feeServiceSummary(filters as Record<string, unknown>),
     queryFn: async () => {
       const params = new URLSearchParams();
       for (const [k, v] of Object.entries(filters)) {
         if (v !== undefined && v !== null && v !== "") params.set(k, String(v));
       }
-      const res = await apiClient.get<{ data: ServiceFeeSummaryResult }>(
-        `/api/v1/reports/service-fee-summary?${params.toString()}`,
+      const res = await apiClient.get<{ data: FeeServiceSummaryResult }>(
+        `/api/v1/reports/fee-service-summary?${params.toString()}`,
       );
       return res.data;
     },
@@ -655,21 +655,21 @@ export function useServiceFeeSummary(filters: ServiceFeeSummaryFilters) {
   });
 }
 
-export function useExportServiceFeeSummary() {
-  async function exportReport(filters: ServiceFeeSummaryFilters) {
+export function useExportFeeServiceSummary() {
+  async function exportReport(filters: FeeServiceSummaryFilters) {
     const params = new URLSearchParams();
     for (const [k, v] of Object.entries(filters)) {
       if (v !== undefined && v !== null && v !== "") params.set(k, String(v));
     }
     const response = await fetch(
-      `/api/v1/reports/service-fee-summary/export?${params.toString()}`,
+      `/api/v1/reports/fee-service-summary/export?${params.toString()}`,
     );
     if (!response.ok) throw new Error("Export failed");
     const blob = await response.blob();
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = "service-fee-summary.xlsx";
+    a.download = "fee-service-summary.xlsx";
     a.click();
     URL.revokeObjectURL(url);
   }
@@ -688,7 +688,7 @@ Expected: clean.
 
 ```bash
 git add src/hooks/api/useReports.ts src/lib/query-keys.ts
-git commit -m "feat(hooks): add useServiceFeeSummary query + export hooks"
+git commit -m "feat(hooks): add useFeeServiceSummary query + export hooks"
 ```
 
 ---
@@ -699,12 +699,12 @@ git commit -m "feat(hooks): add useServiceFeeSummary query + export hooks"
 - Modify: `src/messages/id.json`
 - Modify: `src/messages/en.json`
 
-- [ ] **Step 1: Add keys under `report.serviceFeeSummary`**
+- [ ] **Step 1: Add keys under `report.feeServiceSummary`**
 
 Mirror the shape of `report.classSummary`. Add these keys in both files (translate IDs):
 
 ```json
-"serviceFeeSummary": {
+"feeServiceSummary": {
   "title": "Laporan Iuran Layanan",
   "description": "Ringkasan iuran transportasi & akomodasi per layanan",
   "exportExcel": "Ekspor Excel",
@@ -743,7 +743,7 @@ git commit -m "feat(i18n): add service fee summary translations"
 ### Task 7: Build the filter bar component
 
 **Files:**
-- Create: `src/components/reports/ServiceFeeSummaryFilters.tsx`
+- Create: `src/components/reports/FeeServiceSummaryFilters.tsx`
 
 - [ ] **Step 1: Write the component**
 
@@ -761,7 +761,7 @@ import { useTranslations } from "next-intl";
 import { useAcademicYears } from "@/hooks/api/useAcademicYears";
 import { useClasses } from "@/hooks/api/useClasses";
 import { useFeeServices } from "@/hooks/api/useFeeServices";
-import type { ServiceFeeSummaryFilters as Filters } from "@/lib/business-logic/service-fee-summary";
+import type { FeeServiceSummaryFilters as Filters } from "@/lib/business-logic/fee-service-summary";
 
 interface Props {
   filters: Filters;
@@ -769,7 +769,7 @@ interface Props {
   onChange: <K extends keyof Filters>(key: K, value: Filters[K] | null) => void;
 }
 
-export function ServiceFeeSummaryFilters({ filters, searchDraft, onChange }: Props) {
+export function FeeServiceSummaryFilters({ filters, searchDraft, onChange }: Props) {
   const t = useTranslations();
   const { data: years } = useAcademicYears();
   const { data: classes } = useClasses();
@@ -780,11 +780,11 @@ export function ServiceFeeSummaryFilters({ filters, searchDraft, onChange }: Pro
       <Grid gutter="sm">
         <Grid.Col span={{ base: 12, md: 3 }}>
           <Select
-            label={t("report.serviceFeeSummary.category")}
+            label={t("report.feeServiceSummary.category")}
             data={[
-              { value: "", label: t("report.serviceFeeSummary.categoryAll") },
-              { value: "TRANSPORT", label: t("report.serviceFeeSummary.categoryTransport") },
-              { value: "ACCOMMODATION", label: t("report.serviceFeeSummary.categoryAccommodation") },
+              { value: "", label: t("report.feeServiceSummary.categoryAll") },
+              { value: "TRANSPORT", label: t("report.feeServiceSummary.categoryTransport") },
+              { value: "ACCOMMODATION", label: t("report.feeServiceSummary.categoryAccommodation") },
             ]}
             value={filters.category ?? ""}
             onChange={(v) => onChange("category", (v as Filters["category"]) || null)}
@@ -805,7 +805,7 @@ export function ServiceFeeSummaryFilters({ filters, searchDraft, onChange }: Pro
         </Grid.Col>
         <Grid.Col span={{ base: 12, md: 3 }}>
           <Select
-            label={t("report.serviceFeeSummary.feeService")}
+            label={t("report.feeServiceSummary.feeService")}
             data={(services ?? []).map((s: { feeServiceId: string; name: string }) => ({
               value: s.feeServiceId,
               label: s.name,
@@ -817,7 +817,7 @@ export function ServiceFeeSummaryFilters({ filters, searchDraft, onChange }: Pro
         </Grid.Col>
         <Grid.Col span={{ base: 12, md: 3 }}>
           <Select
-            label={t("report.serviceFeeSummary.billStatus")}
+            label={t("report.feeServiceSummary.billStatus")}
             data={[
               { value: "UNPAID", label: "UNPAID" },
               { value: "PARTIAL", label: "PARTIAL" },
@@ -843,7 +843,7 @@ export function ServiceFeeSummaryFilters({ filters, searchDraft, onChange }: Pro
         </Grid.Col>
         <Grid.Col span={{ base: 12, md: 3 }}>
           <MonthPickerInput
-            label={t("report.serviceFeeSummary.monthFrom")}
+            label={t("report.feeServiceSummary.monthFrom")}
             value={filters.monthFrom ? new Date(`${filters.monthFrom}-01`) : null}
             onChange={(d) =>
               onChange(
@@ -856,7 +856,7 @@ export function ServiceFeeSummaryFilters({ filters, searchDraft, onChange }: Pro
         </Grid.Col>
         <Grid.Col span={{ base: 12, md: 3 }}>
           <MonthPickerInput
-            label={t("report.serviceFeeSummary.monthTo")}
+            label={t("report.feeServiceSummary.monthTo")}
             value={filters.monthTo ? new Date(`${filters.monthTo}-01`) : null}
             onChange={(d) =>
               onChange(
@@ -871,7 +871,7 @@ export function ServiceFeeSummaryFilters({ filters, searchDraft, onChange }: Pro
           <TextInput
             label={t("common.search")}
             leftSection={<IconSearch size={16} />}
-            placeholder={t("report.serviceFeeSummary.searchPlaceholder")}
+            placeholder={t("report.feeServiceSummary.searchPlaceholder")}
             value={searchDraft}
             onChange={(e) => onChange("search", e.currentTarget.value || null)}
           />
@@ -892,7 +892,7 @@ Expected: clean.
 - [ ] **Step 3: Commit**
 
 ```bash
-git add src/components/reports/ServiceFeeSummaryFilters.tsx
+git add src/components/reports/FeeServiceSummaryFilters.tsx
 git commit -m "feat(reports): add service fee summary filter bar"
 ```
 
@@ -901,7 +901,7 @@ git commit -m "feat(reports): add service fee summary filter bar"
 ### Task 8: Build the table + totals component
 
 **Files:**
-- Create: `src/components/reports/ServiceFeeSummaryTable.tsx`
+- Create: `src/components/reports/FeeServiceSummaryTable.tsx`
 
 - [ ] **Step 1: Write the component**
 
@@ -909,8 +909,8 @@ git commit -m "feat(reports): add service fee summary filter bar"
 import { Badge, Card, Grid, Loader, Paper, Table, Text } from "@mantine/core";
 import { useTranslations } from "next-intl";
 import TablePagination from "@/components/ui/TablePagination";
-import { useServiceFeeSummary } from "@/hooks/api/useReports";
-import type { ServiceFeeSummaryFilters } from "@/lib/business-logic/service-fee-summary";
+import { useFeeServiceSummary } from "@/hooks/api/useReports";
+import type { FeeServiceSummaryFilters } from "@/lib/business-logic/fee-service-summary";
 
 function formatRp(v: string | number) {
   const n = typeof v === "string" ? Number.parseFloat(v) : v;
@@ -918,15 +918,15 @@ function formatRp(v: string | number) {
 }
 
 interface Props {
-  filters: ServiceFeeSummaryFilters;
+  filters: FeeServiceSummaryFilters;
   page: number;
   limit: number;
   onPageChange: (p: number) => void;
 }
 
-export function ServiceFeeSummaryTable({ filters, page, limit, onPageChange }: Props) {
+export function FeeServiceSummaryTable({ filters, page, limit, onPageChange }: Props) {
   const t = useTranslations();
-  const { data, isLoading } = useServiceFeeSummary({ ...filters, page, limit });
+  const { data, isLoading } = useFeeServiceSummary({ ...filters, page, limit });
 
   if (isLoading || !data) return <Loader />;
 
@@ -935,19 +935,19 @@ export function ServiceFeeSummaryTable({ filters, page, limit, onPageChange }: P
       <Grid>
         <Grid.Col span={{ base: 12, md: 4 }}>
           <Card withBorder>
-            <Text size="sm" c="dimmed">{t("report.serviceFeeSummary.totalBilled")}</Text>
+            <Text size="sm" c="dimmed">{t("report.feeServiceSummary.totalBilled")}</Text>
             <Text fw={700} size="xl">{formatRp(data.totals.billed)}</Text>
           </Card>
         </Grid.Col>
         <Grid.Col span={{ base: 12, md: 4 }}>
           <Card withBorder>
-            <Text size="sm" c="dimmed">{t("report.serviceFeeSummary.totalPaid")}</Text>
+            <Text size="sm" c="dimmed">{t("report.feeServiceSummary.totalPaid")}</Text>
             <Text fw={700} size="xl" c="green">{formatRp(data.totals.paid)}</Text>
           </Card>
         </Grid.Col>
         <Grid.Col span={{ base: 12, md: 4 }}>
           <Card withBorder>
-            <Text size="sm" c="dimmed">{t("report.serviceFeeSummary.outstanding")}</Text>
+            <Text size="sm" c="dimmed">{t("report.feeServiceSummary.outstanding")}</Text>
             <Text fw={700} size="xl" c="red">{formatRp(data.totals.outstanding)}</Text>
           </Card>
         </Grid.Col>
@@ -956,13 +956,13 @@ export function ServiceFeeSummaryTable({ filters, page, limit, onPageChange }: P
         <Table striped>
           <Table.Thead>
             <Table.Tr>
-              <Table.Th>{t("report.serviceFeeSummary.feeService")}</Table.Th>
-              <Table.Th>{t("report.serviceFeeSummary.category")}</Table.Th>
-              <Table.Th>{t("report.serviceFeeSummary.activeStudents")}</Table.Th>
-              <Table.Th>{t("report.serviceFeeSummary.totalBilled")}</Table.Th>
-              <Table.Th>{t("report.serviceFeeSummary.totalPaid")}</Table.Th>
-              <Table.Th>{t("report.serviceFeeSummary.outstanding")}</Table.Th>
-              <Table.Th>{t("report.serviceFeeSummary.overdueBills")}</Table.Th>
+              <Table.Th>{t("report.feeServiceSummary.feeService")}</Table.Th>
+              <Table.Th>{t("report.feeServiceSummary.category")}</Table.Th>
+              <Table.Th>{t("report.feeServiceSummary.activeStudents")}</Table.Th>
+              <Table.Th>{t("report.feeServiceSummary.totalBilled")}</Table.Th>
+              <Table.Th>{t("report.feeServiceSummary.totalPaid")}</Table.Th>
+              <Table.Th>{t("report.feeServiceSummary.outstanding")}</Table.Th>
+              <Table.Th>{t("report.feeServiceSummary.overdueBills")}</Table.Th>
             </Table.Tr>
           </Table.Thead>
           <Table.Tbody>
@@ -1010,7 +1010,7 @@ Expected: clean.
 - [ ] **Step 3: Commit**
 
 ```bash
-git add src/components/reports/ServiceFeeSummaryTable.tsx
+git add src/components/reports/FeeServiceSummaryTable.tsx
 git commit -m "feat(reports): add service fee summary table"
 ```
 
@@ -1019,7 +1019,7 @@ git commit -m "feat(reports): add service fee summary table"
 ### Task 9: Wire the report page with `useQueryFilters`
 
 **Files:**
-- Create: `src/pages/admin/reports/service-fees.tsx`
+- Create: `src/pages/admin/reports/fee-services.tsx`
 
 - [ ] **Step 1: Write the page**
 
@@ -1030,10 +1030,10 @@ import { useTranslations } from "next-intl";
 import type { ReactElement } from "react";
 import { z } from "zod";
 import AdminLayout from "@/components/layouts/AdminLayout";
-import { ServiceFeeSummaryFilters } from "@/components/reports/ServiceFeeSummaryFilters";
-import { ServiceFeeSummaryTable } from "@/components/reports/ServiceFeeSummaryTable";
+import { FeeServiceSummaryFilters } from "@/components/reports/FeeServiceSummaryFilters";
+import { FeeServiceSummaryTable } from "@/components/reports/FeeServiceSummaryTable";
 import PageHeader from "@/components/ui/PageHeader/PageHeader";
-import { useExportServiceFeeSummary } from "@/hooks/api/useReports";
+import { useExportFeeServiceSummary } from "@/hooks/api/useReports";
 import { useQueryFilters } from "@/hooks/useQueryFilters";
 import type { NextPageWithLayout } from "@/lib/page-types";
 
@@ -1051,13 +1051,13 @@ const schema = z.object({
 const ServiceFeeReportPage: NextPageWithLayout = function ServiceFeeReportPage() {
   const t = useTranslations();
   const { filters, page, limit, drafts, setFilter, setPage } = useQueryFilters({ schema });
-  const { exportReport } = useExportServiceFeeSummary();
+  const { exportReport } = useExportFeeServiceSummary();
 
   return (
     <>
       <PageHeader
-        title={t("report.serviceFeeSummary.title")}
-        description={t("report.serviceFeeSummary.description")}
+        title={t("report.feeServiceSummary.title")}
+        description={t("report.feeServiceSummary.description")}
         actions={
           <Group gap="sm">
             <Button
@@ -1065,18 +1065,18 @@ const ServiceFeeReportPage: NextPageWithLayout = function ServiceFeeReportPage()
               leftSection={<IconFileSpreadsheet size={18} />}
               onClick={() => exportReport(filters)}
             >
-              {t("report.serviceFeeSummary.exportExcel")}
+              {t("report.feeServiceSummary.exportExcel")}
             </Button>
           </Group>
         }
       />
       <Stack gap="md">
-        <ServiceFeeSummaryFilters
+        <FeeServiceSummaryFilters
           filters={filters}
           searchDraft={drafts.search ?? ""}
           onChange={setFilter}
         />
-        <ServiceFeeSummaryTable
+        <FeeServiceSummaryTable
           filters={filters}
           page={page}
           limit={limit}
@@ -1102,20 +1102,20 @@ Edit `src/pages/admin/reports/class-summary.tsx`: inside the `actions` `Group`, 
 <Button
   variant="light"
   leftSection={<IconFileSpreadsheet size={18} />}
-  onClick={() => router.push("/admin/reports/service-fees")}
+  onClick={() => router.push("/admin/reports/fee-services")}
 >
-  {t("report.serviceFeeSummary.title")}
+  {t("report.feeServiceSummary.title")}
 </Button>
 ```
 
 - [ ] **Step 3: Add sidebar link**
 
-Edit `src/components/layouts/AdminLayout.tsx` (or whichever file defines the admin nav — grep for `/admin/reports/class-summary`). Add the new entry `/admin/reports/service-fees` under the Reports group, matching the existing link style.
+Edit `src/components/layouts/AdminLayout.tsx` (or whichever file defines the admin nav — grep for `/admin/reports/class-summary`). Add the new entry `/admin/reports/fee-services` under the Reports group, matching the existing link style.
 
 - [ ] **Step 4: Manual verify**
 
 Run: `pnpm dev`
-- Navigate to `/admin/reports/service-fees`.
+- Navigate to `/admin/reports/fee-services`.
 - Confirm filters render, data loads, totals display.
 - Change category — URL updates, `page` drops, table refetches.
 - Set `?page=2` manually, change any filter — URL should return to `page=1`.
@@ -1124,7 +1124,7 @@ Run: `pnpm dev`
 - [ ] **Step 5: Commit**
 
 ```bash
-git add src/pages/admin/reports/service-fees.tsx src/pages/admin/reports/class-summary.tsx src/components/layouts/AdminLayout.tsx
+git add src/pages/admin/reports/fee-services.tsx src/pages/admin/reports/class-summary.tsx src/components/layouts/AdminLayout.tsx
 git commit -m "feat(reports): add service fee summary page and nav links"
 ```
 
@@ -1275,7 +1275,7 @@ const schema = z.object({
 - Modify: `docs/03-API-ENDPOINTS.md`
 - Modify: `docs/04-FRONTEND-STRUCTURE.md`
 
-- [ ] **Step 1:** Add `GET /api/v1/reports/service-fee-summary` and `/export` entries to `docs/03-API-ENDPOINTS.md`, mirroring the existing class-summary entries (query params table + response shape).
+- [ ] **Step 1:** Add `GET /api/v1/reports/fee-service-summary` and `/export` entries to `docs/03-API-ENDPOINTS.md`, mirroring the existing class-summary entries (query params table + response shape).
 - [ ] **Step 2:** Add a "URL-persisted filters" section to `docs/04-FRONTEND-STRUCTURE.md` describing when to use `useQueryFilters`, including the schema + import snippet.
 - [ ] **Step 3:** Commit `docs: document service fee report and useQueryFilters`.
 
@@ -1301,5 +1301,5 @@ const schema = z.object({
 
 - ✅ Spec coverage: hook (Task 1), report business logic (Task 2), API (Tasks 3–4), hooks + keys (Task 5), i18n (Task 6), UI (Tasks 7–9), retrofits (Tasks 10–23), docs (Task 24), verification (Task 25).
 - ✅ No placeholders; every code-producing step has complete code or a clear recipe grounded in an existing file.
-- ✅ Type consistency: `ServiceFeeSummaryFilters`/`ServiceFeeSummaryResult` used identically across business logic, API, and hook layers.
+- ✅ Type consistency: `FeeServiceSummaryFilters`/`FeeServiceSummaryResult` used identically across business logic, API, and hook layers.
 - ✅ Testing matches project reality (no test runner → type-check + lint + manual browser QA).
