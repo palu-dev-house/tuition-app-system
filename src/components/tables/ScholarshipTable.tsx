@@ -29,6 +29,7 @@ import {
 import dayjs from "dayjs";
 import { useTranslations } from "next-intl";
 import { useState } from "react";
+import { z } from "zod";
 import ColumnSettingsDrawer, {
   useColumnSettings,
 } from "@/components/ui/ColumnSettingsDrawer";
@@ -41,14 +42,20 @@ import {
   useDeleteScholarship,
   useScholarships,
 } from "@/hooks/api/useScholarships";
-import { useQueryParams } from "@/hooks/useQueryParams";
+import { useQueryFilters } from "@/hooks/useQueryFilters";
+
+const scholarshipFiltersSchema = z.object({
+  classAcademicId: z.string().optional(),
+  isFullScholarship: z.enum(["true", "false"]).optional(),
+});
 
 export default function ScholarshipTable() {
   const t = useTranslations();
-  const { setParams, getParam, getNumParam } = useQueryParams();
-  const page = getNumParam("page", 1)!;
-  const classAcademicId = getParam("classAcademicId") ?? null;
-  const isFullScholarship = getParam("isFullScholarship") ?? null;
+  const { filters, page, setFilter, setPage } = useQueryFilters({
+    schema: scholarshipFiltersSchema,
+  });
+  const classAcademicId = filters.classAcademicId ?? null;
+  const isFullScholarship = filters.isFullScholarship ?? null;
 
   const { data: academicYearsData } = useAcademicYears({ limit: 100 });
   const activeYear = academicYearsData?.academicYears.find((ay) => ay.isActive);
@@ -250,7 +257,7 @@ export default function ScholarshipTable() {
             leftSection={<IconFilter size={16} />}
             data={classOptions}
             value={classAcademicId}
-            onChange={(value) => setParams({ classAcademicId: value, page: 1 })}
+            onChange={(value) => setFilter("classAcademicId", value || null)}
             clearable
             searchable
             w={250}
@@ -263,12 +270,20 @@ export default function ScholarshipTable() {
             ]}
             value={isFullScholarship}
             onChange={(value) =>
-              setParams({ isFullScholarship: value, page: 1 })
+              setFilter(
+                "isFullScholarship",
+                (value as "true" | "false" | null) || null,
+              )
             }
             clearable
             w={200}
           />
-          <ActionIcon variant="default" size="lg" onClick={() => refetch()} loading={isFetching}>
+          <ActionIcon
+            variant="default"
+            size="lg"
+            onClick={() => refetch()}
+            loading={isFetching}
+          >
             <IconRefresh size={18} />
           </ActionIcon>
           <ColumnSettingsDrawer
@@ -526,7 +541,7 @@ export default function ScholarshipTable() {
         <TablePagination
           total={data.pagination.totalPages}
           value={page}
-          onChange={(p) => setParams({ page: p })}
+          onChange={setPage}
         />
       )}
     </Stack>

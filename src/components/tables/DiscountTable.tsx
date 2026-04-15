@@ -32,6 +32,7 @@ import {
 import { useRouter } from "next/router";
 import { useTranslations } from "next-intl";
 import { useState } from "react";
+import { z } from "zod";
 import ColumnSettingsDrawer, {
   useColumnSettings,
 } from "@/components/ui/ColumnSettingsDrawer";
@@ -45,16 +46,22 @@ import {
   useDeleteDiscount,
   useDiscounts,
 } from "@/hooks/api/useDiscounts";
-import { useQueryParams } from "@/hooks/useQueryParams";
+import { useQueryFilters } from "@/hooks/useQueryFilters";
 import { getPeriodDisplayName } from "@/lib/business-logic/tuition-generator";
+
+const filtersSchema = z.object({
+  academicYearId: z.string().optional(),
+  isActive: z.enum(["true", "false"]).optional(),
+});
 
 export default function DiscountTable() {
   const t = useTranslations();
   const router = useRouter();
-  const { setParams, getParam, getNumParam } = useQueryParams();
-  const page = getNumParam("page", 1)!;
-  const academicYearId = getParam("academicYearId") ?? null;
-  const isActive = getParam("isActive", "true") ?? "true";
+  const { filters, page, setFilter, setPage } = useQueryFilters({
+    schema: filtersSchema,
+  });
+  const academicYearId = filters.academicYearId ?? null;
+  const isActive = filters.isActive ?? "true";
 
   const { data: academicYearsData } = useAcademicYears({ limit: 100 });
   const activeYear = academicYearsData?.academicYears.find((ay) => ay.isActive);
@@ -343,7 +350,7 @@ export default function DiscountTable() {
             leftSection={<IconFilter size={16} />}
             data={academicYearOptions}
             value={academicYearId || activeYear?.id || null}
-            onChange={(value) => setParams({ academicYearId: value, page: 1 })}
+            onChange={(value) => setFilter("academicYearId", value || null)}
             clearable
             searchable
             w={250}
@@ -355,7 +362,9 @@ export default function DiscountTable() {
               { value: "false", label: t("common.inactive") },
             ]}
             value={isActive}
-            onChange={(value) => setParams({ isActive: value, page: 1 })}
+            onChange={(value) =>
+              setFilter("isActive", (value as "true" | "false" | null) || null)
+            }
             clearable
             w={150}
           />
@@ -671,7 +680,7 @@ export default function DiscountTable() {
         <TablePagination
           total={data.pagination.totalPages}
           value={page}
-          onChange={(p) => setParams({ page: p })}
+          onChange={setPage}
         />
       )}
     </Stack>
