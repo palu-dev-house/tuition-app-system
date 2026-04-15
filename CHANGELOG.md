@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.13.0] - 2026-04-15
+
+### Features
+- feat(payment-card): frequency-aware rows, cashier column, clean overlay layout
+
+
+
 ## [2.12.1] - 2026-04-15
 
 ### Fixes
