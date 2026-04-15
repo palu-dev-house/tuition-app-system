@@ -3,6 +3,10 @@
 import { useQuery } from "@tanstack/react-query";
 import type { Month } from "@/generated/prisma/client";
 import { apiClient } from "@/lib/api-client";
+import type {
+  FeeServiceSummaryFilters,
+  FeeServiceSummaryResult,
+} from "@/lib/business-logic/fee-service-summary";
 import {
   type ClassSummaryFilters,
   type OverdueFilters,
@@ -263,6 +267,51 @@ export function useExportClassSummary() {
     }
     const url = `/api/v1/reports/class-summary/export?${params.toString()}`;
     window.open(url, "_blank");
+  };
+
+  return { exportReport };
+}
+
+export function useFeeServiceSummary(filters: FeeServiceSummaryFilters) {
+  return useQuery({
+    queryKey: queryKeys.reports.feeServiceSummary(
+      filters as Record<string, unknown>,
+    ),
+    queryFn: async () => {
+      const params = new URLSearchParams();
+      for (const [k, v] of Object.entries(filters)) {
+        if (v !== undefined && v !== null && v !== "") {
+          params.set(k, String(v));
+        }
+      }
+      const { data } = await apiClient.get<{ data: FeeServiceSummaryResult }>(
+        `/reports/fee-service-summary?${params.toString()}`,
+      );
+      return data.data;
+    },
+    placeholderData: (previous) => previous,
+  });
+}
+
+export function useExportFeeServiceSummary() {
+  const exportReport = async (filters: FeeServiceSummaryFilters) => {
+    const params = new URLSearchParams();
+    for (const [k, v] of Object.entries(filters)) {
+      if (v !== undefined && v !== null && v !== "") {
+        params.set(k, String(v));
+      }
+    }
+    const response = await fetch(
+      `/api/v1/reports/fee-service-summary/export?${params.toString()}`,
+    );
+    if (!response.ok) throw new Error("Export failed");
+    const blob = await response.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "fee-service-summary.xlsx";
+    a.click();
+    URL.revokeObjectURL(url);
   };
 
   return { exportReport };

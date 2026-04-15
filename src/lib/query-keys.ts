@@ -239,6 +239,8 @@ export const queryKeys = {
       [...queryKeys.reports.all, "overdue-service-fee-bills", filters] as const,
     classSummary: (filters: ClassSummaryFilters) =>
       [...queryKeys.reports.all, "class-summary", filters] as const,
+    feeServiceSummary: (filters: Record<string, unknown>) =>
+      [...queryKeys.reports.all, "fee-service-summary", filters] as const,
   },
 
   discounts: {
