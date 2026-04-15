@@ -464,3 +464,117 @@
   margin-bottom: 12px;
   opacity: 0.4;
 }
+
+/* ============================================
+   PAYMENT CARD (KARTU BUKTI PEMBAYARAN)
+   Designed to print onto pre-printed A5 card.
+   Each month row must be exactly 12px tall.
+   ============================================ */
+.pc-page {
+  width: 148mm;
+  min-height: 210mm;
+  margin: 0 auto 24px;
+  padding: 10mm 8mm;
+  background: white;
+  box-shadow: 0 1px 8px rgba(0, 0, 0, 0.08);
+  box-sizing: border-box;
+  font-family: "Arial", sans-serif;
+  color: #111;
+  font-size: 10px;
+}
+
+.pc-title {
+  text-align: center;
+  font-weight: 700;
+  font-size: 12pt;
+  letter-spacing: 0.05em;
+  margin-bottom: 4mm;
+  border: 1px solid #111;
+  padding: 1.5mm 0;
+}
+
+.pc-student {
+  display: grid;
+  grid-template-columns: 22mm 1fr;
+  row-gap: 0.8mm;
+  column-gap: 2mm;
+  margin-bottom: 3mm;
+  font-size: 10px;
+}
+
+.pc-student-label {
+  font-weight: 600;
+}
+
+.pc-table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+  font-size: 9px;
+}
+
+.pc-table th,
+.pc-table td {
+  border: 0.5px solid #111;
+  padding: 0 1mm;
+  text-align: left;
+  vertical-align: middle;
+  height: 12px;
+  line-height: 12px;
+  overflow: hidden;
+}
+
+.pc-table th {
+  font-weight: 700;
+  text-align: center;
+  font-size: 8px;
+  height: 16px;
+  line-height: 1;
+}
+
+.pc-table td.num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.pc-table td.center {
+  text-align: center;
+}
+
+.pc-row-empty td {
+  color: transparent;
+}
+
+.pc-row-empty td.pc-label-col {
+  color: #111;
+}
+
+.pc-notes {
+  margin-top: 4mm;
+  font-size: 8px;
+  line-height: 1.35;
+}
+
+.pc-notes-title {
+  font-weight: 700;
+  margin-bottom: 1mm;
+}
+
+.pc-select-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 8px 0;
+}
+
+@media print {
+  .pc-select-bar {
+    display: none !important;
+  }
+
+  .pc-page {
+    box-shadow: none;
+    margin: 0;
+    page-break-after: always;
+  }
+}

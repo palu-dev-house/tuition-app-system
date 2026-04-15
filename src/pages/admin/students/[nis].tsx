@@ -25,10 +25,12 @@ import {
   IconCheck,
   IconKey,
   IconPlus,
+  IconPrinter,
   IconTrash,
   IconUserPlus,
 } from "@tabler/icons-react";
 import dayjs from "dayjs";
+import Link from "next/link";
 import { useRouter } from "next/router";
 import { useTranslations } from "next-intl";
 import type { ReactElement } from "react";
@@ -214,6 +216,16 @@ const EditStudentPage: NextPageWithLayout = function EditStudentPage() {
       <PageHeader
         title={t("student.edit")}
         description={`${t("student.edit")} ${student.name}`}
+        actions={
+          <Button
+            component={Link}
+            href={`/admin/students/${nis}/payment-card`}
+            variant="light"
+            leftSection={<IconPrinter size={16} />}
+          >
+            {t("paymentCard.title")}
+          </Button>
+        }
       />
 
       <Grid gutter="lg">
