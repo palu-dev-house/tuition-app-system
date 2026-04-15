@@ -193,6 +193,11 @@ export default function Sidebar() {
           label: t("classSummary"),
           href: "/admin/reports/class-summary",
         },
+        {
+          icon: IconBus,
+          label: t("feeServiceSummary"),
+          href: "/admin/reports/fee-services",
+        },
       ],
     },
     { icon: IconHelp, label: t("help"), href: "/admin/help" },
@@ -216,6 +221,11 @@ export default function Sidebar() {
           icon: IconChartBar,
           label: t("classSummary"),
           href: "/admin/reports/class-summary",
+        },
+        {
+          icon: IconBus,
+          label: t("feeServiceSummary"),
+          href: "/admin/reports/fee-services",
         },
       ],
     },

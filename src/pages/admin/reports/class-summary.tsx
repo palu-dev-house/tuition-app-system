@@ -1,5 +1,9 @@
 import { Button, Group } from "@mantine/core";
-import { IconAlertTriangle, IconFileSpreadsheet } from "@tabler/icons-react";
+import {
+  IconAlertTriangle,
+  IconBus,
+  IconFileSpreadsheet,
+} from "@tabler/icons-react";
 import { useRouter } from "next/router";
 import { useTranslations } from "next-intl";
 import type { ReactElement } from "react";
@@ -31,6 +35,13 @@ const ClassSummaryPage: NextPageWithLayout = function ClassSummaryPage() {
               }
             >
               {t("report.classSummary.exportExcel")}
+            </Button>
+            <Button
+              variant="light"
+              leftSection={<IconBus size={18} />}
+              onClick={() => router.push("/admin/reports/fee-services")}
+            >
+              {t("report.feeServiceSummary.title")}
             </Button>
             <Button
               variant="light"

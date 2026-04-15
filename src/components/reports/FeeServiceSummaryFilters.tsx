@@ -5,7 +5,9 @@ import { useTranslations } from "next-intl";
 import { useAcademicYears } from "@/hooks/api/useAcademicYears";
 import { useClassAcademics } from "@/hooks/api/useClassAcademics";
 import { useFeeServices } from "@/hooks/api/useFeeServices";
-import type { FeeServiceSummaryFilters as Filters } from "@/lib/business-logic/fee-service-summary";
+import type { FeeServiceSummaryFilters as FullFilters } from "@/lib/business-logic/fee-service-summary";
+
+type Filters = Omit<FullFilters, "page" | "limit">;
 
 interface Props {
   filters: Filters;
