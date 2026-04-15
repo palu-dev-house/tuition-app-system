@@ -1,7 +1,7 @@
 import type { PrismaClient } from "@/generated/prisma/client";
 import { Prisma } from "@/generated/prisma/client";
 
-export interface ServiceFeeSummaryFilters {
+export interface FeeServiceSummaryFilters {
   academicYearId?: string;
   category?: "TRANSPORT" | "ACCOMMODATION";
   feeServiceId?: string;
@@ -14,7 +14,7 @@ export interface ServiceFeeSummaryFilters {
   limit?: number;
 }
 
-export interface ServiceFeeSummaryRow {
+export interface FeeServiceSummaryRow {
   feeServiceId: string;
   feeServiceName: string;
   category: "TRANSPORT" | "ACCOMMODATION";
@@ -25,8 +25,8 @@ export interface ServiceFeeSummaryRow {
   overdueBills: number;
 }
 
-export interface ServiceFeeSummaryResult {
-  data: ServiceFeeSummaryRow[];
+export interface FeeServiceSummaryResult {
+  data: FeeServiceSummaryRow[];
   total: number;
   totalPages: number;
   page: number;
@@ -40,10 +40,10 @@ function monthToDate(ym: string, end = false): Date {
   return end ? new Date(y, m, 0, 23, 59, 59, 999) : new Date(y, m - 1, 1);
 }
 
-export async function getServiceFeeSummary(
-  filters: ServiceFeeSummaryFilters,
+export async function getFeeServiceSummary(
+  filters: FeeServiceSummaryFilters,
   prisma: PrismaClient,
-): Promise<ServiceFeeSummaryResult> {
+): Promise<FeeServiceSummaryResult> {
   const page = Math.max(1, filters.page ?? 1);
   const limit = Math.min(100, Math.max(1, filters.limit ?? 20));
 
@@ -90,7 +90,7 @@ export async function getServiceFeeSummary(
   });
 
   const today = new Date();
-  const rows: ServiceFeeSummaryRow[] = [];
+  const rows: FeeServiceSummaryRow[] = [];
   let grandBilled = new Prisma.Decimal(0);
   let grandPaid = new Prisma.Decimal(0);
 
