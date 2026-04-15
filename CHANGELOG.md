@@ -1,5 +1,54 @@
 # Changelog
 
+## [2.11.0] - 2026-04-15
+
+### Features
+- feat(db): add fee services, subscriptions, bills, and service fees
+- feat(db): add (studentNis, status) composite index and align onDelete on service-fee-bill
+- feat(fee-bills): add bill generation with price history resolution
+- feat(payments): add single-bill-target invariant helper
+- feat(service-fee-bills): add per-class service fee bill generation
+- feat(student-exit): cascade exit/undo to fee subscriptions and fee bills
+- feat(api): fee-services CRUD endpoints
+- feat(api): fee-subscriptions endpoints
+- feat(api): service-fees CRUD endpoints
+- feat(api): fee-bills CRUD + generation endpoints
+- feat(api): service-fee-bills endpoints + generation
+- feat(payments): include fee + service-fee bills in /payments/print
+- feat(query-keys): add fee-service, subscription, bill, and service-fee families
+- feat(payments): accept mixed tuition/fee/service-fee items in POST /payments
+- feat(online-payments): accept mixed bill items end-to-end
+- feat(hooks): add useFeeSubscriptions
+- feat(hooks): add useFeeServices and useFeeServicePrices
+- feat(hooks): add useServiceFees and useServiceFeeBills
+- feat(hooks): add useFeeBills, migrate useCreatePayment to mixed items
+- feat(fee-services): add admin list + create/edit/delete page
+- feat(fee-services): add detail page with price history + subscribers + bills
+- feat(fee-bills): add combined list with generate-all (fee + service tabs)
+- feat(service-fees): add admin list + detail pages
+- feat(payments): multi-bill picker payment form
+- feat(students): add subscriptions and fee bills sections to detail page
+- feat(print): render fee and service fee lines on payment slip
+- feat(nav): add fee services, service fees, and all-bills sidebar entries
+- feat(portal): combined outstanding bills (tuition + fee + service fee)
+
+### Fixes
+- fix(api): null-guard polymorphic payment fields in dashboard/stats and bulk-reverse
+- fix(hooks): align generate-all hooks with backend response shape
+
+### Other
+- docs: spec for fees & services module (transport + service fee)
+- docs(spec): make scholarship/discount exclusion an explicit rule
+- docs(spec): resolve open questions — exit cascade, generate-all, help docs
+- docs(plan): add fees & services implementation plan
+- style: remove unused Paper import in fee-services/[id].tsx
+- i18n: add fee-service, fee-bill, service-fee translation keys
+- seed: add fee services, subscriptions, service fees, bills, and payments
+- docs: document fee services, service fees, and multi-bill payment
+- Merge branch 'feat/fees-services'
+
+
+
 ## [2.10.0] - 2026-04-14
 
 ### Features
