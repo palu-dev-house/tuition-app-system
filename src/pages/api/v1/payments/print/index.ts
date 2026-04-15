@@ -15,33 +15,41 @@ async function GET(request: NextRequest) {
   const studentNis = searchParams.get("studentNis");
 
   const where: Prisma.PaymentWhereInput = {};
+  const andClauses: Prisma.PaymentWhereInput[] = [];
 
-  // Student filter takes precedence (for reprint of lost slip)
+  // Student filter (reprint of lost slip) — match via any of the three FKs.
   if (mode === "student" && studentNis) {
-    where.tuition = {
-      studentNis,
-      ...(academicYearId ? { classAcademic: { academicYearId } } : {}),
-    };
-  } else if (academicYearId) {
-    // Filter by academic year through tuition -> classAcademic
-    where.tuition = {
-      classAcademic: {
-        academicYearId,
-      },
-    };
+    andClauses.push({
+      OR: [
+        { tuition: { studentNis } },
+        { feeBill: { studentNis } },
+        { serviceFeeBill: { studentNis } },
+      ],
+    });
   }
 
-  // Filter for today only (not applicable in student mode)
+  // Academic-year filter — may combine with student filter.
+  if (academicYearId) {
+    andClauses.push({
+      OR: [
+        { tuition: { classAcademic: { academicYearId } } },
+        { feeBill: { feeService: { academicYearId } } },
+        { serviceFeeBill: { classAcademic: { academicYearId } } },
+      ],
+    });
+  }
+
+  // Filter for today only (not applicable in student mode).
   if (mode === "today") {
     const todayStart = new Date();
     todayStart.setHours(0, 0, 0, 0);
     const todayEnd = new Date();
     todayEnd.setHours(23, 59, 59, 999);
+    where.paymentDate = { gte: todayStart, lte: todayEnd };
+  }
 
-    where.paymentDate = {
-      gte: todayStart,
-      lte: todayEnd,
-    };
+  if (andClauses.length > 0) {
+    where.AND = andClauses;
   }
 
   const payments = await prisma.payment.findMany({
@@ -50,11 +58,7 @@ async function GET(request: NextRequest) {
       tuition: {
         include: {
           student: {
-            select: {
-              nis: true,
-              name: true,
-              parentName: true,
-            },
+            select: { nis: true, name: true, parentName: true },
           },
           classAcademic: {
             select: {
@@ -64,9 +68,36 @@ async function GET(request: NextRequest) {
           },
         },
       },
-      employee: {
-        select: { name: true },
+      feeBill: {
+        include: {
+          feeService: {
+            select: {
+              id: true,
+              name: true,
+              category: true,
+              academicYear: { select: { year: true } },
+            },
+          },
+          student: {
+            select: { nis: true, name: true, parentName: true },
+          },
+        },
       },
+      serviceFeeBill: {
+        include: {
+          serviceFee: { select: { id: true, name: true } },
+          student: {
+            select: { nis: true, name: true, parentName: true },
+          },
+          classAcademic: {
+            select: {
+              className: true,
+              academicYear: { select: { year: true } },
+            },
+          },
+        },
+      },
+      employee: { select: { name: true } },
     },
     orderBy: [{ paymentDate: "asc" }, { createdAt: "asc" }],
   });

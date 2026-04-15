@@ -19,6 +19,7 @@ import {
   IconSearch,
 } from "@tabler/icons-react";
 import dayjs from "dayjs";
+import { useRouter } from "next/router";
 import { useTranslations } from "next-intl";
 import type { ReactElement } from "react";
 import { useMemo, useState } from "react";
@@ -55,11 +56,31 @@ interface StudentGroup {
   kasirName: string | null;
 }
 
+function getStudentRef(p: PrintPayment) {
+  return (
+    p.tuition?.student ??
+    p.feeBill?.student ??
+    p.serviceFeeBill?.student ??
+    null
+  );
+}
+
+function getClassRef(p: PrintPayment) {
+  return (
+    p.tuition?.classAcademic ??
+    p.feeBill?.classAcademic ??
+    p.serviceFeeBill?.classAcademic ??
+    null
+  );
+}
+
 function groupByStudent(payments: PrintPayment[]): StudentGroup[] {
   const groups = new Map<string, StudentGroup>();
-
   for (const p of payments) {
-    const nis = p.tuition.student.nis;
+    const s = getStudentRef(p);
+    const c = getClassRef(p);
+    if (!s) continue;
+    const nis = s.nis;
     const existing = groups.get(nis);
     const amount = parseFloat(p.amount);
     if (existing) {
@@ -72,9 +93,9 @@ function groupByStudent(payments: PrintPayment[]): StudentGroup[] {
     } else {
       groups.set(nis, {
         nis,
-        name: p.tuition.student.name,
-        className: p.tuition.classAcademic.className,
-        academicYear: p.tuition.classAcademic.academicYear.year,
+        name: s.name,
+        className: c?.className ?? "",
+        academicYear: c?.academicYear.year ?? "",
         payments: [p],
         total: amount,
         latestDate: p.paymentDate,
@@ -82,10 +103,26 @@ function groupByStudent(payments: PrintPayment[]): StudentGroup[] {
       });
     }
   }
-
   return Array.from(groups.values()).sort((a, b) =>
     a.name.localeCompare(b.name),
   );
+}
+
+function buildLineLabel(
+  p: PrintPayment,
+  formatPeriod: (period: string) => string,
+  t: ReturnType<typeof useTranslations>,
+): string {
+  if (p.tuition) {
+    return `${t("invoice.tuitionShort")} ${formatPeriod(p.tuition.period)}`;
+  }
+  if (p.feeBill) {
+    return `${p.feeBill.feeService.name} ${formatPeriod(p.feeBill.period)}`;
+  }
+  if (p.serviceFeeBill) {
+    return `${p.serviceFeeBill.serviceFee.name} ${formatPeriod(p.serviceFeeBill.period)}`;
+  }
+  return "-";
 }
 
 function CompactSlip({
@@ -127,7 +164,7 @@ function CompactSlip({
         {visibleItems.map((p) => (
           <div className="slip-item-row" key={p.id}>
             <span className="slip-item-label">
-              {formatPeriod(p.tuition.period)} {p.tuition.year}
+              {buildLineLabel(p, formatPeriod, t)}
             </span>
             <span className="slip-item-amount">
               {formatRp(parseFloat(p.amount))}
@@ -163,11 +200,42 @@ function FullInvoice({
   onToggle: (id: string) => void;
 }) {
   const t = useTranslations();
-  const tu = payment.tuition;
-  const fee = parseFloat(tu.feeAmount);
-  const scholarship = parseFloat(tu.scholarshipAmount);
-  const discount = parseFloat(tu.discountAmount);
-  const effectiveFee = fee - scholarship - discount;
+  const student = getStudentRef(payment);
+  const klass = getClassRef(payment);
+
+  const formatPeriodLocal = (period: string): string => {
+    const monthKey = `months.${period}` as const;
+    const monthTranslation = t.raw(monthKey);
+    if (monthTranslation !== monthKey) {
+      return (monthTranslation as string).slice(0, 3);
+    }
+    return period;
+  };
+
+  let feeAmount = 0;
+  let deduction = 0;
+  let stampVisible = false;
+  let description = "-";
+
+  if (payment.tuition) {
+    const fee = parseFloat(payment.tuition.feeAmount);
+    const scholarship = parseFloat(payment.tuition.scholarshipAmount);
+    const discount = parseFloat(payment.tuition.discountAmount);
+    feeAmount = fee;
+    deduction = scholarship + discount;
+    stampVisible = payment.tuition.status === "PAID";
+    description = `${t("invoice.tuitionFee")} - ${formatPeriodLocal(payment.tuition.period)} ${payment.tuition.year}`;
+  } else if (payment.feeBill) {
+    feeAmount = parseFloat(payment.feeBill.amount);
+    stampVisible = payment.feeBill.status === "PAID";
+    description = `${payment.feeBill.feeService.name} - ${formatPeriodLocal(payment.feeBill.period)} ${payment.feeBill.year}`;
+  } else if (payment.serviceFeeBill) {
+    feeAmount = parseFloat(payment.serviceFeeBill.amount);
+    stampVisible = payment.serviceFeeBill.status === "PAID";
+    description = `${payment.serviceFeeBill.serviceFee.name} - ${formatPeriodLocal(payment.serviceFeeBill.period)} ${payment.serviceFeeBill.year}`;
+  }
+
+  const effectiveFee = feeAmount - deduction;
   const paidAmount = parseFloat(payment.amount);
 
   return (
@@ -177,12 +245,10 @@ function FullInvoice({
           size="xs"
           checked={selected}
           onChange={() => onToggle(payment.id)}
-          aria-label={tu.student.name}
+          aria-label={student?.name ?? ""}
         />
       </div>
-      {tu.status === "PAID" && (
-        <div className="inv-stamp">{t("invoice.paid")}</div>
-      )}
+      {stampVisible && <div className="inv-stamp">{t("invoice.paid")}</div>}
       <div className="inv-header">
         <div>
           <div className="inv-school">{t("invoice.schoolName")}</div>
@@ -202,20 +268,20 @@ function FullInvoice({
       <div className="inv-student-row">
         <div className="inv-field">
           <span className="inv-field-label">{t("invoice.studentName")}</span>
-          <span className="inv-field-value">{tu.student.name}</span>
+          <span className="inv-field-value">{student?.name ?? "-"}</span>
         </div>
         <div className="inv-field">
           <span className="inv-field-label">{t("invoice.class")}</span>
-          <span className="inv-field-value">{tu.classAcademic.className}</span>
+          <span className="inv-field-value">{klass?.className ?? "-"}</span>
         </div>
         <div className="inv-field">
           <span className="inv-field-label">{t("invoice.nis")}</span>
-          <span className="inv-field-value">{tu.student.nis}</span>
+          <span className="inv-field-value">{student?.nis ?? "-"}</span>
         </div>
         <div className="inv-field">
           <span className="inv-field-label">{t("invoice.academicYear")}</span>
           <span className="inv-field-value">
-            {tu.classAcademic.academicYear.year}
+            {klass?.academicYear.year ?? "-"}
           </span>
         </div>
       </div>
@@ -237,15 +303,9 @@ function FullInvoice({
         </thead>
         <tbody>
           <tr>
-            <td>
-              {t("invoice.tuitionFee")} - {tu.period} {tu.year}
-            </td>
-            <td className="num">{formatRp(fee)}</td>
-            <td className="num">
-              {scholarship + discount > 0
-                ? formatRp(scholarship + discount)
-                : "-"}
-            </td>
+            <td>{description}</td>
+            <td className="num">{formatRp(feeAmount)}</td>
+            <td className="num">{deduction > 0 ? formatRp(deduction) : "-"}</td>
             <td className="num">{formatRp(effectiveFee)}</td>
           </tr>
           <tr className="total-row">
@@ -295,6 +355,10 @@ const PrintInvoicePage: NextPageWithLayout = function PrintInvoicePage() {
     });
   };
 
+  const router = useRouter();
+  const transactionId =
+    (router.query.transactionId as string | undefined) ?? undefined;
+
   const { data: academicYearsData } = useAcademicYears({ limit: 100 });
   const activeYear = academicYearsData?.academicYears.find((ay) => ay.isActive);
   const effectiveYearId = academicYearId || activeYear?.id;
@@ -309,6 +373,7 @@ const PrintInvoicePage: NextPageWithLayout = function PrintInvoicePage() {
     academicYearId: mode === "student" ? undefined : effectiveYearId,
     mode,
     studentNis: mode === "student" ? (studentNis ?? undefined) : undefined,
+    transactionId,
     enabled: mode === "student" ? !!studentNis : !!effectiveYearId,
   });
 

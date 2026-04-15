@@ -23,6 +23,7 @@ import { notifications } from "@mantine/notifications";
 import {
   IconAlertTriangle,
   IconBuilding,
+  IconBus,
   IconCalendar,
   IconCash,
   IconChartBar,
@@ -34,8 +35,10 @@ import {
   IconHome,
   IconKey,
   IconLogout,
+  IconPackage,
   IconPrinter,
   IconReceipt,
+  IconReceipt2,
   IconReportAnalytics,
   IconSchool,
   IconSearch,
@@ -43,6 +46,7 @@ import {
   IconUser,
   IconUserCircle,
   IconUsers,
+  IconWallet,
 } from "@tabler/icons-react";
 import Link from "next/link";
 import { useRouter } from "next/router";
@@ -141,6 +145,27 @@ export default function Sidebar() {
     { icon: IconDiscount, label: t("discounts"), href: "/admin/discounts" },
     { icon: IconReceipt, label: t("payments"), href: "/admin/payments" },
     {
+      icon: IconWallet,
+      label: t("feesAndServices"),
+      children: [
+        {
+          icon: IconBus,
+          label: t("feeServices"),
+          href: "/admin/fee-services",
+        },
+        {
+          icon: IconPackage,
+          label: t("serviceFees"),
+          href: "/admin/service-fees",
+        },
+        {
+          icon: IconReceipt2,
+          label: t("feeBills"),
+          href: "/admin/fee-bills",
+        },
+      ],
+    },
+    {
       icon: IconPrinter,
       label: t("printReceipts"),
       href: "/admin/payments/print",
@@ -183,6 +208,7 @@ export default function Sidebar() {
     { icon: IconHome, label: t("dashboard"), href: "/admin/dashboard" },
     { icon: IconSchool, label: t("students"), href: "/admin/students" },
     { icon: IconReceipt, label: t("payments"), href: "/admin/payments" },
+    { icon: IconReceipt2, label: t("feeBills"), href: "/admin/fee-bills" },
     {
       icon: IconPrinter,
       label: t("printReceipts"),

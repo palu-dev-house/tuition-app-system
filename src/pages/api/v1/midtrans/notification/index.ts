@@ -1,8 +1,12 @@
+import { Prisma } from "@/generated/prisma/client";
 import { createApiHandler } from "@/lib/api-adapter";
 import {
+  reverseFeeBillPayment,
+  reverseServiceFeeBillPayment,
   settleOnlinePayment,
   updateOnlinePaymentStatus,
 } from "@/lib/business-logic/online-payment-processor";
+import { assertSingleBillTarget } from "@/lib/business-logic/payment-items";
 import { verifySignature } from "@/lib/midtrans";
 import { prisma } from "@/lib/prisma";
 
@@ -29,6 +33,7 @@ async function POST(request: Request) {
     // Find related online payment
     const onlinePayment = await prisma.onlinePayment.findUnique({
       where: { orderId },
+      include: { items: true },
     });
 
     // Log webhook
@@ -118,6 +123,28 @@ async function POST(request: Request) {
 
       case "cancel":
         await updateOnlinePaymentStatus(orderId, "CANCEL", rawPayload, prisma);
+        // Reverse any already-applied payments for this order (idempotent guard)
+        if (onlinePayment.status === "SETTLEMENT") {
+          await prisma.$transaction(async (tx) => {
+            for (const item of onlinePayment.items) {
+              assertSingleBillTarget({
+                tuitionId: item.tuitionId,
+                feeBillId: item.feeBillId,
+                serviceFeeBillId: item.serviceFeeBillId,
+              });
+              const amount = new Prisma.Decimal(item.amount);
+              if (item.feeBillId) {
+                await reverseFeeBillPayment(tx, item.feeBillId, amount);
+              } else if (item.serviceFeeBillId) {
+                await reverseServiceFeeBillPayment(
+                  tx,
+                  item.serviceFeeBillId,
+                  amount,
+                );
+              }
+            }
+          });
+        }
         break;
 
       case "deny":

@@ -284,6 +284,94 @@ Filter pada halaman pembayaran untuk melihat:
 
 ---
 
+## Transport & Akomodasi
+
+Tagihan transport dan asrama dikelola sebagai **layanan** dengan langganan per siswa dan riwayat harga.
+
+### Membuat layanan
+
+1. Buka menu **Layanan** pada grup Layanan & Biaya.
+2. Klik **Tambah Layanan** lalu isi Nama, Kategori (Transport atau Akomodasi), dan catatan opsional.
+3. Simpan. Layanan tanpa harga tidak bisa membuat tagihan.
+
+### Mengatur harga dan riwayat harga
+
+Setiap layanan punya riwayat harga. Saat pembuatan tagihan, harga yang aktif pada tanggal 1 bulan terkait yang dipakai.
+
+1. Buka detail layanan → **Riwayat Harga** → **Tambah Harga**.
+2. Isi **Berlaku Mulai** (tanggal bebas dalam bulan tersebut — akan dinormalisasi ke tanggal 1 saat disimpan) dan jumlah.
+3. Untuk menaikkan harga di tengah tahun, tambahkan entri baru dengan tanggal mulai lebih baru. Tagihan yang sudah dibuat tetap memakai harga snapshot lama.
+
+### Menambah dan mengakhiri langganan siswa
+
+1. Pada halaman detail layanan, buka **Pelanggan** → **Langganan Siswa**.
+2. Pilih siswa, isi Tanggal Mulai dan catatan opsional. Kosongkan Tanggal Berakhir untuk langganan terbuka.
+3. **Akhiri Langganan** akan mengisi tanggal berakhir; siswa tidak akan ditagih untuk bulan-bulan setelahnya.
+
+### Membuat tagihan
+
+Gunakan tombol **Buat Semua Tagihan** di bagian atas halaman Semua Tagihan. Aman dijalankan berkali-kali — tagihan yang sudah ada tidak diubah. Siswa baru, langganan baru, dan siswa yang keluar otomatis diperhitungkan pada eksekusi berikutnya.
+
+Jika ada layanan yang belum punya harga pada suatu periode, akan muncul peringatan **Harga belum diatur**. Tambahkan harga lalu jalankan ulang.
+
+## Uang Perlengkapan
+
+**Uang perlengkapan** adalah biaya wajib per kelas yang ditagihkan pada bulan yang dikonfigurasi (default Juli dan Januari).
+
+### Membuat uang perlengkapan
+
+1. Buka **Uang Perlengkapan** pada grup Layanan & Biaya.
+2. Klik **Tambah Uang Perlengkapan**, pilih Kelas, isi Jumlah dan Bulan Penagihan.
+3. Simpan.
+
+Setiap siswa di kelas tersebut akan mendapat tagihan di setiap bulan penagihan.
+
+### Bulan penagihan
+
+Edit uang perlengkapan untuk menambah/menghapus bulan penagihan. Eksekusi berikutnya mengikuti daftar baru; tagihan lama tidak berubah.
+
+### Perubahan jumlah
+
+Perubahan jumlah hanya berlaku untuk tagihan yang dibuat berikutnya. Tagihan lama tetap memakai snapshot.
+
+## Buat Semua Tagihan
+
+Tombol **Buat Semua Tagihan** pada halaman **Semua Tagihan** membuat tagihan yang belum ada untuk tahun ajaran aktif di tiga jalur (SPP, transport/akomodasi, uang perlengkapan).
+
+- **Idempoten:** aman dijalankan berulang.
+- **Tidak merusak:** tagihan yang sudah dibayar tidak disentuh.
+- **Sadar drift:** siswa baru, langganan baru, dan siswa yang keluar diperhitungkan otomatis.
+- Jalankan ulang setelah menambah harga yang hilang, menambah langganan baru, atau mencatat siswa keluar.
+
+## Pembayaran Multi-Tagihan (Kasir)
+
+Pada halaman pembayaran kasir, daftar tagihan menggabungkan SPP, tagihan transport/akomodasi, dan uang perlengkapan untuk siswa yang dipilih. Sekali klik **Proses Pembayaran** membuat satu transaksi yang mencakup semua item terpilih.
+
+- Setiap baris payment terkait tepat satu tagihan (SPP, fee bill, atau service-fee bill).
+- Semua baris dalam satu transaksi berbagi **ID Transaksi** yang sama, jadi kuitansi dicetak sebagai satu slip.
+- Membatalkan payment akan memperbarui jumlah terbayar dan status pada tagihan asalnya.
+
+## Portal — Tagihan Gabungan
+
+Siswa/orang tua melihat tiga jenis tagihan dalam satu daftar di halaman pembayaran portal. Mereka bisa memilih subset mana saja dan membayar lewat Midtrans dalam satu transaksi. Item yang lunas otomatis hilang dari daftar setelah settlement.
+
+## Perilaku Keluar Siswa
+
+Saat siswa ditandai keluar:
+
+- **Langganan transport/akomodasi** yang aktif diberi Tanggal Berakhir sama dengan tanggal keluar.
+- Tagihan **belum dibayar** untuk bulan-bulan berikutnya (termasuk fee bill dan uang perlengkapan) **dibatalkan** — flag `voidedByExit` diset, jumlah menjadi 0. Tidak dihitung lagi di total.
+- Tagihan **sebagian dibayar** tetap utuh, dan ada peringatan agar staf memutuskan cara menyelesaikannya.
+- Tagihan yang sudah lunas tidak pernah diubah.
+
+Membatalkan status keluar akan memulihkan langganan dan mengembalikan tagihan yang sebelumnya dibatalkan (jumlah dihitung ulang dari riwayat harga atau jumlah uang perlengkapan saat ini).
+
+## Beasiswa dan Diskon — Hanya untuk SPP
+
+**Penting:** Beasiswa dan diskon hanya berlaku untuk SPP. Tagihan transport, akomodasi, dan uang perlengkapan tetap dibebankan penuh, tanpa melihat status beasiswa atau diskon siswa. Layar kasir tidak menyediakan kolom beasiswa/diskon untuk item non-SPP.
+
+---
+
 ## 8. Akun Portal Siswa
 
 **Menu:** `Akun Siswa` *(hanya Admin)*

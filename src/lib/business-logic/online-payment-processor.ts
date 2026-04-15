@@ -3,16 +3,14 @@ import type {
   PaymentStatus,
   PrismaClient,
 } from "@/generated/prisma/client";
+import { Prisma } from "@/generated/prisma/client";
+import { assertSingleBillTarget } from "@/lib/business-logic/payment-items";
 import {
   cancelTransaction,
   createSnapTransaction,
   generateOrderId,
 } from "@/lib/midtrans";
-
-export interface CreateOnlinePaymentParams {
-  studentNis: string;
-  tuitionIds: string[];
-}
+import type { OnlinePaymentItemInput } from "@/lib/validations/schemas/online-payment.schema";
 
 export interface OnlinePaymentResult {
   id: string;
@@ -22,14 +20,58 @@ export interface OnlinePaymentResult {
   grossAmount: number;
 }
 
+const MONTH_LABEL: Record<string, string> = {
+  JANUARY: "Jan",
+  FEBRUARY: "Feb",
+  MARCH: "Mar",
+  APRIL: "Apr",
+  MAY: "May",
+  JUNE: "Jun",
+  JULY: "Jul",
+  AUGUST: "Aug",
+  SEPTEMBER: "Sep",
+  OCTOBER: "Oct",
+  NOVEMBER: "Nov",
+  DECEMBER: "Dec",
+};
+
+function periodLabel(period: string, year: number): string {
+  return `${MONTH_LABEL[period] ?? period} ${year}`;
+}
+
+type Line = {
+  id: string;
+  price: number;
+  quantity: 1;
+  name: string;
+  itemInput: {
+    tuitionId?: string;
+    feeBillId?: string;
+    serviceFeeBillId?: string;
+    amount: Prisma.Decimal;
+  };
+};
+
 /**
  * Create an online payment via Midtrans Snap
  */
 export async function createOnlinePayment(
-  params: CreateOnlinePaymentParams,
+  args: {
+    studentNis: string;
+    items: OnlinePaymentItemInput[];
+  },
   prisma: PrismaClient,
 ): Promise<OnlinePaymentResult> {
-  const { studentNis, tuitionIds } = params;
+  const { studentNis, items } = args;
+
+  // Assert single bill target invariant per item
+  for (const item of items) {
+    assertSingleBillTarget({
+      tuitionId: item.tuitionId ?? null,
+      feeBillId: item.feeBillId ?? null,
+      serviceFeeBillId: item.serviceFeeBillId ?? null,
+    });
+  }
 
   // Check payment settings
   const settings = await prisma.paymentSetting.findUnique({
@@ -47,64 +89,104 @@ export async function createOnlinePayment(
   });
   if (!student) throw new Error("Student not found");
 
-  // Get tuitions and validate ownership
-  const tuitions = await prisma.tuition.findMany({
-    where: {
-      id: { in: tuitionIds },
-      studentNis,
-    },
-    include: {
-      classAcademic: {
-        select: { className: true, academicYear: { select: { year: true } } },
-      },
-    },
-  });
+  // Load all bills, enforce ownership + unpaid
+  const tuitionIds = items.map((i) => i.tuitionId).filter(Boolean) as string[];
+  const feeBillIds = items.map((i) => i.feeBillId).filter(Boolean) as string[];
+  const serviceFeeBillIds = items
+    .map((i) => i.serviceFeeBillId)
+    .filter(Boolean) as string[];
 
-  if (tuitions.length !== tuitionIds.length) {
-    throw new Error("Some tuitions not found or do not belong to this student");
+  const [tuitions, feeBills, serviceFeeBills] = await Promise.all([
+    tuitionIds.length
+      ? prisma.tuition.findMany({
+          where: { id: { in: tuitionIds }, studentNis },
+          include: { classAcademic: true },
+        })
+      : Promise.resolve([]),
+    feeBillIds.length
+      ? prisma.feeBill.findMany({
+          where: { id: { in: feeBillIds }, studentNis },
+          include: { feeService: true },
+        })
+      : Promise.resolve([]),
+    serviceFeeBillIds.length
+      ? prisma.serviceFeeBill.findMany({
+          where: { id: { in: serviceFeeBillIds }, studentNis },
+          include: { serviceFee: true },
+        })
+      : Promise.resolve([]),
+  ]);
+
+  if (
+    tuitions.length !== tuitionIds.length ||
+    feeBills.length !== feeBillIds.length ||
+    serviceFeeBills.length !== serviceFeeBillIds.length
+  ) {
+    throw new Error("One or more bills not found or not yours");
   }
 
-  // Validate all tuitions are payable (not PAID)
-  for (const tuition of tuitions) {
-    if (tuition.status === "PAID") {
-      throw new Error(
-        `Tuition ${tuition.period} ${tuition.year} is already paid`,
-      );
+  const lines: Line[] = [];
+
+  for (const t of tuitions) {
+    if (
+      (t.status as PaymentStatus) === "PAID" ||
+      (t.status as PaymentStatus) === "VOID"
+    ) {
+      throw new Error(`Tuition ${t.id} not payable`);
     }
-  }
-
-  // Check no existing PENDING online payment covers these tuitions
-  const existingPending = await prisma.onlinePaymentItem.findFirst({
-    where: {
-      tuitionId: { in: tuitionIds },
-      onlinePayment: { status: "PENDING" },
-    },
-  });
-  if (existingPending) {
-    throw new Error(
-      "One or more tuitions already have a pending online payment",
-    );
-  }
-
-  // Calculate amounts
-  const itemDetails = tuitions.map((t) => {
-    const remaining =
-      Number(t.feeAmount) -
-      Number(t.paidAmount) -
-      Number(t.scholarshipAmount) -
-      Number(t.discountAmount);
-    return {
-      id: t.id,
-      name: `${t.classAcademic.className} - ${t.period} ${t.year}`,
-      price: Math.max(Math.round(remaining), 0),
+    const remaining = new Prisma.Decimal(t.feeAmount)
+      .minus(t.scholarshipAmount)
+      .minus(t.discountAmount)
+      .minus(t.paidAmount);
+    if (remaining.lte(0)) continue;
+    lines.push({
+      id: `TUI-${t.id}`,
+      price: remaining.toNumber(),
       quantity: 1,
-    };
-  });
-
-  const grossAmount = itemDetails.reduce((sum, item) => sum + item.price, 0);
-  if (grossAmount <= 0) {
-    throw new Error("Total payment amount must be greater than 0");
+      name: `SPP ${periodLabel(t.period, t.year)}`,
+      itemInput: { tuitionId: t.id, amount: remaining },
+    });
   }
+
+  for (const b of feeBills) {
+    if (
+      (b.status as PaymentStatus) === "PAID" ||
+      (b.status as PaymentStatus) === "VOID"
+    ) {
+      throw new Error(`Fee bill ${b.id} not payable`);
+    }
+    const remaining = new Prisma.Decimal(b.amount).minus(b.paidAmount);
+    if (remaining.lte(0)) continue;
+    lines.push({
+      id: `FEE-${b.id}`,
+      price: remaining.toNumber(),
+      quantity: 1,
+      name: `${b.feeService.name} ${periodLabel(b.period, b.year)}`,
+      itemInput: { feeBillId: b.id, amount: remaining },
+    });
+  }
+
+  for (const b of serviceFeeBills) {
+    if (
+      (b.status as PaymentStatus) === "PAID" ||
+      (b.status as PaymentStatus) === "VOID"
+    ) {
+      throw new Error(`Service fee bill ${b.id} not payable`);
+    }
+    const remaining = new Prisma.Decimal(b.amount).minus(b.paidAmount);
+    if (remaining.lte(0)) continue;
+    lines.push({
+      id: `SVC-${b.id}`,
+      price: remaining.toNumber(),
+      quantity: 1,
+      name: `${b.serviceFee.name} ${periodLabel(b.period, b.year)}`,
+      itemInput: { serviceFeeBillId: b.id, amount: remaining },
+    });
+  }
+
+  if (lines.length === 0) throw new Error("Nothing to pay");
+
+  const grossAmount = lines.reduce((sum, l) => sum + l.price, 0);
 
   // Create Snap transaction
   const orderId = generateOrderId(studentNis);
@@ -115,7 +197,12 @@ export async function createOnlinePayment(
       firstName: student.name,
       phone: student.parentPhone,
     },
-    itemDetails,
+    itemDetails: lines.map((l) => ({
+      id: l.id,
+      name: l.name,
+      price: Math.round(l.price),
+      quantity: l.quantity,
+    })),
   });
 
   // Save to database
@@ -128,9 +215,11 @@ export async function createOnlinePayment(
       snapRedirectUrl: snapResult.redirectUrl,
       status: "PENDING",
       items: {
-        create: itemDetails.map((item) => ({
-          tuitionId: item.id,
-          amount: item.price,
+        create: lines.map((l) => ({
+          tuitionId: l.itemInput.tuitionId ?? null,
+          feeBillId: l.itemInput.feeBillId ?? null,
+          serviceFeeBillId: l.itemInput.serviceFeeBillId ?? null,
+          amount: l.itemInput.amount,
         })),
       },
     },
@@ -145,8 +234,136 @@ export async function createOnlinePayment(
   };
 }
 
+// ── Internal settlement helpers ──────────────────────────────────────────────
+
+type TxClient = Parameters<Parameters<PrismaClient["$transaction"]>[0]>[0];
+
+export async function applyTuitionPayment(
+  tx: TxClient,
+  tuitionId: string,
+  amount: Prisma.Decimal,
+): Promise<void> {
+  const tuition = await tx.tuition.findUniqueOrThrow({
+    where: { id: tuitionId },
+  });
+  const feeAmount = new Prisma.Decimal(tuition.feeAmount);
+  const scholarshipAmount = new Prisma.Decimal(tuition.scholarshipAmount);
+  const discountAmount = new Prisma.Decimal(tuition.discountAmount);
+  const effectiveFee = Prisma.Decimal.max(
+    feeAmount.minus(scholarshipAmount).minus(discountAmount),
+    new Prisma.Decimal(0),
+  );
+  const newPaid = new Prisma.Decimal(tuition.paidAmount).plus(amount);
+  let newStatus: PaymentStatus;
+  if (newPaid.gte(effectiveFee)) {
+    newStatus = "PAID";
+  } else if (newPaid.gt(0)) {
+    newStatus = "PARTIAL";
+  } else {
+    newStatus = "UNPAID";
+  }
+  await tx.tuition.update({
+    where: { id: tuitionId },
+    data: { paidAmount: newPaid, status: newStatus },
+  });
+}
+
+export async function applyFeeBillPayment(
+  tx: TxClient,
+  feeBillId: string,
+  amount: Prisma.Decimal,
+): Promise<void> {
+  const bill = await tx.feeBill.findUniqueOrThrow({ where: { id: feeBillId } });
+  const newPaid = new Prisma.Decimal(bill.paidAmount).plus(amount);
+  let newStatus: PaymentStatus;
+  if (newPaid.gte(new Prisma.Decimal(bill.amount))) {
+    newStatus = "PAID";
+  } else if (newPaid.gt(0)) {
+    newStatus = "PARTIAL";
+  } else {
+    newStatus = "UNPAID";
+  }
+  await tx.feeBill.update({
+    where: { id: feeBillId },
+    data: { paidAmount: newPaid, status: newStatus },
+  });
+}
+
+export async function applyServiceFeeBillPayment(
+  tx: TxClient,
+  serviceFeeBillId: string,
+  amount: Prisma.Decimal,
+): Promise<void> {
+  const bill = await tx.serviceFeeBill.findUniqueOrThrow({
+    where: { id: serviceFeeBillId },
+  });
+  const newPaid = new Prisma.Decimal(bill.paidAmount).plus(amount);
+  let newStatus: PaymentStatus;
+  if (newPaid.gte(new Prisma.Decimal(bill.amount))) {
+    newStatus = "PAID";
+  } else if (newPaid.gt(0)) {
+    newStatus = "PARTIAL";
+  } else {
+    newStatus = "UNPAID";
+  }
+  await tx.serviceFeeBill.update({
+    where: { id: serviceFeeBillId },
+    data: { paidAmount: newPaid, status: newStatus },
+  });
+}
+
+export async function reverseFeeBillPayment(
+  tx: TxClient,
+  feeBillId: string,
+  amount: Prisma.Decimal,
+): Promise<void> {
+  const bill = await tx.feeBill.findUniqueOrThrow({ where: { id: feeBillId } });
+  const newPaid = Prisma.Decimal.max(
+    new Prisma.Decimal(bill.paidAmount).minus(amount),
+    new Prisma.Decimal(0),
+  );
+  let newStatus: PaymentStatus;
+  if (newPaid.gte(new Prisma.Decimal(bill.amount))) {
+    newStatus = "PAID";
+  } else if (newPaid.gt(0)) {
+    newStatus = "PARTIAL";
+  } else {
+    newStatus = "UNPAID";
+  }
+  await tx.feeBill.update({
+    where: { id: feeBillId },
+    data: { paidAmount: newPaid, status: newStatus },
+  });
+}
+
+export async function reverseServiceFeeBillPayment(
+  tx: TxClient,
+  serviceFeeBillId: string,
+  amount: Prisma.Decimal,
+): Promise<void> {
+  const bill = await tx.serviceFeeBill.findUniqueOrThrow({
+    where: { id: serviceFeeBillId },
+  });
+  const newPaid = Prisma.Decimal.max(
+    new Prisma.Decimal(bill.paidAmount).minus(amount),
+    new Prisma.Decimal(0),
+  );
+  let newStatus: PaymentStatus;
+  if (newPaid.gte(new Prisma.Decimal(bill.amount))) {
+    newStatus = "PAID";
+  } else if (newPaid.gt(0)) {
+    newStatus = "PARTIAL";
+  } else {
+    newStatus = "UNPAID";
+  }
+  await tx.serviceFeeBill.update({
+    where: { id: serviceFeeBillId },
+    data: { paidAmount: newPaid, status: newStatus },
+  });
+}
+
 /**
- * Settle an online payment — update tuitions and create payment records
+ * Settle an online payment — update bills and create payment records
  */
 export async function settleOnlinePayment(
   orderId: string,
@@ -164,11 +381,17 @@ export async function settleOnlinePayment(
 ): Promise<void> {
   const onlinePayment = await prisma.onlinePayment.findUnique({
     where: { orderId },
-    include: { items: { include: { tuition: true } } },
+    include: {
+      items: true,
+    },
   });
 
   if (!onlinePayment) throw new Error("Online payment not found");
   if (onlinePayment.status === "SETTLEMENT") return; // Idempotent
+
+  const settlementDate = webhookData.settlementTime
+    ? new Date(webhookData.settlementTime)
+    : new Date();
 
   await prisma.$transaction(async (tx) => {
     // Update online payment status
@@ -182,57 +405,60 @@ export async function settleOnlinePayment(
         billerCode: webhookData.billerCode,
         paymentType: webhookData.paymentType,
         midtransResponse: webhookData.rawResponse,
-        settlementTime: webhookData.settlementTime
-          ? new Date(webhookData.settlementTime)
-          : new Date(),
+        settlementTime: settlementDate,
         transactionTime: webhookData.transactionTime
           ? new Date(webhookData.transactionTime)
           : undefined,
       },
     });
 
-    // Process each tuition
+    // Process each item
     for (const item of onlinePayment.items) {
-      const tuition = item.tuition;
-      const payAmount = Number(item.amount);
-      const currentPaid = Number(tuition.paidAmount);
-      const feeAmount = Number(tuition.feeAmount);
-      const scholarshipAmount = Number(tuition.scholarshipAmount);
-      const discountAmount = Number(tuition.discountAmount);
-      const effectiveFee = Math.max(
-        feeAmount - scholarshipAmount - discountAmount,
-        0,
-      );
+      assertSingleBillTarget({
+        tuitionId: item.tuitionId,
+        feeBillId: item.feeBillId,
+        serviceFeeBillId: item.serviceFeeBillId,
+      });
 
-      const newPaid = currentPaid + payAmount;
-      let newStatus: PaymentStatus;
-      if (newPaid >= effectiveFee) {
-        newStatus = "PAID";
-      } else if (newPaid > 0) {
-        newStatus = "PARTIAL";
-      } else {
-        newStatus = "UNPAID";
+      const amount = new Prisma.Decimal(item.amount);
+
+      if (item.tuitionId) {
+        await tx.payment.create({
+          data: {
+            tuitionId: item.tuitionId,
+            onlinePaymentId: onlinePayment.id,
+            amount,
+            scholarshipAmount: new Prisma.Decimal(0),
+            paymentDate: settlementDate,
+            notes: `Online payment ${orderId}`,
+          },
+        });
+        await applyTuitionPayment(tx, item.tuitionId, amount);
+      } else if (item.feeBillId) {
+        await tx.payment.create({
+          data: {
+            feeBillId: item.feeBillId,
+            onlinePaymentId: onlinePayment.id,
+            amount,
+            scholarshipAmount: new Prisma.Decimal(0),
+            paymentDate: settlementDate,
+            notes: `Online payment ${orderId}`,
+          },
+        });
+        await applyFeeBillPayment(tx, item.feeBillId, amount);
+      } else if (item.serviceFeeBillId) {
+        await tx.payment.create({
+          data: {
+            serviceFeeBillId: item.serviceFeeBillId,
+            onlinePaymentId: onlinePayment.id,
+            amount,
+            scholarshipAmount: new Prisma.Decimal(0),
+            paymentDate: settlementDate,
+            notes: `Online payment ${orderId}`,
+          },
+        });
+        await applyServiceFeeBillPayment(tx, item.serviceFeeBillId, amount);
       }
-
-      // Create payment record (no employeeId for online payments)
-      await tx.payment.create({
-        data: {
-          tuitionId: tuition.id,
-          onlinePaymentId: onlinePayment.id,
-          amount: payAmount,
-          scholarshipAmount: Number(tuition.scholarshipAmount),
-          notes: `Online payment - ${orderId}`,
-        },
-      });
-
-      // Update tuition
-      await tx.tuition.update({
-        where: { id: tuition.id },
-        data: {
-          paidAmount: newPaid,
-          status: newStatus,
-        },
-      });
     }
 
     // Update student lastPaymentAt

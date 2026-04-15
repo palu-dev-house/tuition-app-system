@@ -29,7 +29,7 @@ async function POST(request: NextRequest) {
     const result = await createOnlinePayment(
       {
         studentNis: session.studentNis,
-        tuitionIds: parsed.data.tuitionIds,
+        items: parsed.data.items,
       },
       prisma,
     );
@@ -77,6 +77,31 @@ async function GET(request: NextRequest) {
                     academicYear: { select: { year: true } },
                   },
                 },
+              },
+            },
+            feeBill: {
+              select: {
+                id: true,
+                period: true,
+                year: true,
+                amount: true,
+                paidAmount: true,
+                status: true,
+                feeService: {
+                  select: { id: true, name: true, category: true },
+                },
+              },
+            },
+            serviceFeeBill: {
+              select: {
+                id: true,
+                period: true,
+                year: true,
+                amount: true,
+                paidAmount: true,
+                status: true,
+                serviceFee: { select: { id: true, name: true } },
+                classAcademic: { select: { className: true } },
               },
             },
           },

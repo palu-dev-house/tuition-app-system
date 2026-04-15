@@ -284,6 +284,94 @@ Use the filters on the payments page to see:
 
 ---
 
+## Transport & Accommodation
+
+Transport and dorm fees are managed as **services** with per-student subscriptions and price history.
+
+### Create a service
+
+1. Open **Services** from the Fees & Services menu.
+2. Click **Add Service** and fill in Name, Category (Transport or Accommodation), and optional notes.
+3. Save. A service with no price cannot generate bills yet.
+
+### Set prices and price history
+
+Each service has a price history. Bill generation snapshots the price active on the first day of the billed month.
+
+1. Open a service's detail page → **Price History** → **Add Price**.
+2. Enter the **Effective From** date (any day of a month — it is normalized to the 1st on save) and the amount.
+3. To raise prices mid-year, add a new entry with a later effective date. Bills already generated keep their original snapshot.
+
+### Subscribe and unsubscribe students
+
+1. On the service detail page, open **Subscribers** → **Subscribe Student**.
+2. Pick a student, set Start Date, optionally Notes. Leave End Date empty for open-ended.
+3. **End Subscription** sets the end date; the student will stop receiving bills for months after that date.
+
+### Generate bills
+
+Use the **Generate All Bills** button at the top of the All Bills page. It is idempotent — safe to re-run any time. Existing bills are never modified. New students, new subscriptions, and student exits are picked up automatically on the next run.
+
+If any services are missing a price for a period, you will see a **Missing prices** warning list. Add the price and re-run.
+
+## Service Fee (Uang Perlengkapan)
+
+A **service fee** is a mandatory per-class charge billed at admin-configured months (default July and January).
+
+### Create a service fee
+
+1. Open **Service Fees** from the Fees & Services menu.
+2. Click **Add Service Fee**, pick the Class, enter Amount and Billing Months.
+3. Save.
+
+Every student enrolled in that class will get a bill on each billing month.
+
+### Billing months
+
+Edit the service fee to add or remove billing months. Next generation respects the new list; existing bills are untouched.
+
+### Amount changes
+
+Changing the amount affects future-generated bills only. Existing bills keep their snapshot.
+
+## Generate All Bills
+
+The **Generate All Bills** button at the top of **All Bills** creates any missing bills for the active academic year across all three tracks.
+
+- **Idempotent:** running it multiple times is safe.
+- **Non-destructive:** paid or partial bills are never touched.
+- **Data-drift aware:** picks up new students, subscriptions, and exits on next run.
+- Re-run after adding a missing price, subscribing a late joiner, or recording a student exit.
+
+## Multi-Bill Payment (Cashier)
+
+On the cashier payment page the outstanding list combines tuition, transport/accommodation bills, and service-fee bills for the selected student. A single **Process Payment** action creates one transaction that covers all selected items.
+
+- Each payment row is linked to exactly one bill (tuition, fee bill, or service-fee bill).
+- All rows in a transaction share the same **Transaction ID**, so the receipt prints as one slip.
+- Voiding a payment updates the originating bill's paid amount and status.
+
+## Portal — Combined Bills
+
+Students and parents see all three bill types in one outstanding list on the portal payment page. They can select any subset and pay via Midtrans in one transaction. Paid items disappear from the list automatically after settlement.
+
+## Student Exit Behavior
+
+When a student is marked as exited:
+
+- Active **transport/accommodation subscriptions** have their End Date set to the exit date.
+- **Unpaid** future bills (including fee bills and service-fee bills) are **voided** — `voidedByExit` flag set, amount zeroed. They no longer count toward totals.
+- **Partially paid** bills are kept, and a warning is surfaced so staff can decide how to settle them.
+- Paid bills are never touched.
+
+Undoing an exit restores subscriptions and reinstates voided bills (amounts re-resolved from price history or current service-fee amount).
+
+## Scholarships and Discounts — Tuition Only
+
+**Important:** Scholarships and discounts apply only to tuition. Transport, accommodation, and service-fee bills are billed in full regardless of a student's scholarship or discount status. The cashier screen does not offer scholarship/discount fields on non-tuition line items.
+
+---
+
 ## 8. Student Portal Accounts
 
 **Menu:** `Student Accounts` *(Admin only)*
