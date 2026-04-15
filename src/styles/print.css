@@ -508,7 +508,7 @@
 }
 
 .pc-table {
-  width: 100%;
+  width: 186mm;
   border-collapse: collapse;
   table-layout: fixed;
   font-size: 10px;
@@ -565,6 +565,10 @@
 .pc-spacer {
   flex: 1;
   min-height: 10mm;
+}
+
+.pc-header-gap {
+  height: 42mm;
 }
 
 .pc-notes {

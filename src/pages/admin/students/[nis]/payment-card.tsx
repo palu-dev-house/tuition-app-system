@@ -264,24 +264,33 @@ const PaymentCardPage: NextPageWithLayout = function PaymentCardPage() {
 
           {mode === "header" && <div className="pc-spacer" />}
 
+          {mode === "selected" && <div className="pc-header-gap" />}
+
           {mode !== "header" && (
             <table className="pc-table">
+              <colgroup>
+                <col style={{ width: "9mm" }} />
+                <col style={{ width: "24mm" }} />
+                <col style={{ width: "20mm" }} />
+                <col style={{ width: "20mm" }} />
+                <col style={{ width: "20mm" }} />
+                <col style={{ width: "20mm" }} />
+                <col style={{ width: "19mm" }} />
+                <col style={{ width: "24mm" }} />
+                <col style={{ width: "30mm" }} />
+              </colgroup>
               {mode !== "selected" && (
                 <thead>
                   <tr>
-                    <th style={{ width: "5%" }}>No</th>
-                    <th style={{ width: "13%" }}>{t("paymentCard.month")}</th>
-                    <th style={{ width: "11%" }}>{t("paymentCard.tuition")}</th>
-                    <th style={{ width: "11%" }}>
-                      {t("paymentCard.transport")}
-                    </th>
-                    <th style={{ width: "11%" }}>{t("paymentCard.service")}</th>
-                    <th style={{ width: "11%" }}>{t("paymentCard.total")}</th>
-                    <th style={{ width: "10%" }}>{t("paymentCard.payDate")}</th>
-                    <th style={{ width: "13%" }}>
-                      {t("paymentCard.receiptNo")}
-                    </th>
-                    <th style={{ width: "15%" }}>{t("paymentCard.cashier")}</th>
+                    <th>No</th>
+                    <th>{t("paymentCard.month")}</th>
+                    <th>{t("paymentCard.tuition")}</th>
+                    <th>{t("paymentCard.transport")}</th>
+                    <th>{t("paymentCard.service")}</th>
+                    <th>{t("paymentCard.total")}</th>
+                    <th>{t("paymentCard.payDate")}</th>
+                    <th>{t("paymentCard.receiptNo")}</th>
+                    <th>{t("paymentCard.cashier")}</th>
                   </tr>
                 </thead>
               )}
