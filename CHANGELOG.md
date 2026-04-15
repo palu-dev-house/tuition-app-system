@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.13.2] - 2026-04-15
+
+### Fixes
+- fix(payment-card): header/selected mode layout, print visibility
+
+
+
 ## [2.13.1] - 2026-04-15
 
 ### Fixes
