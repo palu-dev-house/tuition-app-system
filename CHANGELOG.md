@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.13.3] - 2026-04-15
+
+### Fixes
+- fix(payment-card): fixed column widths and selected-mode header gap
+
+
+
 ## [2.13.2] - 2026-04-15
 
 ### Fixes
