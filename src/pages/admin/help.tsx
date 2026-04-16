@@ -4,11 +4,9 @@ import {
   Anchor,
   Badge,
   Box,
-  Button,
   Code,
   Divider,
   Grid,
-  Group,
   NavLink,
   Paper,
   ScrollArea,
@@ -16,7 +14,7 @@ import {
   Text,
   Title,
 } from "@mantine/core";
-import { IconBook, IconPrinter } from "@tabler/icons-react";
+import { IconBook } from "@tabler/icons-react";
 import type { GetStaticProps } from "next";
 import { useLocale, useTranslations } from "next-intl";
 import type { ReactElement } from "react";
@@ -110,23 +108,9 @@ const HelpPage: NextPageWithLayout<Props> = function HelpPage({
     }
   };
 
-  const handlePrint = () => {
-    window.print();
-  };
-
   return (
     <>
       <PageHeader title={t("help")} description={t("helpDescription")} />
-
-      <Group justify="flex-end" mb="md" className="help-print-btn">
-        <Button
-          variant="light"
-          leftSection={<IconPrinter size={18} />}
-          onClick={handlePrint}
-        >
-          {t("print")}
-        </Button>
-      </Group>
 
       <Grid gutter="lg">
         {/* TOC Sidebar */}
