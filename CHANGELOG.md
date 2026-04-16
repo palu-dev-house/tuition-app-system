@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.16.3] - 2026-04-16
+
+### Fixes
+- rename fee bill tab labels to Tagihan Transportasi / Uang Perlengkapan
+
+
+
 ## [2.16.2] - 2026-04-16
 
 ### Fixes
