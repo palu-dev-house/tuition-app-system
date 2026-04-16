@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.18.1] - 2026-04-16
+
+### Other
+- docs: document payment confirmation dialog and print card button
+
+
+
 ## [2.18.0] - 2026-04-16
 
 ### Features
