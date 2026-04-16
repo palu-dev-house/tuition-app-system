@@ -396,7 +396,17 @@ Tombol **Buat Semua Tagihan** pada halaman **Semua Tagihan** membuat tagihan yan
 
 ## Pembayaran Multi-Tagihan (Kasir)
 
-Pada halaman pembayaran kasir, daftar tagihan menggabungkan SPP, tagihan transport, dan uang perlengkapan untuk siswa yang dipilih. Sekali klik **Proses Pembayaran** membuat satu transaksi yang mencakup semua item terpilih.
+Pada halaman pembayaran kasir, daftar tagihan menggabungkan SPP, tagihan transport, dan uang perlengkapan untuk siswa yang dipilih.
+
+### Cetak Kartu Bukti Pembayaran
+
+Setelah memilih siswa, tombol **Kartu Bukti Pembayaran** muncul di atas daftar tagihan. Klik tombol tersebut untuk membuka halaman kartu pembayaran di tab baru — pilih bulan yang ingin dicetak, lalu klik **Cetak**.
+
+### Proses Pembayaran
+
+1. Centang tagihan yang ingin dibayar, isi jumlah.
+2. Klik **Proses Pembayaran** — dialog konfirmasi akan muncul menampilkan jumlah tagihan dan total.
+3. Konfirmasi untuk memproses. Satu transaksi dibuat mencakup semua item terpilih.
 
 - Setiap baris payment terkait tepat satu tagihan (SPP, fee bill, atau service-fee bill).
 - Semua baris dalam satu transaksi berbagi **ID Transaksi** yang sama, jadi kuitansi dicetak sebagai satu slip.

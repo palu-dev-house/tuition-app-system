@@ -396,7 +396,17 @@ The **Generate All Bills** button at the top of **All Bills** creates any missin
 
 ## Multi-Bill Payment (Cashier)
 
-On the cashier payment page the outstanding list combines tuition, transport bills, and service-fee bills for the selected student. A single **Process Payment** action creates one transaction that covers all selected items.
+On the cashier payment page the outstanding list combines tuition, transport bills, and service-fee bills for the selected student.
+
+### Print Payment Proof Card
+
+After selecting a student, a **Payment Proof Card** button appears above the outstanding list. Click it to open the student's payment card in a new tab — select which months to include, then click **Print**.
+
+### Processing Payment
+
+1. Check the bills to pay and enter the amounts.
+2. Click **Process Payment** — a confirmation dialog shows the item count and total amount.
+3. Confirm to proceed. A single transaction is created covering all selected items.
 
 - Each payment row is linked to exactly one bill (tuition, fee bill, or service-fee bill).
 - All rows in a transaction share the same **Transaction ID**, so the receipt prints as one slip.
