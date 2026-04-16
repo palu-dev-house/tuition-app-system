@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.18.4] - 2026-04-16
+
+### Fixes
+- remove print/download button from help page
+
+
+
 ## [2.18.3] - 2026-04-16
 
 ### Other
