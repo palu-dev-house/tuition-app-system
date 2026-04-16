@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.16.1] - 2026-04-16
+
+### Fixes
+- auth-aware redirects, payments table null fields, sidebar reorder, and locale gaps
+
+
+
 ## [2.16.0] - 2026-04-15
 
 ### Features
