@@ -407,7 +407,10 @@
     "remaining": "Sisa",
     "selectedCount": "{count} tagihan dipilih",
     "total": "Total:",
-    "multiItemExplainer": "Pembayaran akan dibuat dan dialokasikan ke setiap tagihan terpilih. Satu kuitansi dihasilkan per transaksi."
+    "multiItemExplainer": "Pembayaran akan dibuat dan dialokasikan ke setiap tagihan terpilih. Satu kuitansi dihasilkan per transaksi.",
+    "transactionId": "ID Transaksi",
+    "transactionCreated": "Transaksi #{id} berhasil dibuat",
+    "partialFailureTitle": "Beberapa tagihan gagal diproses"
   },
   "nav": {
     "home": "Beranda",
@@ -468,14 +471,14 @@
     "discounts": "Diskon",
     "payments": "Pembayaran",
     "feesAndServices": "Layanan & Perlengkapan",
-    "feeServices": "Transport & Asrama",
+    "feeServices": "Transport",
     "serviceFees": "Uang Perlengkapan",
     "feeBills": "Semua Tagihan",
     "studentAccounts": "Akun Siswa",
     "reports": "Laporan",
     "overdueReport": "Laporan Tunggakan",
     "classSummary": "Ringkasan Kelas",
-    "feeServiceSummary": "Laporan Transport & Asrama",
+    "feeServiceSummary": "Laporan Transport",
     "searchMenu": "Cari menu...",
     "onlinePayments": "Pembayaran Online",
     "paymentSettings": "Pengaturan Pembayaran",
@@ -1060,7 +1063,7 @@
       "filterByGrade": "Filter berdasarkan Tingkat",
       "tabs": {
         "tuition": "SPP",
-        "feeBill": "Transport & Asrama",
+        "feeBill": "Transport",
         "serviceFeeBill": "Uang Perlengkapan"
       }
     },
@@ -1097,7 +1100,7 @@
       "collected": "Terkumpul",
       "noData": "Tidak ada data untuk tahun ajaran ini",
       "tuitionSection": "SPP",
-      "feeBillSection": "Transport & Asrama",
+      "feeBillSection": "Transport",
       "serviceFeeSection": "Uang Layanan",
       "totalBills": "Total Tagihan",
       "totalAmount": "Total Jumlah",
@@ -1142,7 +1145,7 @@
     "outstanding": "Sisa Tagihan",
     "daysOverdue": "Hari Tunggakan",
     "days": "hari",
-    "feeService": "Transport & Asrama",
+    "feeService": "Transport",
     "serviceFee": "Uang Perlengkapan"
   },
   "header": {
@@ -1309,9 +1312,9 @@
     "note3": "Jika kartu hilang, hubungi bagian administrasi"
   },
   "feeService": {
-    "title": "Transport & Asrama",
-    "description": "Kelola layanan transportasi dan akomodasi",
-    "label": "Transport & Asrama",
+    "title": "Transport",
+    "description": "Kelola layanan transportasi",
+    "label": "Transport",
     "name": "Nama Layanan",
     "namePlaceholder": "mis. Bus Sekolah Rute A",
     "amount": "Jumlah",

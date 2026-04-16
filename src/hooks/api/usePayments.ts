@@ -52,17 +52,28 @@ interface Payment {
     id: string;
     period: string;
     year: number;
+    status?: string;
     feeService?: {
       id: string;
       name: string;
       category: "TRANSPORT" | "ACCOMMODATION";
     };
+    student?: {
+      nis: string;
+      name: string;
+      studentClasses?: Array<{
+        classAcademic?: { className: string };
+      }>;
+    } | null;
   } | null;
   serviceFeeBill?: {
     id: string;
     period: string;
     year: number;
+    status?: string;
     serviceFee?: { id: string; name: string };
+    student?: { nis: string; name: string } | null;
+    classAcademic?: { className: string } | null;
   } | null;
   employee?: {
     employeeId: string;

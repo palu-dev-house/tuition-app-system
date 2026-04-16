@@ -407,7 +407,10 @@
     "remaining": "Remaining",
     "selectedCount": "{count} items selected",
     "total": "Total:",
-    "multiItemExplainer": "One payment will be created and allocated across every selected item. A single receipt is generated per transaction."
+    "multiItemExplainer": "One payment will be created and allocated across every selected item. A single receipt is generated per transaction.",
+    "transactionId": "Transaction ID",
+    "transactionCreated": "Transaction #{id} created successfully",
+    "partialFailureTitle": "Some items failed to process"
   },
   "nav": {
     "home": "Home",
@@ -1310,7 +1313,7 @@
   },
   "feeService": {
     "title": "Fee Services",
-    "description": "Manage transport and accommodation fee services",
+    "description": "Manage transport fee services",
     "label": "Fee Service",
     "name": "Service Name",
     "namePlaceholder": "e.g. School Bus Route A",

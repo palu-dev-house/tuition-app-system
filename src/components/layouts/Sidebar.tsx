@@ -131,53 +131,13 @@ export default function Sidebar() {
 
   const adminLinks: NavItem[] = [
     { icon: IconHome, label: t("dashboard"), href: "/admin/dashboard" },
-    { icon: IconUsers, label: t("employees"), href: "/admin/employees" },
-    { icon: IconSchool, label: t("students"), href: "/admin/students" },
-    {
-      icon: IconCalendar,
-      label: t("academicYears"),
-      href: "/admin/academic-years",
-    },
-    { icon: IconBuilding, label: t("classes"), href: "/admin/classes" },
-    { icon: IconCash, label: t("tuitions"), href: "/admin/tuitions" },
-    { icon: IconGift, label: t("scholarships"), href: "/admin/scholarships" },
-    { icon: IconDiscount, label: t("discounts"), href: "/admin/discounts" },
     { icon: IconReceipt, label: t("payments"), href: "/admin/payments" },
-    {
-      icon: IconWallet,
-      label: t("feesAndServices"),
-      children: [
-        {
-          icon: IconBus,
-          label: t("feeServices"),
-          href: "/admin/fee-services",
-        },
-        {
-          icon: IconPackage,
-          label: t("serviceFees"),
-          href: "/admin/service-fees",
-        },
-        {
-          icon: IconReceipt2,
-          label: t("feeBills"),
-          href: "/admin/fee-bills",
-        },
-      ],
-    },
+    { icon: IconCash, label: t("tuitions"), href: "/admin/tuitions" },
+    { icon: IconSchool, label: t("students"), href: "/admin/students" },
     {
       icon: IconCreditCard,
       label: t("onlinePayments"),
       href: "/admin/online-payments",
-    },
-    {
-      icon: IconUserCircle,
-      label: t("studentAccounts"),
-      href: "/admin/student-accounts",
-    },
-    {
-      icon: IconSettings,
-      label: t("paymentSettings"),
-      href: "/admin/payment-settings",
     },
     {
       icon: IconReportAnalytics,
@@ -200,14 +160,54 @@ export default function Sidebar() {
         },
       ],
     },
+    {
+      icon: IconWallet,
+      label: t("feesAndServices"),
+      children: [
+        {
+          icon: IconBus,
+          label: t("feeServices"),
+          href: "/admin/fee-services",
+        },
+        {
+          icon: IconPackage,
+          label: t("serviceFees"),
+          href: "/admin/service-fees",
+        },
+        {
+          icon: IconReceipt2,
+          label: t("feeBills"),
+          href: "/admin/fee-bills",
+        },
+      ],
+    },
+    { icon: IconGift, label: t("scholarships"), href: "/admin/scholarships" },
+    { icon: IconDiscount, label: t("discounts"), href: "/admin/discounts" },
+    {
+      icon: IconCalendar,
+      label: t("academicYears"),
+      href: "/admin/academic-years",
+    },
+    { icon: IconBuilding, label: t("classes"), href: "/admin/classes" },
+    { icon: IconUsers, label: t("employees"), href: "/admin/employees" },
+    {
+      icon: IconUserCircle,
+      label: t("studentAccounts"),
+      href: "/admin/student-accounts",
+    },
+    {
+      icon: IconSettings,
+      label: t("paymentSettings"),
+      href: "/admin/payment-settings",
+    },
     { icon: IconHelp, label: t("help"), href: "/admin/help" },
   ];
 
   const cashierLinks: NavItem[] = [
     { icon: IconHome, label: t("dashboard"), href: "/admin/dashboard" },
-    { icon: IconSchool, label: t("students"), href: "/admin/students" },
     { icon: IconReceipt, label: t("payments"), href: "/admin/payments" },
     { icon: IconReceipt2, label: t("feeBills"), href: "/admin/fee-bills" },
+    { icon: IconSchool, label: t("students"), href: "/admin/students" },
     {
       icon: IconReportAnalytics,
       label: t("reports"),

@@ -41,14 +41,29 @@ async function GET(request: NextRequest) {
     }
   }
 
-  if (studentNis || classAcademicId) {
-    where.tuition = {};
-    if (studentNis) {
-      where.tuition.studentNis = studentNis;
-    }
-    if (classAcademicId) {
-      where.tuition.classAcademicId = classAcademicId;
-    }
+  if (studentNis) {
+    where.OR = [
+      { tuition: { studentNis } },
+      { feeBill: { studentNis } },
+      { serviceFeeBill: { studentNis } },
+    ];
+  }
+
+  if (classAcademicId) {
+    const classFilter: Prisma.PaymentWhereInput = {
+      OR: [
+        { tuition: { classAcademicId } },
+        { serviceFeeBill: { classAcademicId } },
+        {
+          feeBill: {
+            student: {
+              studentClasses: { some: { classAcademicId } },
+            },
+          },
+        },
+      ],
+    };
+    where.AND = [...(Array.isArray(where.AND) ? where.AND : []), classFilter];
   }
 
   const [payments, total] = await Promise.all([
@@ -57,24 +72,39 @@ async function GET(request: NextRequest) {
       include: {
         tuition: {
           include: {
-            student: {
-              select: { nis: true, name: true },
-            },
-            classAcademic: {
-              select: { className: true },
-            },
+            student: { select: { nis: true, name: true } },
+            classAcademic: { select: { className: true } },
             discount: {
+              select: { name: true, reason: true, description: true },
+            },
+          },
+        },
+        feeBill: {
+          include: {
+            feeService: { select: { id: true, name: true, category: true } },
+            student: {
               select: {
+                nis: true,
                 name: true,
-                reason: true,
-                description: true,
+                studentClasses: {
+                  take: 1,
+                  orderBy: { enrolledAt: "desc" },
+                  include: {
+                    classAcademic: { select: { className: true } },
+                  },
+                },
               },
             },
           },
         },
-        employee: {
-          select: { employeeId: true, name: true },
+        serviceFeeBill: {
+          include: {
+            serviceFee: { select: { id: true, name: true } },
+            student: { select: { nis: true, name: true } },
+            classAcademic: { select: { className: true } },
+          },
         },
+        employee: { select: { employeeId: true, name: true } },
       },
       skip: (page - 1) * limit,
       take: limit,

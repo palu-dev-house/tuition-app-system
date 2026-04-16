@@ -1,10 +1,18 @@
-import { useRouter } from "next/router";
-import { useEffect } from "react";
+import type { GetServerSideProps } from "next";
+import { verifyToken } from "@/lib/auth";
+
+export const getServerSideProps: GetServerSideProps = async ({ req }) => {
+  const authToken = req.cookies["auth-token"];
+  const destination =
+    authToken && (await verifyToken(authToken))
+      ? "/admin/dashboard"
+      : "/admin/login";
+
+  return {
+    redirect: { destination, permanent: false },
+  };
+};
 
 export default function AdminIndexPage() {
-  const router = useRouter();
-  useEffect(() => {
-    router.replace("/admin/dashboard");
-  }, [router]);
   return null;
 }
