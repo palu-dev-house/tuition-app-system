@@ -133,3 +133,32 @@ export function useDeleteFeeService() {
     },
   });
 }
+
+interface ImportResponse {
+  success: boolean;
+  data: {
+    imported: number;
+    skipped: number;
+    errors: Array<{ row: number; error?: string; errors?: string[] }>;
+  };
+}
+
+export function useImportFeeServices() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (file: File) => {
+      const formData = new FormData();
+      formData.append("file", file);
+      const { data } = await apiClient.post<ImportResponse>(
+        "/fee-services/import",
+        formData,
+      );
+      return data.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.feeServices.lists(),
+      });
+    },
+  });
+}

@@ -20,6 +20,7 @@ import { modals } from "@mantine/modals";
 import { notifications } from "@mantine/notifications";
 import {
   IconEdit,
+  IconFileUpload,
   IconFilter,
   IconPlus,
   IconSearch,
@@ -179,9 +180,19 @@ const FeeServicesPage: NextPageWithLayout = function FeeServicesPage() {
         title={t("feeService.title")}
         description={t("feeService.description")}
         actions={
-          <Button leftSection={<IconPlus size={18} />} onClick={openCreate}>
-            {t("feeService.create")}
-          </Button>
+          <Group gap="sm">
+            <Button
+              component={Link}
+              href="/admin/fee-services/import"
+              variant="light"
+              leftSection={<IconFileUpload size={18} />}
+            >
+              {t("common.import")}
+            </Button>
+            <Button leftSection={<IconPlus size={18} />} onClick={openCreate}>
+              {t("feeService.create")}
+            </Button>
+          </Group>
         }
       />
 

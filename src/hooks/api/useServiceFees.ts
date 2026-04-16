@@ -143,3 +143,32 @@ export function useDeleteServiceFee() {
     },
   });
 }
+
+interface ImportResponse {
+  success: boolean;
+  data: {
+    imported: number;
+    skipped: number;
+    errors: Array<{ row: number; error?: string; errors?: string[] }>;
+  };
+}
+
+export function useImportServiceFees() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (file: File) => {
+      const formData = new FormData();
+      formData.append("file", file);
+      const { data } = await apiClient.post<ImportResponse>(
+        "/service-fees/import",
+        formData,
+      );
+      return data.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.serviceFees.lists(),
+      });
+    },
+  });
+}

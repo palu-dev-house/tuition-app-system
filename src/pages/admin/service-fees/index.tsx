@@ -20,7 +20,7 @@ import {
 import { useForm } from "@mantine/form";
 import { useDisclosure } from "@mantine/hooks";
 import { notifications } from "@mantine/notifications";
-import { IconEdit, IconPlus } from "@tabler/icons-react";
+import { IconEdit, IconFileUpload, IconPlus } from "@tabler/icons-react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import type { ReactElement } from "react";
@@ -140,9 +140,19 @@ const ServiceFeesPage: NextPageWithLayout = function ServiceFeesPage() {
         title={t("serviceFee.title")}
         description={t("serviceFee.description")}
         actions={
-          <Button leftSection={<IconPlus size={18} />} onClick={openCreate}>
-            {t("serviceFee.create")}
-          </Button>
+          <Group gap="sm">
+            <Button
+              component={Link}
+              href="/admin/service-fees/import"
+              variant="light"
+              leftSection={<IconFileUpload size={18} />}
+            >
+              {t("common.import")}
+            </Button>
+            <Button leftSection={<IconPlus size={18} />} onClick={openCreate}>
+              {t("serviceFee.create")}
+            </Button>
+          </Group>
         }
       />
 

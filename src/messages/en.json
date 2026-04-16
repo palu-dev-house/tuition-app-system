@@ -1351,7 +1351,12 @@
     "updated": "Fee service updated successfully",
     "deleteTitle": "Delete Fee Service",
     "deleteConfirm": "Are you sure you want to delete this fee service?",
-    "deleted": "Fee service deleted successfully"
+    "deleted": "Fee service deleted successfully",
+    "importTitle": "Import Fee Services",
+    "importDescription": "Import fee service data from an Excel file",
+    "importStep1": "Download the Excel template",
+    "importStep2": "Fill in the fee service data following the format",
+    "importStep3": "Upload the file and process the import"
   },
   "feeBill": {
     "title": "Fee Bills",
@@ -1394,6 +1399,23 @@
     "generateAll": "Generate All",
     "generateAllTitle": "Generate All Service Fee Bills",
     "generateAllConfirm": "Generate bills for every active class service fee in the current academic year? Existing bills are not touched.",
-    "generateResultTitle": "Generation Result"
+    "generateResultTitle": "Generation Result",
+    "importTitle": "Import Service Fees",
+    "importDescription": "Import service fee data from an Excel file",
+    "importStep1": "Download the Excel template",
+    "importStep2": "Fill in the service fee data following the format",
+    "importStep3": "Upload the file and process the import"
+  },
+  "import": {
+    "instructions": "Instructions:",
+    "downloadTemplate": "Download Template",
+    "uploadFile": "Upload Excel File",
+    "chooseFile": "Choose .xlsx file",
+    "process": "Process Import",
+    "imported": "Imported",
+    "skipped": "Skipped",
+    "rowErrors": "{count} rows have errors",
+    "andMore": "+{count} more",
+    "completeMessage": "Successfully imported {imported} records, {skipped} skipped"
   }
 }

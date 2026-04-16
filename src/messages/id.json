@@ -1351,7 +1351,12 @@
     "updated": "Layanan biaya berhasil diperbarui",
     "deleteTitle": "Hapus Layanan Biaya",
     "deleteConfirm": "Apakah Anda yakin ingin menghapus layanan biaya ini?",
-    "deleted": "Layanan biaya berhasil dihapus"
+    "deleted": "Layanan biaya berhasil dihapus",
+    "importTitle": "Import Transport",
+    "importDescription": "Import data layanan transport dari file Excel",
+    "importStep1": "Download template Excel",
+    "importStep2": "Isi data layanan transport sesuai format",
+    "importStep3": "Upload file dan proses import"
   },
   "feeBill": {
     "title": "Tagihan Biaya",
@@ -1394,6 +1399,23 @@
     "generateAll": "Buat Semua",
     "generateAllTitle": "Buat Semua Tagihan Biaya Layanan",
     "generateAllConfirm": "Buat tagihan untuk setiap biaya layanan kelas aktif pada tahun ajaran ini? Tagihan yang sudah ada tidak akan diubah.",
-    "generateResultTitle": "Hasil Pembuatan"
+    "generateResultTitle": "Hasil Pembuatan",
+    "importTitle": "Import Uang Perlengkapan",
+    "importDescription": "Import data uang perlengkapan dari file Excel",
+    "importStep1": "Download template Excel",
+    "importStep2": "Isi data biaya layanan sesuai format",
+    "importStep3": "Upload file dan proses import"
+  },
+  "import": {
+    "instructions": "Petunjuk:",
+    "downloadTemplate": "Download Template",
+    "uploadFile": "Upload File Excel",
+    "chooseFile": "Pilih file .xlsx",
+    "process": "Proses Import",
+    "imported": "Diimpor",
+    "skipped": "Dilewati",
+    "rowErrors": "{count} baris memiliki error",
+    "andMore": "+{count} lagi",
+    "completeMessage": "Berhasil mengimpor {imported} data, {skipped} dilewati"
   }
 }
