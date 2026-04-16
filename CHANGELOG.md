@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.17.0] - 2026-04-16
+
+### Features
+- add Excel mass import for fee-services and service-fees
+
+
+
 ## [2.16.3] - 2026-04-16
 
 ### Fixes
