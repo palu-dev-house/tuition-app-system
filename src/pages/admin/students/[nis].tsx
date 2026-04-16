@@ -759,7 +759,20 @@ function FeeBillsSection({ nis }: { nis: string }) {
                 <Table.Td>{formatRp(r.amount)}</Table.Td>
                 <Table.Td>{formatRp(r.paidAmount)}</Table.Td>
                 <Table.Td>
-                  <Badge>{t(`tuition.status.${r.status.toLowerCase()}`)}</Badge>
+                  <Badge
+                    color={
+                      r.status === "PAID"
+                        ? "green"
+                        : r.status === "PARTIAL"
+                          ? "yellow"
+                          : r.status === "VOID"
+                            ? "gray"
+                            : "red"
+                    }
+                    variant="light"
+                  >
+                    {t(`tuition.status.${r.status.toLowerCase()}`)}
+                  </Badge>
                 </Table.Td>
               </Table.Tr>
             ))}

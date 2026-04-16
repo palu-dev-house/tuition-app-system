@@ -521,7 +521,9 @@ export default function PaymentTable() {
                                     ? "green"
                                     : status === "PARTIAL"
                                       ? "yellow"
-                                      : "red"
+                                      : status === "VOID"
+                                        ? "gray"
+                                        : "red"
                                 }
                                 variant="light"
                                 size="sm"
