@@ -1,15 +1,23 @@
 import {
   Alert,
+  Box,
   Button,
   Center,
-  Paper,
+  Grid,
+  Group,
   PasswordInput,
   Stack,
   Text,
   TextInput,
+  ThemeIcon,
   Title,
 } from "@mantine/core";
-import { IconAlertCircle } from "@tabler/icons-react";
+import {
+  IconAlertCircle,
+  IconLock,
+  IconSchool,
+  IconUser,
+} from "@tabler/icons-react";
 import { useTranslations } from "next-intl";
 import type { ReactElement } from "react";
 import { useState } from "react";
@@ -42,54 +50,94 @@ const LoginPage: NextPageWithLayout = function LoginPage() {
   };
 
   return (
-    <Paper shadow="md" p={30} radius="md" w={420}>
-      <Title order={2} ta="center" mb="xs">
-        {t("auth.welcomeBack")}
-      </Title>
-      <Text c="dimmed" size="sm" ta="center" mb="lg">
-        {t("auth.enterCredentials")}
-      </Text>
-
-      {error && (
-        <Alert
-          icon={<IconAlertCircle size={16} />}
-          color="red"
-          mb="md"
-          onClose={() => setError("")}
-          withCloseButton
-        >
-          {error}
-        </Alert>
-      )}
-
-      <form onSubmit={handleSubmit}>
-        <Stack gap="md">
-          <TextInput
-            label={t("auth.username")}
-            placeholder={t("auth.username")}
-            value={email}
-            onChange={(e) => setEmail(e.currentTarget.value)}
-            required
-          />
-          <PasswordInput
-            label={t("auth.password")}
-            placeholder={t("auth.enterCredentials")}
-            value={password}
-            onChange={(e) => setPassword(e.currentTarget.value)}
-            required
-          />
-          <Button type="submit" fullWidth loading={loading}>
-            {t("auth.login")}
-          </Button>
+    <Grid mih="100vh" gutter={0}>
+      <Grid.Col
+        span={{ base: 0, md: 5 }}
+        visibleFrom="md"
+        style={{
+          background: "linear-gradient(135deg, #228be6 0%, #1864ab 100%)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
+        <Stack align="center" gap="xl" p="xl">
+          <ThemeIcon size={80} radius="xl" variant="white" color="blue">
+            <IconSchool size={44} />
+          </ThemeIcon>
+          <Title order={1} c="white" ta="center">
+            SkolFi
+          </Title>
+          <Text c="white" ta="center" maw={320} opacity={0.85} size="lg">
+            {t("auth.tagline")}
+          </Text>
         </Stack>
-      </form>
-    </Paper>
+      </Grid.Col>
+
+      <Grid.Col span={{ base: 12, md: 7 }}>
+        <Center mih="100vh" p="xl">
+          <Box w="100%" maw={400}>
+            <Group gap="sm" mb="xs" hiddenFrom="md">
+              <ThemeIcon size="lg" radius="md" color="blue">
+                <IconSchool size={20} />
+              </ThemeIcon>
+              <Title order={3}>SkolFi</Title>
+            </Group>
+
+            <Title order={2} mb="xs">
+              {t("auth.welcomeBack")}
+            </Title>
+            <Text c="dimmed" size="sm" mb="xl">
+              {t("auth.enterCredentials")}
+            </Text>
+
+            {error && (
+              <Alert
+                icon={<IconAlertCircle size={16} />}
+                color="red"
+                mb="md"
+                onClose={() => setError("")}
+                withCloseButton
+              >
+                {error}
+              </Alert>
+            )}
+
+            <form onSubmit={handleSubmit}>
+              <Stack gap="md">
+                <TextInput
+                  label={t("auth.username")}
+                  placeholder={t("auth.username")}
+                  leftSection={<IconUser size={16} />}
+                  value={email}
+                  onChange={(e) => setEmail(e.currentTarget.value)}
+                  size="md"
+                  required
+                />
+                <PasswordInput
+                  label={t("auth.password")}
+                  placeholder={t("auth.enterCredentials")}
+                  leftSection={<IconLock size={16} />}
+                  value={password}
+                  onChange={(e) => setPassword(e.currentTarget.value)}
+                  size="md"
+                  required
+                />
+                <Button type="submit" fullWidth loading={loading} size="md">
+                  {t("auth.login")}
+                </Button>
+              </Stack>
+            </form>
+
+            <Text c="dimmed" size="xs" ta="center" mt="xl">
+              {t("auth.footer")}
+            </Text>
+          </Box>
+        </Center>
+      </Grid.Col>
+    </Grid>
   );
 };
-LoginPage.getLayout = (page: ReactElement) => (
-  <Center mih="100vh" bg="gray.0">
-    {page}
-  </Center>
-);
+LoginPage.getLayout = (page: ReactElement) => <>{page}</>;
 
 export default LoginPage;

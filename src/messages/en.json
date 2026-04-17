@@ -107,7 +107,9 @@
     "profile": "Profile",
     "passwordRequired": "Current password is required",
     "newPasswordMinChars": "New password must be at least 6 characters",
-    "passwordsDoNotMatch": "Passwords do not match"
+    "passwordsDoNotMatch": "Passwords do not match",
+    "tagline": "School Payment Management System",
+    "footer": "SkolFi - School Finance Management"
   },
   "portal": {
     "greeting": {

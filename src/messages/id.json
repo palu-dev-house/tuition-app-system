@@ -107,7 +107,9 @@
     "profile": "Profil",
     "passwordRequired": "Password saat ini wajib diisi",
     "newPasswordMinChars": "Password baru minimal 6 karakter",
-    "passwordsDoNotMatch": "Password tidak cocok"
+    "passwordsDoNotMatch": "Password tidak cocok",
+    "tagline": "Sistem Manajemen Pembayaran Sekolah",
+    "footer": "SkolFi - School Finance Management"
   },
   "portal": {
     "greeting": {
