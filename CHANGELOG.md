@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.21.0] - 2026-04-17
+
+### Features
+- migrate Student PK from NIS to UUID with SchoolLevel enum
+
+
+
 ## [2.20.0] - 2026-04-17
 
 ### Features
