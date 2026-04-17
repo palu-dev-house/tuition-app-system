@@ -16,9 +16,11 @@ import {
   TextInput,
   Tooltip,
 } from "@mantine/core";
+import { DateInput } from "@mantine/dates";
 import { modals } from "@mantine/modals";
 import { notifications } from "@mantine/notifications";
 import {
+  IconCalendar,
   IconDiscount,
   IconFilter,
   IconGift,
@@ -237,19 +239,21 @@ export default function PaymentTable() {
               setFilter("studentSearch", e.currentTarget.value || null)
             }
           />
-          <TextInput
-            type="date"
+          <DateInput
             placeholder={t("payment.fromDate")}
-            value={dateFrom}
-            onChange={(e) =>
-              setFilter("dateFrom", e.currentTarget.value || null)
-            }
+            valueFormat="DD/MM/YYYY"
+            leftSection={<IconCalendar size={16} />}
+            value={dateFrom || null}
+            onChange={(val) => setFilter("dateFrom", val || null)}
+            clearable
           />
-          <TextInput
-            type="date"
+          <DateInput
             placeholder={t("payment.toDate")}
-            value={dateTo}
-            onChange={(e) => setFilter("dateTo", e.currentTarget.value || null)}
+            valueFormat="DD/MM/YYYY"
+            leftSection={<IconCalendar size={16} />}
+            value={dateTo || null}
+            onChange={(val) => setFilter("dateTo", val || null)}
+            clearable
           />
           <Group gap="xs" style={{ flexGrow: 0 }}>
             <ActionIcon
