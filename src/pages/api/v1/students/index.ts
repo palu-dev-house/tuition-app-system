@@ -23,7 +23,6 @@ async function GET(request: NextRequest) {
   if (search) {
     where.OR = [
       { nis: { contains: search, mode: "insensitive" } },
-      { nik: { contains: search, mode: "insensitive" } },
       { name: { contains: search, mode: "insensitive" } },
     ];
   }
@@ -68,7 +67,6 @@ async function POST(request: NextRequest) {
     const {
       nis,
       schoolLevel,
-      nik,
       name,
       address,
       parentName,
@@ -76,19 +74,12 @@ async function POST(request: NextRequest) {
       startJoinDate,
     } = parsed.data;
 
-    const existingNis = await prisma.student.findFirst({ where: { nis } });
+    const existingNis = await prisma.student.findUnique({
+      where: { nis_schoolLevel: { nis, schoolLevel } },
+    });
     if (existingNis) {
       return errorResponse(
         t("api.alreadyExists", { resource: "NIS" }),
-        "DUPLICATE_ENTRY",
-        409,
-      );
-    }
-
-    const existingNik = await prisma.student.findUnique({ where: { nik } });
-    if (existingNik) {
-      return errorResponse(
-        t("api.alreadyExists", { resource: "NIK" }),
         "DUPLICATE_ENTRY",
         409,
       );
@@ -105,7 +96,6 @@ async function POST(request: NextRequest) {
       data: {
         nis,
         schoolLevel,
-        nik,
         name,
         address,
         parentName,

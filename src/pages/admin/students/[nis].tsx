@@ -84,7 +84,7 @@ const EditStudentPage: NextPageWithLayout = function EditStudentPage() {
 
   const handleSubmit = (data: {
     nis: string;
-    nik: string;
+    schoolLevel: "SD" | "SMP" | "SMA";
     name: string;
     address: string;
     parentName: string;
@@ -219,7 +219,7 @@ const EditStudentPage: NextPageWithLayout = function EditStudentPage() {
         actions={
           <Button
             component={Link}
-            href={`/admin/students/${nis}/payment-card`}
+            href={`/admin/payment-card?studentId=${student.id}`}
             variant="light"
             leftSection={<IconPrinter size={16} />}
           >

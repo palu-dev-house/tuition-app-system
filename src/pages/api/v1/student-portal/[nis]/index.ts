@@ -1,7 +1,7 @@
 import type { NextRequest } from "next/server";
 import { createApiHandler } from "@/lib/api-adapter";
 import { errorResponse, successResponse } from "@/lib/api-response";
-import { censorIdentityNumber, censorName, censorPhone } from "@/lib/censor";
+import { censorName, censorPhone } from "@/lib/censor";
 import { prisma } from "@/lib/prisma";
 
 /**
@@ -23,7 +23,6 @@ async function GET(
       name: true,
       parentName: true,
       parentPhone: true,
-      nik: true,
     },
   });
   if (student?.parentName) {
@@ -32,10 +31,6 @@ async function GET(
 
   if (student?.parentPhone) {
     student.parentPhone = censorPhone(student?.parentPhone);
-  }
-
-  if (student?.nik) {
-    student.nik = censorIdentityNumber(student?.nik);
   }
 
   if (!student) {

@@ -280,7 +280,7 @@ export default function PaymentForm() {
           <Group>
             <Button
               component={Link}
-              href={`/admin/students/${studentId}/payment-card`}
+              href={`/admin/payment-card?studentId=${studentId}`}
               target="_blank"
               variant="light"
               leftSection={<IconPrinter size={18} />}

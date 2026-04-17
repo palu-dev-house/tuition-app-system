@@ -93,9 +93,18 @@ export function createApiHandler(handlers: RouteHandlers) {
       if (contentType.includes("application/json")) {
         const body = await response.json();
         res.json(body);
-      } else {
+      } else if (
+        contentType.startsWith("text/") ||
+        contentType.includes("charset=") ||
+        contentType.includes("xml") ||
+        contentType.includes("javascript") ||
+        contentType === ""
+      ) {
         const body = await response.text();
         res.send(body);
+      } else {
+        const buffer = Buffer.from(await response.arrayBuffer());
+        res.send(buffer);
       }
     } catch (error) {
       console.error("API handler error:", error);

@@ -1,61 +1,13 @@
-import * as XLSX from "xlsx";
+import ExcelJS from "exceljs";
+import { addRefColumn, applyListValidation } from "../exceljs-utils";
+
+const LAST_ROW = 1000;
 
 export interface ServiceFeeExcelRow {
   Class: string;
   Name: string;
   Amount: number;
   "Billing Months": string;
-}
-
-export function createServiceFeeTemplate(
-  classes: Array<{ id: string; className: string }>,
-): XLSX.WorkBook {
-  const workbook = XLSX.utils.book_new();
-
-  const headers = ["Class", "Name", "Amount", "Billing Months"];
-  const wsData: (string | number)[][] = [headers];
-
-  if (classes.length > 0) {
-    wsData.push([
-      classes[0].className,
-      "Uang Perlengkapan",
-      750000,
-      "JULY,JANUARY",
-    ]);
-  }
-
-  for (let i = 0; i < 99; i++) wsData.push(["", "", "", ""]);
-
-  const worksheet = XLSX.utils.aoa_to_sheet(wsData);
-  worksheet["!cols"] = [{ wch: 25 }, { wch: 30 }, { wch: 15 }, { wch: 50 }];
-  XLSX.utils.book_append_sheet(workbook, worksheet, "Service Fees");
-
-  const classData = [["Class Name"]];
-  for (const c of classes) classData.push([c.className]);
-  const classSheet = XLSX.utils.aoa_to_sheet(classData);
-  classSheet["!cols"] = [{ wch: 25 }];
-  XLSX.utils.book_append_sheet(workbook, classSheet, "Classes Reference");
-
-  const monthData = [
-    ["Month"],
-    ["JULY"],
-    ["AUGUST"],
-    ["SEPTEMBER"],
-    ["OCTOBER"],
-    ["NOVEMBER"],
-    ["DECEMBER"],
-    ["JANUARY"],
-    ["FEBRUARY"],
-    ["MARCH"],
-    ["APRIL"],
-    ["MAY"],
-    ["JUNE"],
-  ];
-  const monthSheet = XLSX.utils.aoa_to_sheet(monthData);
-  monthSheet["!cols"] = [{ wch: 15 }];
-  XLSX.utils.book_append_sheet(workbook, monthSheet, "Months Reference");
-
-  return workbook;
 }
 
 const VALID_MONTHS = [
@@ -72,6 +24,55 @@ const VALID_MONTHS = [
   "MAY",
   "JUNE",
 ];
+
+export function createServiceFeeTemplate(
+  classes: Array<{ id: string; className: string }>,
+): ExcelJS.Workbook {
+  const workbook = new ExcelJS.Workbook();
+  const sheet = workbook.addWorksheet("Service Fees");
+
+  sheet.addRow(["Class", "Name", "Amount", "Billing Months"]);
+  [25, 30, 15, 50].forEach((w, i) => {
+    sheet.getColumn(i + 1).width = w;
+  });
+
+  if (classes.length > 0) {
+    sheet.addRow([
+      classes[0].className,
+      "Uang Perlengkapan",
+      750000,
+      "JULY,JANUARY",
+    ]);
+  }
+
+  // Visible reference sheets preserved.
+  const classSheet = workbook.addWorksheet("Classes Reference");
+  classSheet.addRow(["Class Name"]);
+  for (const c of classes) classSheet.addRow([c.className]);
+  classSheet.getColumn(1).width = 25;
+
+  const monthSheet = workbook.addWorksheet("Months Reference");
+  monthSheet.addRow(["Month"]);
+  for (const m of VALID_MONTHS) monthSheet.addRow([m]);
+  monthSheet.getColumn(1).width = 15;
+
+  // Dropdown: Class (col A)
+  const classRange = addRefColumn(
+    workbook,
+    "Class",
+    classes.map((c) => c.className),
+  );
+  if (classRange) {
+    applyListValidation(sheet, "A", 2, LAST_ROW, [`=${classRange}`], {
+      promptTitle: "Class",
+      prompt: "Select a class.",
+    });
+  }
+
+  // Billing Months (col D) is comma-separated, so no list validation.
+
+  return workbook;
+}
 
 export interface ValidatedServiceFeeRow {
   classAcademicId: string;

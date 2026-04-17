@@ -38,7 +38,6 @@ import { getPeriodDisplayName } from "@/lib/business-logic/tuition-generator";
 interface PaymentData {
   student: {
     nis: string;
-    nik: string;
     name: string;
     parentName: string;
     parentPhone: string;
@@ -214,7 +213,7 @@ export default function StudentPortalPage() {
           <Stack gap={24}>
             {/* Student Info */}
             <Card withBorder bg="dark.0">
-              <SimpleGrid cols={{ base: 1, xs: 2, sm: 5 }} spacing="md">
+              <SimpleGrid cols={{ base: 1, xs: 2, sm: 4 }} spacing="md">
                 <Stack gap={4}>
                   <Text size="sm" c="dark.4">
                     Student Name
@@ -230,12 +229,6 @@ export default function StudentPortalPage() {
                   <Badge size="lg" variant="filled" color="dark">
                     {data.student.nis}
                   </Badge>
-                </Stack>
-                <Stack gap={4}>
-                  <Text size="sm" c="dark.4">
-                    NIK
-                  </Text>
-                  <Text c="dark">{data.student.nik}</Text>
                 </Stack>
                 <Stack gap={4}>
                   <Text size="sm" c="dark.4">

@@ -13,12 +13,13 @@ export interface StudentClassFilters {
 }
 
 interface Student {
+  id: string;
   nis: string;
+  schoolLevel: "SD" | "SMP" | "SMA";
   name: string;
   parentName: string;
   parentPhone: string;
   startJoinDate: string;
-  nik?: string;
 }
 
 interface ClassInfo {

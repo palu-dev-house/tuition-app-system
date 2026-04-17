@@ -55,20 +55,20 @@ interface PaymentCardResponse {
 }
 
 export function usePaymentCard(
-  nis: string | null | undefined,
+  studentId: string | null | undefined,
   academicYearId?: string,
 ) {
   return useQuery({
-    queryKey: ["payment-card", nis, academicYearId] as const,
+    queryKey: ["payment-card", studentId, academicYearId] as const,
     queryFn: async () => {
       const { data } = await apiClient.get<PaymentCardResponse>(
-        `/students/${nis}/payment-card`,
+        `/students/${studentId}/payment-card`,
         {
           params: academicYearId ? { academicYearId } : undefined,
         },
       );
       return data.data;
     },
-    enabled: !!nis,
+    enabled: !!studentId,
   });
 }

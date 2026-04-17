@@ -2,6 +2,7 @@ import { Grid, Paper, Select, TextInput } from "@mantine/core";
 import { MonthPickerInput } from "@mantine/dates";
 import { IconSearch } from "@tabler/icons-react";
 import { useTranslations } from "next-intl";
+import { useEffect } from "react";
 import { useAcademicYears } from "@/hooks/api/useAcademicYears";
 import { useClassAcademics } from "@/hooks/api/useClassAcademics";
 import { useFeeServices } from "@/hooks/api/useFeeServices";
@@ -39,6 +40,14 @@ export function FeeServiceSummaryFilters({
   const years = yearsData?.academicYears ?? [];
   const classes = classesData?.classes ?? [];
   const services = servicesData?.feeServices ?? [];
+  const activeYear = years.find((y) => y.isActive);
+
+  // Default to active academic year when none selected
+  useEffect(() => {
+    if (!filters.academicYearId && activeYear?.id) {
+      onChange("academicYearId", activeYear.id);
+    }
+  }, [filters.academicYearId, activeYear?.id, onChange]);
 
   return (
     <Paper p="md" radius="md" withBorder>
@@ -67,7 +76,10 @@ export function FeeServiceSummaryFilters({
         <Grid.Col span={{ base: 12, md: 3 }}>
           <Select
             label={t("academicYear.title")}
-            data={years.map((y) => ({ value: y.id, label: y.year }))}
+            data={years.map((y) => ({
+              value: y.id,
+              label: `${y.year}${y.isActive ? ` (${t("common.active")})` : ""}`,
+            }))}
             value={filters.academicYearId ?? null}
             onChange={(v) => onChange("academicYearId", v || null)}
             clearable

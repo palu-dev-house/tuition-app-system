@@ -7,6 +7,7 @@ import type {
   FeeServiceSummaryFilters,
   FeeServiceSummaryResult,
 } from "@/lib/business-logic/fee-service-summary";
+import { downloadFileFromApi } from "@/lib/download";
 import {
   type ClassSummaryFilters,
   type OverdueFilters,
@@ -265,8 +266,10 @@ export function useExportClassSummary() {
     if (filters.academicYearId) {
       params.set("academicYearId", filters.academicYearId);
     }
-    const url = `/api/v1/reports/class-summary/export?${params.toString()}`;
-    window.open(url, "_blank");
+    await downloadFileFromApi(
+      `/api/v1/reports/class-summary/export?${params.toString()}`,
+      "class-summary.xlsx",
+    );
   };
 
   return { exportReport };
@@ -301,17 +304,10 @@ export function useExportFeeServiceSummary() {
         params.set(k, String(v));
       }
     }
-    const response = await fetch(
+    await downloadFileFromApi(
       `/api/v1/reports/fee-service-summary/export?${params.toString()}`,
+      "fee-service-summary.xlsx",
     );
-    if (!response.ok) throw new Error("Export failed");
-    const blob = await response.blob();
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "fee-service-summary.xlsx";
-    a.click();
-    URL.revokeObjectURL(url);
   };
 
   return { exportReport };
@@ -330,8 +326,10 @@ export function useExportOverdueReport() {
       params.set("academicYearId", filters.academicYearId);
     }
 
-    const url = `/api/v1/reports/overdue/export?${params.toString()}`;
-    window.open(url, "_blank");
+    await downloadFileFromApi(
+      `/api/v1/reports/overdue/export?${params.toString()}`,
+      "overdue-report.xlsx",
+    );
   };
 
   return { exportReport };

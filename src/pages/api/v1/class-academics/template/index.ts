@@ -2,7 +2,7 @@ import type { NextRequest } from "next/server";
 import { createApiHandler } from "@/lib/api-adapter";
 import { requireRole } from "@/lib/api-auth";
 import { createClassTemplate } from "@/lib/excel-templates/class-template";
-import { workbookToBuffer } from "@/lib/excel-utils";
+import { exceljsToBuffer } from "@/lib/exceljs-utils";
 import { prisma } from "@/lib/prisma";
 
 async function GET(request: NextRequest) {
@@ -15,7 +15,7 @@ async function GET(request: NextRequest) {
   });
 
   const workbook = createClassTemplate(academicYears.map((ay) => ay.year));
-  const buffer = workbookToBuffer(workbook);
+  const buffer = await exceljsToBuffer(workbook);
 
   return new Response(buffer, {
     headers: {

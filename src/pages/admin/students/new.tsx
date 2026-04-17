@@ -16,7 +16,7 @@ const NewStudentPage: NextPageWithLayout = function NewStudentPage() {
 
   const handleSubmit = (data: {
     nis: string;
-    nik: string;
+    schoolLevel: "SD" | "SMP" | "SMA";
     name: string;
     address: string;
     parentName: string;

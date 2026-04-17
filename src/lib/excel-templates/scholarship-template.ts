@@ -1,4 +1,7 @@
-import * as XLSX from "xlsx";
+import ExcelJS from "exceljs";
+import { addRefColumn, applyListValidation } from "../exceljs-utils";
+
+const LAST_ROW = 1000;
 
 export interface ScholarshipExcelRow {
   "Student NIS": string;
@@ -10,16 +13,17 @@ export interface ScholarshipExcelRow {
 export function createScholarshipTemplate(
   students: Array<{ nis: string; name: string }>,
   classes: Array<{ id: string; className: string }>,
-): XLSX.WorkBook {
-  const workbook = XLSX.utils.book_new();
+): ExcelJS.Workbook {
+  const workbook = new ExcelJS.Workbook();
+  const sheet = workbook.addWorksheet("Scholarships");
 
-  // Create main data sheet
-  const headers = ["Student NIS", "Student Name", "Class", "Nominal"];
-  const wsData: (string | number)[][] = [headers];
+  sheet.addRow(["Student NIS", "Student Name", "Class", "Nominal"]);
+  [15, 30, 25, 15].forEach((w, i) => {
+    sheet.getColumn(i + 1).width = w;
+  });
 
-  // Add sample row
   if (students.length > 0 && classes.length > 0) {
-    wsData.push([
+    sheet.addRow([
       students[0].nis,
       students[0].name,
       classes[0].className,
@@ -27,40 +31,42 @@ export function createScholarshipTemplate(
     ]);
   }
 
-  // Add empty rows for user input
-  for (let i = 0; i < 99; i++) {
-    wsData.push(["", "", "", ""]);
+  // Visible reference sheets preserved.
+  const studentSheet = workbook.addWorksheet("Students Reference");
+  studentSheet.addRow(["NIS", "Name"]);
+  for (const s of students) studentSheet.addRow([s.nis, s.name]);
+  studentSheet.getColumn(1).width = 15;
+  studentSheet.getColumn(2).width = 30;
+
+  const classSheet = workbook.addWorksheet("Classes Reference");
+  classSheet.addRow(["Class Name"]);
+  for (const c of classes) classSheet.addRow([c.className]);
+  classSheet.getColumn(1).width = 25;
+
+  // Dropdowns.
+  const nisRange = addRefColumn(
+    workbook,
+    "NIS",
+    students.map((s) => s.nis),
+  );
+  if (nisRange) {
+    applyListValidation(sheet, "A", 2, LAST_ROW, [`=${nisRange}`], {
+      promptTitle: "Student NIS",
+      prompt: "Select a student NIS.",
+    });
   }
 
-  const worksheet = XLSX.utils.aoa_to_sheet(wsData);
-
-  // Set column widths
-  worksheet["!cols"] = [
-    { wch: 15 }, // Student NIS
-    { wch: 30 }, // Student Name
-    { wch: 25 }, // Class
-    { wch: 15 }, // Nominal
-  ];
-
-  XLSX.utils.book_append_sheet(workbook, worksheet, "Scholarships");
-
-  // Create reference sheet for students
-  const studentData = [["NIS", "Name"]];
-  students.forEach((s) => {
-    studentData.push([s.nis, s.name]);
-  });
-  const studentSheet = XLSX.utils.aoa_to_sheet(studentData);
-  studentSheet["!cols"] = [{ wch: 15 }, { wch: 30 }];
-  XLSX.utils.book_append_sheet(workbook, studentSheet, "Students Reference");
-
-  // Create reference sheet for classes
-  const classData = [["Class Name"]];
-  classes.forEach((c) => {
-    classData.push([c.className]);
-  });
-  const classSheet = XLSX.utils.aoa_to_sheet(classData);
-  classSheet["!cols"] = [{ wch: 25 }];
-  XLSX.utils.book_append_sheet(workbook, classSheet, "Classes Reference");
+  const classRange = addRefColumn(
+    workbook,
+    "Class",
+    classes.map((c) => c.className),
+  );
+  if (classRange) {
+    applyListValidation(sheet, "C", 2, LAST_ROW, [`=${classRange}`], {
+      promptTitle: "Class",
+      prompt: "Select a class.",
+    });
+  }
 
   return workbook;
 }
@@ -85,14 +91,12 @@ export function validateScholarshipData(
 
   data.forEach((row, index) => {
     const rowErrors: string[] = [];
-    const rowNum = index + 2; // +2 for header row and 0-index
+    const rowNum = index + 2;
 
-    // Skip empty rows
     if (!row["Student NIS"] && !row.Class && !row.Nominal) {
       return;
     }
 
-    // Validate Student NIS
     const nis = String(row["Student NIS"]).trim();
     if (!nis) {
       rowErrors.push("Student NIS is required");
@@ -100,7 +104,6 @@ export function validateScholarshipData(
       rowErrors.push(`Student NIS "${nis}" not found`);
     }
 
-    // Validate Class
     const className = String(row.Class).trim();
     if (!className) {
       rowErrors.push("Class is required");
@@ -108,7 +111,6 @@ export function validateScholarshipData(
       rowErrors.push(`Class "${className}" not found`);
     }
 
-    // Validate Nominal
     const nominal = Number(row.Nominal);
     if (!row.Nominal && row.Nominal !== 0) {
       rowErrors.push("Nominal is required");

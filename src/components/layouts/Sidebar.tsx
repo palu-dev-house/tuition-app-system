@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  Accordion,
   Avatar,
   Box,
   Button,
@@ -29,7 +30,6 @@ import {
   IconChartBar,
   IconCheck,
   IconCoin,
-  IconCreditCard,
   IconDiscount,
   IconGift,
   IconHelp,
@@ -37,14 +37,13 @@ import {
   IconKey,
   IconLogout,
   IconPackage,
+  IconPrinter,
   IconReceipt,
   IconReceipt2,
   IconReportAnalytics,
   IconSchool,
   IconSearch,
-  IconSettings,
   IconUser,
-  IconUserCircle,
   IconUsers,
   IconWallet,
 } from "@tabler/icons-react";
@@ -130,50 +129,59 @@ export default function Sidebar() {
     );
   };
 
-  const adminLinks: NavItem[] = [
-    { icon: IconHome, label: t("dashboard"), href: "/admin/dashboard" },
-    { icon: IconReceipt, label: t("payments"), href: "/admin/payments" },
-    { icon: IconCash, label: t("tuitions"), href: "/admin/tuitions" },
-    { icon: IconSchool, label: t("students"), href: "/admin/students" },
+  interface NavGroup {
+    key: string;
+    icon: React.ElementType;
+    label: string;
+    items: NavItem[];
+  }
+
+  const tSidebar = useTranslations("sidebar.groups");
+
+  const adminGroups: NavGroup[] = [
     {
-      icon: IconCreditCard,
-      label: t("onlinePayments"),
-      href: "/admin/online-payments",
-    },
-    {
-      icon: IconReportAnalytics,
-      label: t("reports"),
-      children: [
+      key: "main",
+      icon: IconHome,
+      label: tSidebar("main"),
+      items: [
+        { icon: IconHome, label: t("dashboard"), href: "/admin/dashboard" },
+        { icon: IconReceipt, label: t("payments"), href: "/admin/payments" },
         {
-          icon: IconAlertTriangle,
-          label: t("overdueReport"),
-          href: "/admin/reports/overdue",
+          icon: IconReceipt2,
+          label: t("feeBills"),
+          href: "/admin/fee-bills",
         },
-        {
-          icon: IconChartBar,
-          label: t("classSummary"),
-          href: "/admin/reports/class-summary",
-        },
-        {
-          icon: IconBus,
-          label: t("feeServiceSummary"),
-          href: "/admin/reports/fee-services",
-        },
-        {
-          icon: IconCoin,
-          label: t("incomeReport"),
-          href: "/admin/reports/income",
-        },
+        { icon: IconSchool, label: t("students"), href: "/admin/students" },
       ],
     },
     {
-      icon: IconWallet,
-      label: t("feesAndServices"),
-      children: [
+      key: "academic",
+      icon: IconCalendar,
+      label: tSidebar("academic"),
+      items: [
         {
-          icon: IconBus,
-          label: t("feeServices"),
-          href: "/admin/fee-services",
+          icon: IconCalendar,
+          label: t("academicYears"),
+          href: "/admin/academic-years",
+        },
+        { icon: IconBuilding, label: t("classes"), href: "/admin/classes" },
+      ],
+    },
+    {
+      key: "finance",
+      icon: IconWallet,
+      label: tSidebar("finance"),
+      items: [
+        { icon: IconCash, label: t("tuitions"), href: "/admin/tuitions" },
+        {
+          icon: IconDiscount,
+          label: t("discounts"),
+          href: "/admin/discounts",
+        },
+        {
+          icon: IconGift,
+          label: t("scholarships"),
+          href: "/admin/scholarships",
         },
         {
           icon: IconPackage,
@@ -181,43 +189,17 @@ export default function Sidebar() {
           href: "/admin/service-fees",
         },
         {
-          icon: IconReceipt2,
-          label: t("feeBills"),
-          href: "/admin/fee-bills",
+          icon: IconBus,
+          label: t("feeServices"),
+          href: "/admin/fee-services",
         },
       ],
     },
-    { icon: IconGift, label: t("scholarships"), href: "/admin/scholarships" },
-    { icon: IconDiscount, label: t("discounts"), href: "/admin/discounts" },
     {
-      icon: IconCalendar,
-      label: t("academicYears"),
-      href: "/admin/academic-years",
-    },
-    { icon: IconBuilding, label: t("classes"), href: "/admin/classes" },
-    { icon: IconUsers, label: t("employees"), href: "/admin/employees" },
-    {
-      icon: IconUserCircle,
-      label: t("studentAccounts"),
-      href: "/admin/student-accounts",
-    },
-    {
-      icon: IconSettings,
-      label: t("paymentSettings"),
-      href: "/admin/payment-settings",
-    },
-    { icon: IconHelp, label: t("help"), href: "/admin/help" },
-  ];
-
-  const cashierLinks: NavItem[] = [
-    { icon: IconHome, label: t("dashboard"), href: "/admin/dashboard" },
-    { icon: IconReceipt, label: t("payments"), href: "/admin/payments" },
-    { icon: IconReceipt2, label: t("feeBills"), href: "/admin/fee-bills" },
-    { icon: IconSchool, label: t("students"), href: "/admin/students" },
-    {
+      key: "reports",
       icon: IconReportAnalytics,
-      label: t("reports"),
-      children: [
+      label: tSidebar("reports"),
+      items: [
         {
           icon: IconAlertTriangle,
           label: t("overdueReport"),
@@ -238,47 +220,90 @@ export default function Sidebar() {
           label: t("incomeReport"),
           href: "/admin/reports/income",
         },
+        {
+          icon: IconPrinter,
+          label: t("paymentCardReport"),
+          href: "/admin/payment-card",
+        },
       ],
     },
-    { icon: IconHelp, label: t("help"), href: "/admin/help" },
+    {
+      key: "system",
+      icon: IconUsers,
+      label: tSidebar("system"),
+      items: [
+        { icon: IconUsers, label: t("employees"), href: "/admin/employees" },
+        { icon: IconHelp, label: t("help"), href: "/admin/help" },
+      ],
+    },
   ];
 
-  const links = user?.role === "ADMIN" ? adminLinks : cashierLinks;
+  const cashierGroups: NavGroup[] = [
+    {
+      key: "main",
+      icon: IconHome,
+      label: tSidebar("main"),
+      items: [
+        { icon: IconHome, label: t("dashboard"), href: "/admin/dashboard" },
+        { icon: IconReceipt, label: t("payments"), href: "/admin/payments" },
+        {
+          icon: IconReceipt2,
+          label: t("feeBills"),
+          href: "/admin/fee-bills",
+        },
+        { icon: IconSchool, label: t("students"), href: "/admin/students" },
+      ],
+    },
+    {
+      key: "reports",
+      icon: IconReportAnalytics,
+      label: tSidebar("reports"),
+      items: [
+        {
+          icon: IconAlertTriangle,
+          label: t("overdueReport"),
+          href: "/admin/reports/overdue",
+        },
+        {
+          icon: IconChartBar,
+          label: t("classSummary"),
+          href: "/admin/reports/class-summary",
+        },
+        {
+          icon: IconBus,
+          label: t("feeServiceSummary"),
+          href: "/admin/reports/fee-services",
+        },
+        {
+          icon: IconCoin,
+          label: t("incomeReport"),
+          href: "/admin/reports/income",
+        },
+        {
+          icon: IconPrinter,
+          label: t("paymentCardReport"),
+          href: "/admin/payment-card",
+        },
+      ],
+    },
+    {
+      key: "system",
+      icon: IconHelp,
+      label: tSidebar("system"),
+      items: [{ icon: IconHelp, label: t("help"), href: "/admin/help" }],
+    },
+  ];
+
+  const groups = user?.role === "ADMIN" ? adminGroups : cashierGroups;
 
   const [search, setSearch] = useState("");
 
-  const filteredLinks = useMemo(() => {
-    const query = search.trim().toLowerCase();
-    if (!query) return links;
-
-    return links.reduce<NavItem[]>((acc, item) => {
-      const parentMatches = item.label.toLowerCase().includes(query);
-
-      if (item.children) {
-        if (parentMatches) {
-          acc.push(item);
-        } else {
-          const matchingChildren = item.children.filter((child) =>
-            child.label.toLowerCase().includes(query),
-          );
-          if (matchingChildren.length > 0) {
-            acc.push({ ...item, children: matchingChildren });
-          }
-        }
-      } else if (parentMatches) {
-        acc.push(item);
-      }
-
-      return acc;
-    }, []);
-  }, [links, search]);
-
   const activeHref = useMemo(() => {
     const candidates: string[] = [];
-    for (const item of links) {
-      if (item.href) candidates.push(item.href);
-      if (item.children)
-        for (const c of item.children) if (c.href) candidates.push(c.href);
+    for (const group of groups) {
+      for (const item of group.items) {
+        if (item.href) candidates.push(item.href);
+      }
     }
     const matching = candidates.filter(
       (href) => pathname === href || pathname.startsWith(`${href}/`),
@@ -290,12 +315,83 @@ export default function Sidebar() {
       return null;
     }
     return matching.reduce((a, b) => (b.length > a.length ? b : a));
-  }, [links, pathname]);
+  }, [groups, pathname]);
 
   const isActive = (href: string) => href === activeHref;
 
-  const hasActiveChild = (children?: NavItem[]) => {
-    return children?.some((child) => child.href && isActive(child.href));
+  // Persisted accordion state
+  const STORAGE_KEY = "sidebar:openGroups";
+  const [userOpenGroups, setUserOpenGroups] = useState<string[] | null>(() => {
+    if (typeof window === "undefined") return null;
+    try {
+      const raw = window.localStorage.getItem(STORAGE_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed)) {
+          return parsed.filter((v) => typeof v === "string");
+        }
+      }
+    } catch {
+      // ignore malformed storage
+    }
+    return null;
+  });
+
+  // Default (all open) computed from current groups; used only when
+  // nothing has been persisted yet.
+  const defaultOpenGroups = useMemo(() => groups.map((g) => g.key), [groups]);
+
+  // Persist whenever user toggles
+  useEffect(() => {
+    if (userOpenGroups === null) return;
+    if (typeof window === "undefined") return;
+    try {
+      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(userOpenGroups));
+    } catch {
+      // ignore quota errors
+    }
+  }, [userOpenGroups]);
+
+  // Groups that contain the active route should force-open (without
+  // polluting the persisted user preference).
+  const activeGroupKeys = useMemo(() => {
+    const keys: string[] = [];
+    for (const group of groups) {
+      if (group.items.some((item) => item.href && item.href === activeHref)) {
+        keys.push(group.key);
+      }
+    }
+    return keys;
+  }, [groups, activeHref]);
+
+  const searching = search.trim().length > 0;
+
+  // Flat filtered items (used while searching)
+  const filteredFlatItems = useMemo(() => {
+    const query = search.trim().toLowerCase();
+    if (!query) return [] as NavItem[];
+    const out: NavItem[] = [];
+    for (const group of groups) {
+      for (const item of group.items) {
+        if (item.label.toLowerCase().includes(query)) {
+          out.push(item);
+        }
+      }
+    }
+    return out;
+  }, [groups, search]);
+
+  // Effective open groups = user-opened ∪ active-forced (∪ all during search)
+  const effectiveOpenGroups = useMemo(() => {
+    if (searching) return defaultOpenGroups;
+    const base = userOpenGroups ?? defaultOpenGroups;
+    return Array.from(new Set([...base, ...activeGroupKeys]));
+  }, [defaultOpenGroups, userOpenGroups, activeGroupKeys, searching]);
+
+  const handleAccordionChange = (value: string[]) => {
+    // While searching, don't let user toggles clobber the search-expand state.
+    if (searching) return;
+    setUserOpenGroups(value);
   };
 
   return (
@@ -309,41 +405,60 @@ export default function Sidebar() {
 
       <ScrollArea style={{ flex: 1 }} type="auto" offsetScrollbars>
         <nav>
-          {filteredLinks.map((link) => {
-            if (link.children) {
-              return (
-                <NavLink
-                  key={link.label}
-                  label={link.label}
-                  leftSection={<link.icon size={20} />}
-                  defaultOpened={hasActiveChild(link.children)}
-                  childrenOffset={28}
-                >
-                  {link.children.map((child) => (
-                    <NavLink
-                      key={child.href}
-                      component={Link}
-                      href={child.href!}
-                      label={child.label}
-                      leftSection={<child.icon size={18} />}
-                      active={isActive(child.href!)}
-                    />
-                  ))}
-                </NavLink>
-              );
-            }
-
-            return (
-              <NavLink
-                key={link.href}
-                component={Link}
-                href={link.href!}
-                label={link.label}
-                leftSection={<link.icon size={20} />}
-                active={isActive(link.href!)}
-              />
-            );
-          })}
+          {searching ? (
+            <Stack gap={0}>
+              {filteredFlatItems.length === 0 ? (
+                <Text size="sm" c="dimmed" p="sm">
+                  {tCommon("common.noResults")}
+                </Text>
+              ) : (
+                filteredFlatItems.map((item) => (
+                  <NavLink
+                    key={item.href}
+                    component={Link}
+                    href={item.href!}
+                    label={item.label}
+                    leftSection={<item.icon size={20} />}
+                    active={isActive(item.href!)}
+                  />
+                ))
+              )}
+            </Stack>
+          ) : (
+            <Accordion
+              multiple
+              value={effectiveOpenGroups}
+              onChange={handleAccordionChange}
+              chevronPosition="right"
+              variant="default"
+              styles={{
+                control: { paddingLeft: 8, paddingRight: 8 },
+                label: { fontWeight: 600, fontSize: 13 },
+                content: { padding: 0 },
+                item: { borderBottom: "none" },
+              }}
+            >
+              {groups.map((group) => (
+                <Accordion.Item key={group.key} value={group.key}>
+                  <Accordion.Control icon={<group.icon size={18} />}>
+                    {group.label}
+                  </Accordion.Control>
+                  <Accordion.Panel>
+                    {group.items.map((item) => (
+                      <NavLink
+                        key={item.href}
+                        component={Link}
+                        href={item.href!}
+                        label={item.label}
+                        leftSection={<item.icon size={18} />}
+                        active={isActive(item.href!)}
+                      />
+                    ))}
+                  </Accordion.Panel>
+                </Accordion.Item>
+              ))}
+            </Accordion>
+          )}
         </nav>
       </ScrollArea>
 

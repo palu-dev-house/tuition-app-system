@@ -199,15 +199,6 @@ function randomInt(min: number, max: number): number {
   return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
-function generateNik(): string {
-  // 16-digit NIK
-  let nik = "";
-  for (let i = 0; i < 16; i++) {
-    nik += Math.floor(Math.random() * 10).toString();
-  }
-  return nik;
-}
-
 function generatePhone(): string {
   const prefixes = [
     "0811",
@@ -451,17 +442,6 @@ async function main() {
   const BATCH_SIZE = 500;
   const UPDATE_BATCH = 100;
 
-  // Generate unique NIKs
-  const usedNiks = new Set<string>();
-  const generateUniqueNik = (): string => {
-    let nik: string;
-    do {
-      nik = generateNik();
-    } while (usedNiks.has(nik));
-    usedNiks.add(nik);
-    return nik;
-  };
-
   const monthlyPeriods: {
     period: string;
     month: string;
@@ -518,7 +498,6 @@ async function main() {
 
     oldStudentInputs.push({
       nis,
-      nik: generateUniqueNik(),
       name: generateStudentName(i + 200), // offset to avoid name collisions with current students
       address: `Jl. Veteran No. ${randomInt(1, 200)}, RT ${randomInt(1, 15)}/RW ${randomInt(1, 10)}, Jakarta`,
       parentName: generateParentName(),
@@ -915,7 +894,6 @@ async function main() {
 
     studentInputs.push({
       nis,
-      nik: generateUniqueNik(),
       name: generateStudentName(i - 1),
       address: `Jl. Merdeka No. ${randomInt(1, 200)}, RT ${randomInt(1, 15)}/RW ${randomInt(1, 10)}, Jakarta`,
       parentName: generateParentName(),
@@ -957,7 +935,6 @@ async function main() {
 
     smpStudentInputs.push({
       nis,
-      nik: generateUniqueNik(),
       name: `${generateStudentName(i + 500)} (SMP)`,
       address: `Jl. Pendidikan No. ${randomInt(1, 100)}, Jakarta`,
       parentName: generateParentName(),

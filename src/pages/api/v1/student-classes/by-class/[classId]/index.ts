@@ -38,7 +38,6 @@ async function GET(
         select: {
           nis: true,
           name: true,
-          nik: true,
           parentName: true,
           parentPhone: true,
           startJoinDate: true,

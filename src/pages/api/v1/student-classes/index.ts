@@ -52,7 +52,9 @@ async function GET(request: NextRequest) {
       include: {
         student: {
           select: {
+            id: true,
             nis: true,
+            schoolLevel: true,
             name: true,
             parentName: true,
             parentPhone: true,

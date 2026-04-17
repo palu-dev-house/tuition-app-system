@@ -35,6 +35,9 @@ import FeeServiceForm, {
   type FeeServiceFormValues,
 } from "@/components/forms/FeeServiceForm";
 import AdminLayout from "@/components/layouts/AdminLayout";
+import ImportModal, {
+  type ImportResult,
+} from "@/components/shared/ImportModal";
 import PageHeader from "@/components/ui/PageHeader/PageHeader";
 import TablePagination from "@/components/ui/TablePagination";
 import { useAcademicYears } from "@/hooks/api/useAcademicYears";
@@ -42,9 +45,11 @@ import {
   useCreateFeeService,
   useDeleteFeeService,
   useFeeServices,
+  useImportFeeServices,
   useUpdateFeeService,
 } from "@/hooks/api/useFeeServices";
 import { useQueryFilters } from "@/hooks/useQueryFilters";
+import { downloadFileFromApi } from "@/lib/download";
 import type { NextPageWithLayout } from "@/lib/page-types";
 
 const filterSchema = z.object({
@@ -83,9 +88,43 @@ const FeeServicesPage: NextPageWithLayout = function FeeServicesPage() {
   const createMutation = useCreateFeeService();
   const updateMutation = useUpdateFeeService();
   const deleteMutation = useDeleteFeeService();
+  const importMutation = useImportFeeServices();
 
   const [createOpened, { open: openCreate, close: closeCreate }] =
     useDisclosure(false);
+  const [importOpened, { open: openImport, close: closeImport }] =
+    useDisclosure(false);
+
+  const handleImport = async (file: File): Promise<ImportResult> => {
+    try {
+      const data = await importMutation.mutateAsync(file);
+      notifications.show({
+        color: "green",
+        title: t("common.success"),
+        message: t("import.completeMessage", {
+          imported: data.imported,
+          skipped: data.skipped,
+        }),
+      });
+      return {
+        success: data.imported,
+        skipped: data.skipped,
+        errors: (data.errors ?? []).map(
+          (e: { row: number; error?: string; errors?: string[] }) => ({
+            row: e.row,
+            message: e.error ?? e.errors?.join(", ") ?? "Unknown",
+          }),
+        ),
+      };
+    } catch (error) {
+      notifications.show({
+        color: "red",
+        title: t("common.error"),
+        message: (error as Error).message,
+      });
+      throw error;
+    }
+  };
   const [editTarget, setEditTarget] = useState<{
     id: string;
     name: string;
@@ -182,10 +221,9 @@ const FeeServicesPage: NextPageWithLayout = function FeeServicesPage() {
         actions={
           <Group gap="sm">
             <Button
-              component={Link}
-              href="/admin/fee-services/import"
               variant="light"
               leftSection={<IconFileUpload size={18} />}
+              onClick={openImport}
             >
               {t("common.import")}
             </Button>
@@ -337,6 +375,20 @@ const FeeServicesPage: NextPageWithLayout = function FeeServicesPage() {
           </Stack>
         )}
       </Paper>
+
+      <ImportModal
+        opened={importOpened}
+        onClose={closeImport}
+        title={t("feeService.importTitle")}
+        description={t("feeService.importDescription")}
+        onDownloadTemplate={() =>
+          downloadFileFromApi(
+            "/api/v1/fee-services/template",
+            "fee-service-import-template.xlsx",
+          )
+        }
+        onImport={handleImport}
+      />
 
       <Modal
         opened={createOpened}

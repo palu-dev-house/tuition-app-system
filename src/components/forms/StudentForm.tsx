@@ -1,15 +1,17 @@
 "use client";
 
-import { Button, Stack, Textarea, TextInput } from "@mantine/core";
+import { Button, Select, Stack, Textarea, TextInput } from "@mantine/core";
 import { DatePickerInput } from "@mantine/dates";
 import { useForm } from "@mantine/form";
 import { useTranslations } from "next-intl";
 import { studentSchema } from "@/lib/validations";
 import { zodResolver } from "@/lib/validations/mantine-zod-resolver";
 
+type SchoolLevel = "SD" | "SMP" | "SMA";
+
 interface StudentFormValues {
   nis: string;
-  nik: string;
+  schoolLevel: SchoolLevel;
   name: string;
   address: string;
   parentName: string;
@@ -20,7 +22,7 @@ interface StudentFormValues {
 interface StudentFormProps {
   initialData?: {
     nis?: string;
-    nik?: string;
+    schoolLevel?: SchoolLevel;
     name?: string;
     address?: string;
     parentName?: string;
@@ -29,7 +31,7 @@ interface StudentFormProps {
   };
   onSubmit: (data: {
     nis: string;
-    nik: string;
+    schoolLevel: SchoolLevel;
     name: string;
     address: string;
     parentName: string;
@@ -51,7 +53,7 @@ export default function StudentForm({
   const form = useForm<StudentFormValues>({
     initialValues: {
       nis: initialData?.nis || "",
-      nik: initialData?.nik || "",
+      schoolLevel: initialData?.schoolLevel || "SD",
       name: initialData?.name || "",
       address: initialData?.address || "",
       parentName: initialData?.parentName || "",
@@ -84,12 +86,17 @@ export default function StudentForm({
           disabled={isEdit}
           {...form.getInputProps("nis")}
         />
-        <TextInput
-          label={t("student.nik")}
-          placeholder={t("student.nikPlaceholder")}
+        <Select
+          label={t("student.schoolLevel")}
+          placeholder={t("student.schoolLevelPlaceholder")}
           required
-          maxLength={16}
-          {...form.getInputProps("nik")}
+          disabled={isEdit}
+          data={[
+            { value: "SD", label: "SD" },
+            { value: "SMP", label: "SMP" },
+            { value: "SMA", label: "SMA" },
+          ]}
+          {...form.getInputProps("schoolLevel")}
         />
         <TextInput
           label={t("student.name")}

@@ -1,3 +1,5 @@
+"use client";
+
 import {
   Button,
   Card,
@@ -6,22 +8,14 @@ import {
   Loader,
   Paper,
   SegmentedControl,
-  Select,
   Stack,
   Text,
 } from "@mantine/core";
 import { IconPrinter } from "@tabler/icons-react";
 import dayjs from "dayjs";
-import { useRouter } from "next/router";
 import { useTranslations } from "next-intl";
-import type { ReactElement } from "react";
 import { useEffect, useMemo, useState } from "react";
-import AdminLayout from "@/components/layouts/AdminLayout";
-import PageHeader from "@/components/ui/PageHeader/PageHeader";
-import { useAcademicYears } from "@/hooks/api/useAcademicYears";
 import { usePaymentCard } from "@/hooks/api/usePaymentCard";
-import { useStudent, useStudents } from "@/hooks/api/useStudents";
-import type { NextPageWithLayout } from "@/lib/page-types";
 
 type PrintMode = "header" | "selected" | "all";
 
@@ -30,39 +24,17 @@ function formatRp(value: number): string {
   return value.toLocaleString("id-ID", { minimumFractionDigits: 0 });
 }
 
-const PaymentCardPage: NextPageWithLayout = function PaymentCardPage() {
-  const router = useRouter();
-  const { nis: urlNis } = router.query as { nis: string };
-  const t = useTranslations();
+interface Props {
+  studentId: string;
+  academicYearId: string;
+}
 
-  const [selectedNis, setSelectedNis] = useState<string | null>(null);
-  const [studentSearch, setStudentSearch] = useState("");
-  const [academicYearId, setAcademicYearId] = useState<string | null>(null);
+export default function PaymentCardView({ studentId, academicYearId }: Props) {
+  const t = useTranslations();
   const [mode, setMode] = useState<PrintMode>("header");
   const [selectedMonths, setSelectedMonths] = useState<Set<string>>(new Set());
 
-  // Pre-fill from URL param
-  const nis = selectedNis || urlNis;
-
-  const { data: studentsData } = useStudents({
-    limit: 50,
-    search: studentSearch || undefined,
-  });
-  const studentOptions = useMemo(
-    () =>
-      studentsData?.students.map((s) => ({
-        value: s.nis,
-        label: `${s.name} (${s.nis})`,
-      })) || [],
-    [studentsData],
-  );
-
-  const { data: student } = useStudent(nis);
-  const { data: academicYearsData } = useAcademicYears({ limit: 100 });
-  const activeYear = academicYearsData?.academicYears.find((ay) => ay.isActive);
-  const effectiveYearId = academicYearId || activeYear?.id;
-
-  const { data: card, isLoading } = usePaymentCard(nis, effectiveYearId);
+  const { data: card, isLoading } = usePaymentCard(studentId, academicYearId);
 
   // Autofill: when data arrives, pre-select all months that have any paid amount.
   useEffect(() => {
@@ -76,7 +48,7 @@ const PaymentCardPage: NextPageWithLayout = function PaymentCardPage() {
     );
   }, [card]);
 
-  // Inject A5 @page for this route only.
+  // Inject A4 @page for this route only.
   useEffect(() => {
     const style = document.createElement("style");
     style.setAttribute("data-pc-page", "1");
@@ -86,12 +58,6 @@ const PaymentCardPage: NextPageWithLayout = function PaymentCardPage() {
       style.remove();
     };
   }, []);
-
-  const yearOptions =
-    academicYearsData?.academicYears.map((ay) => ({
-      value: ay.id,
-      label: `${ay.year}${ay.isActive ? ` (${t("common.active")})` : ""}`,
-    })) || [];
 
   const toggleMonth = (key: string) => {
     setSelectedMonths((prev) => {
@@ -142,44 +108,12 @@ const PaymentCardPage: NextPageWithLayout = function PaymentCardPage() {
     };
   }, [card, mode, selectedMonths]);
 
-  if (!nis) return null;
-
   return (
     <>
       <div className="print-controls">
-        <PageHeader
-          title={t("paymentCard.title")}
-          description={student ? `${student.nis} — ${student.name}` : ""}
-          actions={
-            <Button variant="subtle" onClick={() => router.back()}>
-              {t("common.back")}
-            </Button>
-          }
-        />
-
         <Card withBorder mb="md">
           <Stack gap="md">
             <Group gap="md" align="flex-end" wrap="wrap">
-              <Select
-                label={t("paymentCard.student")}
-                placeholder={t("paymentCard.searchStudent")}
-                data={studentOptions}
-                value={nis || null}
-                onChange={setSelectedNis}
-                searchable
-                onSearchChange={setStudentSearch}
-                w={300}
-                nothingFoundMessage={t("common.noResults")}
-              />
-              <Select
-                label={t("paymentCard.academicYear")}
-                placeholder={t("paymentCard.selectYear")}
-                data={yearOptions}
-                value={academicYearId}
-                onChange={setAcademicYearId}
-                w={240}
-                clearable
-              />
               <Stack gap={4}>
                 <Text size="sm" fw={500}>
                   {t("paymentCard.mode")}
@@ -242,7 +176,7 @@ const PaymentCardPage: NextPageWithLayout = function PaymentCardPage() {
                     return (
                       <Checkbox
                         key={key}
-                        label={`${m.periodLabel} ${m.year % 100}${hasData ? " ✓" : ""}`}
+                        label={`${m.periodLabel} ${m.year % 100}${hasData ? " \u2713" : ""}`}
                         checked={selectedMonths.has(key)}
                         onChange={() => toggleMonth(key)}
                         size="xs"
@@ -390,10 +324,4 @@ const PaymentCardPage: NextPageWithLayout = function PaymentCardPage() {
       )}
     </>
   );
-};
-
-PaymentCardPage.getLayout = (page: ReactElement) => (
-  <AdminLayout>{page}</AdminLayout>
-);
-
-export default PaymentCardPage;
+}

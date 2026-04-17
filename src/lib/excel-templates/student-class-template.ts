@@ -1,13 +1,18 @@
+import ExcelJS from "exceljs";
 import * as XLSX from "xlsx";
+import { addRefColumn, applyListValidation } from "../exceljs-utils";
+
+const LAST_ROW = 1000;
 
 export function generateStudentClassTemplate(
   students: Array<{ nis: string; name: string }>,
   classes: Array<{ id: string; className: string }>,
-) {
-  const workbook = XLSX.utils.book_new();
+): ExcelJS.Workbook {
+  const workbook = new ExcelJS.Workbook();
 
   // Instructions sheet
-  const instructionsData = [
+  const instructions = workbook.addWorksheet("Instructions");
+  const instructionRows = [
     ["Student Class Assignment Import Template"],
     [""],
     ["Instructions:"],
@@ -21,33 +26,53 @@ export function generateStudentClassTemplate(
     ["- Student Name: For reference only (not imported)"],
     ["- Class Name: The class to assign the student to (required)"],
   ];
-  const instructionsSheet = XLSX.utils.aoa_to_sheet(instructionsData);
-  instructionsSheet["!cols"] = [{ wch: 60 }];
-  XLSX.utils.book_append_sheet(workbook, instructionsSheet, "Instructions");
+  for (const row of instructionRows) instructions.addRow(row);
+  instructions.getColumn(1).width = 60;
 
   // Data entry sheet
-  const dataHeaders = ["Student NIS", "Student Name (Reference)", "Class Name"];
-  const dataSheet = XLSX.utils.aoa_to_sheet([dataHeaders]);
-  dataSheet["!cols"] = [{ wch: 15 }, { wch: 30 }, { wch: 25 }];
-  XLSX.utils.book_append_sheet(workbook, dataSheet, "Import Data");
+  const dataSheet = workbook.addWorksheet("Import Data");
+  dataSheet.addRow(["Student NIS", "Student Name (Reference)", "Class Name"]);
+  [15, 30, 25].forEach((w, i) => {
+    dataSheet.getColumn(i + 1).width = w;
+  });
 
-  // Students reference sheet
-  const studentsData = [
-    ["Student NIS", "Student Name"],
-    ...students.map((s) => [s.nis, s.name]),
-  ];
-  const studentsSheet = XLSX.utils.aoa_to_sheet(studentsData);
-  studentsSheet["!cols"] = [{ wch: 15 }, { wch: 30 }];
-  XLSX.utils.book_append_sheet(workbook, studentsSheet, "Students List");
+  // Visible reference sheets preserved.
+  const studentsSheet = workbook.addWorksheet("Students List");
+  studentsSheet.addRow(["Student NIS", "Student Name"]);
+  for (const s of students) studentsSheet.addRow([s.nis, s.name]);
+  studentsSheet.getColumn(1).width = 15;
+  studentsSheet.getColumn(2).width = 30;
 
-  // Classes reference sheet
-  const classesData = [
-    ["Class ID", "Class Name"],
-    ...classes.map((c) => [c.id, c.className]),
-  ];
-  const classesSheet = XLSX.utils.aoa_to_sheet(classesData);
-  classesSheet["!cols"] = [{ wch: 40 }, { wch: 25 }];
-  XLSX.utils.book_append_sheet(workbook, classesSheet, "Classes List");
+  const classesSheet = workbook.addWorksheet("Classes List");
+  classesSheet.addRow(["Class ID", "Class Name"]);
+  for (const c of classes) classesSheet.addRow([c.id, c.className]);
+  classesSheet.getColumn(1).width = 40;
+  classesSheet.getColumn(2).width = 25;
+
+  // Dropdowns on the Import Data sheet.
+  const nisRange = addRefColumn(
+    workbook,
+    "NIS",
+    students.map((s) => s.nis),
+  );
+  if (nisRange) {
+    applyListValidation(dataSheet, "A", 2, LAST_ROW, [`=${nisRange}`], {
+      promptTitle: "Student NIS",
+      prompt: "Pick a student NIS.",
+    });
+  }
+
+  const classRange = addRefColumn(
+    workbook,
+    "Class",
+    classes.map((c) => c.className),
+  );
+  if (classRange) {
+    applyListValidation(dataSheet, "C", 2, LAST_ROW, [`=${classRange}`], {
+      promptTitle: "Class Name",
+      prompt: "Pick a class name.",
+    });
+  }
 
   return workbook;
 }

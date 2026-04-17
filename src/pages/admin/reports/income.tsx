@@ -18,6 +18,7 @@ import type { ReactElement } from "react";
 import { useState } from "react";
 import AdminLayout from "@/components/layouts/AdminLayout";
 import PageHeader from "@/components/ui/PageHeader/PageHeader";
+import { downloadFileFromApi } from "@/lib/download";
 import type { NextPageWithLayout } from "@/lib/page-types";
 
 type ReportPeriod = "daily" | "monthly" | "yearly";
@@ -28,12 +29,15 @@ const IncomeReportPage: NextPageWithLayout = function IncomeReportPage() {
   const [dateFrom, setDateFrom] = useState<DateStringValue | null>(null);
   const [dateTo, setDateTo] = useState<DateStringValue | null>(null);
 
-  const handleExport = () => {
+  const handleExport = async () => {
     const params = new URLSearchParams();
     params.set("period", period);
     if (dateFrom) params.set("dateFrom", dateFrom);
     if (dateTo) params.set("dateTo", dateTo);
-    window.open(`/api/v1/reports/income/export?${params.toString()}`, "_blank");
+    await downloadFileFromApi(
+      `/api/v1/reports/income/export?${params.toString()}`,
+      `laporan-pendapatan-${period}-${new Date().toISOString().split("T")[0]}.xlsx`,
+    );
   };
 
   return (

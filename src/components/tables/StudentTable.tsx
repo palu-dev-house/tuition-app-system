@@ -444,7 +444,7 @@ export default function StudentTable() {
                                 </ActionIcon>
                                 <ActionIcon
                                   component={Link}
-                                  href={`/admin/students/${student.nis}/payment-card`}
+                                  href={`/admin/payment-card?studentId=${student.id}`}
                                   variant="subtle"
                                   color="grape"
                                   title={t("paymentCard.title")}

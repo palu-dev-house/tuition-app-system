@@ -1,8 +1,8 @@
 import type { NextRequest } from "next/server";
-import * as XLSX from "xlsx";
 import { createApiHandler } from "@/lib/api-adapter";
 import { requireRole } from "@/lib/api-auth";
 import { createFeeServiceTemplate } from "@/lib/excel-templates/fee-service-template";
+import { exceljsToBuffer } from "@/lib/exceljs-utils";
 import { prisma } from "@/lib/prisma";
 
 async function GET(request: NextRequest) {
@@ -16,7 +16,7 @@ async function GET(request: NextRequest) {
     });
 
     const workbook = createFeeServiceTemplate(academicYears);
-    const buffer = XLSX.write(workbook, { type: "buffer", bookType: "xlsx" });
+    const buffer = await exceljsToBuffer(workbook);
 
     return new Response(buffer, {
       headers: {

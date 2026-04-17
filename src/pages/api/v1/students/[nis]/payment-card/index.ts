@@ -56,7 +56,12 @@ async function GET(
   const academicYearIdParam = sp.get("academicYearId") || undefined;
 
   try {
-    const student = await prisma.student.findFirst({ where: { nis } });
+    // `nis` route param is treated as the student primary key (studentId / uuid)
+    // to support (nis, schoolLevel) composite uniqueness. Falls back to NIS
+    // lookup for backward compatibility with legacy links.
+    const student =
+      (await prisma.student.findUnique({ where: { id: nis } })) ??
+      (await prisma.student.findFirst({ where: { nis } }));
     if (!student) {
       return errorResponse(
         t("api.notFound", { resource: "Student" }),
@@ -64,6 +69,7 @@ async function GET(
         404,
       );
     }
+    const studentId = student.id;
 
     const academicYear = academicYearIdParam
       ? await prisma.academicYear.findUnique({
@@ -83,7 +89,7 @@ async function GET(
 
     const studentClass = await prisma.studentClass.findFirst({
       where: {
-        studentId: nis,
+        studentId,
         classAcademic: { academicYearId: academicYear.id },
       },
       include: { classAcademic: true },
@@ -92,7 +98,7 @@ async function GET(
     const [tuitions, feeBills, serviceFeeBills] = await Promise.all([
       prisma.tuition.findMany({
         where: {
-          studentId: nis,
+          studentId,
           year: { in: [startYear, startYear + 1] },
           classAcademic: { academicYearId: academicYear.id },
         },
@@ -105,7 +111,7 @@ async function GET(
       }),
       prisma.feeBill.findMany({
         where: {
-          studentId: nis,
+          studentId,
           year: { in: [startYear, startYear + 1] },
           feeService: { academicYearId: academicYear.id },
         },
@@ -119,7 +125,7 @@ async function GET(
       }),
       prisma.serviceFeeBill.findMany({
         where: {
-          studentId: nis,
+          studentId,
           year: { in: [startYear, startYear + 1] },
           classAcademic: { academicYearId: academicYear.id },
         },

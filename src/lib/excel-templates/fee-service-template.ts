@@ -1,4 +1,12 @@
-import * as XLSX from "xlsx";
+import ExcelJS from "exceljs";
+import {
+  addRefColumn,
+  applyListValidation,
+  inlineListFormula,
+} from "../exceljs-utils";
+
+const LAST_ROW = 1000;
+const CATEGORIES = ["TRANSPORT", "ACCOMMODATION"];
 
 export interface FeeServiceExcelRow {
   "Academic Year": string;
@@ -9,14 +17,17 @@ export interface FeeServiceExcelRow {
 
 export function createFeeServiceTemplate(
   academicYears: Array<{ id: string; year: string }>,
-): XLSX.WorkBook {
-  const workbook = XLSX.utils.book_new();
+): ExcelJS.Workbook {
+  const workbook = new ExcelJS.Workbook();
+  const sheet = workbook.addWorksheet("Fee Services");
 
-  const headers = ["Academic Year", "Category", "Name", "Description"];
-  const wsData: string[][] = [headers];
+  sheet.addRow(["Academic Year", "Category", "Name", "Description"]);
+  [20, 18, 30, 40].forEach((w, i) => {
+    sheet.getColumn(i + 1).width = w;
+  });
 
   if (academicYears.length > 0) {
-    wsData.push([
+    sheet.addRow([
       academicYears[0].year,
       "TRANSPORT",
       "Bus Rute A",
@@ -24,22 +35,42 @@ export function createFeeServiceTemplate(
     ]);
   }
 
-  for (let i = 0; i < 99; i++) wsData.push(["", "", "", ""]);
+  // Visible reference sheets preserved.
+  const refSheet = workbook.addWorksheet("Reference");
+  refSheet.addRow(["Academic Year"]);
+  for (const ay of academicYears) refSheet.addRow([ay.year]);
+  refSheet.getColumn(1).width = 20;
 
-  const worksheet = XLSX.utils.aoa_to_sheet(wsData);
-  worksheet["!cols"] = [{ wch: 20 }, { wch: 18 }, { wch: 30 }, { wch: 40 }];
-  XLSX.utils.book_append_sheet(workbook, worksheet, "Fee Services");
+  const catSheet = workbook.addWorksheet("Categories");
+  catSheet.addRow(["Category"]);
+  for (const c of CATEGORIES) catSheet.addRow([c]);
+  catSheet.getColumn(1).width = 18;
 
-  const refData = [["Academic Year"]];
-  for (const ay of academicYears) refData.push([ay.year]);
-  const refSheet = XLSX.utils.aoa_to_sheet(refData);
-  refSheet["!cols"] = [{ wch: 20 }];
-  XLSX.utils.book_append_sheet(workbook, refSheet, "Reference");
+  // Dropdown: Academic Year (col A)
+  const yearRange = addRefColumn(
+    workbook,
+    "AcademicYear",
+    academicYears.map((a) => a.year),
+  );
+  if (yearRange) {
+    applyListValidation(sheet, "A", 2, LAST_ROW, [`=${yearRange}`], {
+      promptTitle: "Academic Year",
+      prompt: "Select an academic year.",
+    });
+  }
 
-  const catData = [["Category"], ["TRANSPORT"], ["ACCOMMODATION"]];
-  const catSheet = XLSX.utils.aoa_to_sheet(catData);
-  catSheet["!cols"] = [{ wch: 18 }];
-  XLSX.utils.book_append_sheet(workbook, catSheet, "Categories");
+  // Dropdown: Category (col B)
+  applyListValidation(
+    sheet,
+    "B",
+    2,
+    LAST_ROW,
+    [inlineListFormula(CATEGORIES)],
+    {
+      promptTitle: "Category",
+      prompt: "Choose TRANSPORT or ACCOMMODATION.",
+    },
+  );
 
   return workbook;
 }

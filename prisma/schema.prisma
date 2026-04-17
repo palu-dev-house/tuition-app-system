@@ -103,7 +103,6 @@ model Student {
   id            String      @id @default(uuid())
   nis           String
   schoolLevel   SchoolLevel @map("school_level")
-  nik           String      @unique @map("nik")
   name          String
   address       String
   parentName    String      @map("parent_name")

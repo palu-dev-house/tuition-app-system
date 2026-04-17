@@ -1,4 +1,7 @@
-import * as XLSX from "xlsx";
+import ExcelJS from "exceljs";
+import { addRefColumn, applyListValidation } from "../exceljs-utils";
+
+const LAST_ROW = 1000;
 
 export interface TuitionExcelRow {
   Class: string;
@@ -7,31 +10,38 @@ export interface TuitionExcelRow {
 
 export function createTuitionTemplate(
   classes: Array<{ id: string; className: string }>,
-): XLSX.WorkBook {
-  const workbook = XLSX.utils.book_new();
+): ExcelJS.Workbook {
+  const workbook = new ExcelJS.Workbook();
+  const sheet = workbook.addWorksheet("Tuitions");
 
-  const headers = ["Class", "Fee Amount"];
-  const wsData: (string | number)[][] = [headers];
+  sheet.addRow(["Class", "Fee Amount"]);
+  sheet.columns = [
+    { header: "Class", key: "class", width: 30 },
+    { header: "Fee Amount", key: "fee", width: 20 },
+  ];
 
   if (classes.length > 0) {
-    wsData.push([classes[0].className, 500000]);
+    sheet.addRow([classes[0].className, 500000]);
   }
 
-  for (let i = 0; i < 99; i++) wsData.push(["", ""]);
+  // Visible reference sheet preserved for parity with the previous template.
+  const refSheet = workbook.addWorksheet("Classes (Ref)");
+  refSheet.addRow(["Class"]);
+  for (const c of classes) refSheet.addRow([c.className]);
+  refSheet.getColumn(1).width = 30;
 
-  const worksheet = XLSX.utils.aoa_to_sheet(wsData);
-  worksheet["!cols"] = [{ wch: 30 }, { wch: 20 }];
-
-  XLSX.utils.book_append_sheet(workbook, worksheet, "Tuitions");
-
-  // Reference sheet: classes
-  const refData: string[][] = [["Class"]];
-  for (const c of classes) {
-    refData.push([c.className]);
+  // Hidden dynamic range for data validation.
+  const classRange = addRefColumn(
+    workbook,
+    "Class",
+    classes.map((c) => c.className),
+  );
+  if (classRange) {
+    applyListValidation(sheet, "A", 2, LAST_ROW, [`=${classRange}`], {
+      promptTitle: "Class",
+      prompt: "Select a class.",
+    });
   }
-  const refSheet = XLSX.utils.aoa_to_sheet(refData);
-  refSheet["!cols"] = [{ wch: 30 }];
-  XLSX.utils.book_append_sheet(workbook, refSheet, "Classes (Ref)");
 
   return workbook;
 }

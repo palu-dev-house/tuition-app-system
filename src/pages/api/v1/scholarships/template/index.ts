@@ -1,8 +1,8 @@
 import type { NextRequest } from "next/server";
-import * as XLSX from "xlsx";
 import { createApiHandler } from "@/lib/api-adapter";
 import { requireRole } from "@/lib/api-auth";
 import { createScholarshipTemplate } from "@/lib/excel-templates/scholarship-template";
+import { exceljsToBuffer } from "@/lib/exceljs-utils";
 import { prisma } from "@/lib/prisma";
 
 async function GET(request: NextRequest) {
@@ -10,7 +10,6 @@ async function GET(request: NextRequest) {
   if (auth instanceof Response) return auth;
 
   try {
-    // Get students and classes for reference sheets
     const students = await prisma.student.findMany({
       select: { nis: true, name: true },
       orderBy: { name: "asc" },
@@ -21,13 +20,9 @@ async function GET(request: NextRequest) {
       orderBy: { className: "asc" },
     });
 
-    // Create workbook with template
     const workbook = createScholarshipTemplate(students, classes);
+    const buffer = await exceljsToBuffer(workbook);
 
-    // Convert to buffer
-    const buffer = XLSX.write(workbook, { type: "buffer", bookType: "xlsx" });
-
-    // Return as file download
     return new Response(buffer, {
       headers: {
         "Content-Type":

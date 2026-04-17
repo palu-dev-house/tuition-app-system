@@ -50,24 +50,10 @@ async function PUT(
       );
     }
 
-    if (body.nik && body.nik !== existing.nik) {
-      const nikTaken = await prisma.student.findUnique({
-        where: { nik: body.nik },
-      });
-      if (nikTaken) {
-        return errorResponse(
-          t("api.alreadyExists", { resource: "NIK" }),
-          "DUPLICATE_ENTRY",
-          409,
-        );
-      }
-    }
-
     const student = await prisma.student.update({
       where: { id: existing.id },
       data: {
         ...(body.name && { name: body.name }),
-        ...(body.nik && { nik: body.nik }),
         ...(body.address && { address: body.address }),
         ...(body.parentName && { parentName: body.parentName }),
         ...(body.parentPhone && { parentPhone: body.parentPhone }),

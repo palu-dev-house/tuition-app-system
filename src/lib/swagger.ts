@@ -63,7 +63,7 @@ export const getApiDocs = () => {
             type: "object",
             properties: {
               nis: { type: "string" },
-              nik: { type: "string" },
+              schoolLevel: { type: "string", enum: ["SD", "SMP", "SMA"] },
               name: { type: "string" },
               address: { type: "string" },
               parentName: { type: "string" },
@@ -491,7 +491,7 @@ export const getApiDocs = () => {
               {
                 name: "search",
                 in: "query",
-                description: "Search by NIS, NIK, or name",
+                description: "Search by NIS or name",
                 schema: { type: "string" },
               },
             ],
@@ -536,7 +536,7 @@ export const getApiDocs = () => {
                     type: "object",
                     required: [
                       "nis",
-                      "nik",
+                      "schoolLevel",
                       "name",
                       "address",
                       "parentName",
@@ -545,7 +545,10 @@ export const getApiDocs = () => {
                     ],
                     properties: {
                       nis: { type: "string" },
-                      nik: { type: "string", minLength: 16, maxLength: 16 },
+                      schoolLevel: {
+                        type: "string",
+                        enum: ["SD", "SMP", "SMA"],
+                      },
                       name: { type: "string" },
                       address: { type: "string" },
                       parentName: { type: "string" },
@@ -575,7 +578,7 @@ export const getApiDocs = () => {
                 },
               },
               "409": {
-                description: "Duplicate NIS or NIK",
+                description: "Duplicate NIS for this school level",
                 content: {
                   "application/json": {
                     schema: { $ref: "#/components/schemas/Error" },
@@ -634,7 +637,10 @@ export const getApiDocs = () => {
                   schema: {
                     type: "object",
                     properties: {
-                      nik: { type: "string" },
+                      schoolLevel: {
+                        type: "string",
+                        enum: ["SD", "SMP", "SMA"],
+                      },
                       name: { type: "string" },
                       address: { type: "string" },
                       parentName: { type: "string" },

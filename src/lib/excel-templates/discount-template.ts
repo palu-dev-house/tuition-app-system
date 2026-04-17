@@ -1,8 +1,11 @@
-import * as XLSX from "xlsx";
+import ExcelJS from "exceljs";
 import {
   getPeriodDisplayName,
   PERIODS,
 } from "../business-logic/tuition-generator";
+import { addRefColumn, applyListValidation } from "../exceljs-utils";
+
+const LAST_ROW = 1000;
 
 export interface DiscountExcelRow {
   Name: string;
@@ -21,10 +24,10 @@ export function createDiscountTemplate(
     className: string;
     academicYear: { year: string };
   }>,
-): XLSX.WorkBook {
-  const workbook = XLSX.utils.book_new();
+): ExcelJS.Workbook {
+  const workbook = new ExcelJS.Workbook();
+  const sheet = workbook.addWorksheet("Discounts");
 
-  // Create main data sheet
   const headers = [
     "Name",
     "Description",
@@ -34,24 +37,25 @@ export function createDiscountTemplate(
     "Academic Year",
     "Class",
   ];
-  const wsData: (string | number)[][] = [headers];
+  sheet.addRow(headers);
 
-  // Add sample rows
+  const widths = [25, 35, 20, 18, 30, 15, 25];
+  widths.forEach((w, i) => {
+    sheet.getColumn(i + 1).width = w;
+  });
+
   if (academicYears.length > 0) {
-    // Sample 1: School-wide discount for Q2
-    wsData.push([
+    sheet.addRow([
       "COVID Relief Q2",
       "COVID-19 tuition relief program",
       "COVID Relief",
       100000,
       "Q2",
       academicYears[0].year,
-      "", // Empty = school-wide
+      "",
     ]);
-
-    // Sample 2: Class-specific discount for specific months
     if (classes.length > 0) {
-      wsData.push([
+      sheet.addRow([
         "Class Discount Jul-Aug",
         "Special discount for specific class",
         "School Support",
@@ -63,27 +67,7 @@ export function createDiscountTemplate(
     }
   }
 
-  // Add empty rows for user input
-  for (let i = 0; i < 98; i++) {
-    wsData.push(["", "", "", "", "", "", ""]);
-  }
-
-  const worksheet = XLSX.utils.aoa_to_sheet(wsData);
-
-  // Set column widths
-  worksheet["!cols"] = [
-    { wch: 25 }, // Name
-    { wch: 35 }, // Description
-    { wch: 20 }, // Reason
-    { wch: 18 }, // Discount Amount
-    { wch: 30 }, // Target Periods
-    { wch: 15 }, // Academic Year
-    { wch: 25 }, // Class
-  ];
-
-  XLSX.utils.book_append_sheet(workbook, worksheet, "Discounts");
-
-  // Create reference sheet for periods
+  // Keep existing visible reference sheets for backwards compatibility.
   const allPeriods = [
     ...PERIODS.MONTHLY.map((p) => ({
       period: p,
@@ -101,32 +85,58 @@ export function createDiscountTemplate(
       display: getPeriodDisplayName(p),
     })),
   ];
-
-  const periodData: string[][] = [["Period Code", "Type", "Display Name"]];
+  const periodSheet = workbook.addWorksheet("Periods Reference");
+  periodSheet.addRow(["Period Code", "Type", "Display Name"]);
   for (const p of allPeriods) {
-    periodData.push([p.period, p.type, p.display]);
+    periodSheet.addRow([p.period, p.type, p.display]);
   }
-  const periodSheet = XLSX.utils.aoa_to_sheet(periodData);
-  periodSheet["!cols"] = [{ wch: 15 }, { wch: 12 }, { wch: 25 }];
-  XLSX.utils.book_append_sheet(workbook, periodSheet, "Periods Reference");
+  periodSheet.getColumn(1).width = 15;
+  periodSheet.getColumn(2).width = 12;
+  periodSheet.getColumn(3).width = 25;
 
-  // Create reference sheet for academic years
-  const yearData: string[][] = [["Academic Year"]];
-  for (const ay of academicYears) {
-    yearData.push([ay.year]);
-  }
-  const yearSheet = XLSX.utils.aoa_to_sheet(yearData);
-  yearSheet["!cols"] = [{ wch: 15 }];
-  XLSX.utils.book_append_sheet(workbook, yearSheet, "Academic Years Reference");
+  const yearSheet = workbook.addWorksheet("Academic Years Reference");
+  yearSheet.addRow(["Academic Year"]);
+  for (const ay of academicYears) yearSheet.addRow([ay.year]);
+  yearSheet.getColumn(1).width = 15;
 
-  // Create reference sheet for classes
-  const classData: string[][] = [["Class Name", "Academic Year"]];
-  for (const c of classes) {
-    classData.push([c.className, c.academicYear.year]);
+  const classSheet = workbook.addWorksheet("Classes Reference");
+  classSheet.addRow(["Class Name", "Academic Year"]);
+  for (const c of classes)
+    classSheet.addRow([c.className, c.academicYear.year]);
+  classSheet.getColumn(1).width = 25;
+  classSheet.getColumn(2).width = 15;
+
+  // Hidden dynamic ranges for dropdowns.
+  const yearRange = addRefColumn(
+    workbook,
+    "AcademicYear",
+    academicYears.map((a) => a.year),
+  );
+  const classRange = addRefColumn(
+    workbook,
+    "Class",
+    classes.map((c) => c.className),
+  );
+
+  // Academic Year -> column F
+  if (yearRange) {
+    applyListValidation(sheet, "F", 2, LAST_ROW, [`=${yearRange}`], {
+      promptTitle: "Academic Year",
+      prompt: "Select an academic year.",
+    });
   }
-  const classSheet = XLSX.utils.aoa_to_sheet(classData);
-  classSheet["!cols"] = [{ wch: 25 }, { wch: 15 }];
-  XLSX.utils.book_append_sheet(workbook, classSheet, "Classes Reference");
+
+  // Class -> column G (optional, blank = school-wide)
+  if (classRange) {
+    applyListValidation(sheet, "G", 2, LAST_ROW, [`=${classRange}`], {
+      promptTitle: "Class",
+      prompt: "Leave blank for school-wide discounts.",
+    });
+  }
+
+  // Target Periods column E accepts comma-separated values; we do not apply a
+  // list validation there because Excel list validation does not allow
+  // multi-select.
 
   return workbook;
 }
@@ -138,10 +148,9 @@ export interface ValidatedDiscountRow {
   discountAmount: number;
   targetPeriods: string[];
   academicYear: string;
-  className: string | null; // null = school-wide
+  className: string | null;
 }
 
-// All valid period codes
 const ALL_VALID_PERIODS: readonly string[] = [
   ...PERIODS.MONTHLY,
   ...PERIODS.QUARTERLY,
@@ -161,20 +170,17 @@ export function validateDiscountData(
 
   data.forEach((row, index) => {
     const rowErrors: string[] = [];
-    const rowNum = index + 2; // +2 for header row and 0-index
+    const rowNum = index + 2;
 
-    // Skip empty rows
     if (!row.Name && !row["Discount Amount"] && !row["Target Periods"]) {
       return;
     }
 
-    // Validate Name
     const name = String(row.Name || "").trim();
     if (!name) {
       rowErrors.push("Name is required");
     }
 
-    // Validate Discount Amount
     const discountAmount = Number(row["Discount Amount"]);
     if (!row["Discount Amount"] && row["Discount Amount"] !== 0) {
       rowErrors.push("Discount Amount is required");
@@ -182,7 +188,6 @@ export function validateDiscountData(
       rowErrors.push("Discount Amount must be a positive number");
     }
 
-    // Validate Target Periods
     const periodsStr = String(row["Target Periods"] || "").trim();
     if (!periodsStr) {
       rowErrors.push("Target Periods is required");
@@ -205,7 +210,6 @@ export function validateDiscountData(
       }
     }
 
-    // Validate Academic Year
     const academicYear = String(row["Academic Year"] || "").trim();
     if (!academicYear) {
       rowErrors.push("Academic Year is required");
@@ -213,7 +217,6 @@ export function validateDiscountData(
       rowErrors.push(`Academic Year "${academicYear}" not found`);
     }
 
-    // Validate Class (optional - empty means school-wide)
     const className = String(row.Class || "").trim() || null;
     if (className && !validClassNames.includes(className)) {
       rowErrors.push(`Class "${className}" not found`);
