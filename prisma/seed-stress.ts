@@ -942,6 +942,44 @@ async function main() {
 
   console.log(`  Created ${students.length} students.`);
 
+  // 5a-extra: Create SMP students with same NIS as first 10 SD students
+  console.log(
+    "Creating 10 SMP students with duplicate NIS (different tingkatan)...",
+  );
+
+  const SMP_DUPLICATE_COUNT = 10;
+  const smpStudentInputs = [];
+  for (let i = 1; i <= SMP_DUPLICATE_COUNT; i++) {
+    const nis = `2024${String(i).padStart(3, "0")}`; // same NIS as SD students
+    const joinDate = new Date("2024-07-15");
+    const parentPhone = generatePhone();
+    const hashedPhone = await bcrypt.hash(parentPhone, 10);
+
+    smpStudentInputs.push({
+      nis,
+      nik: generateUniqueNik(),
+      name: `${generateStudentName(i + 500)} (SMP)`,
+      address: `Jl. Pendidikan No. ${randomInt(1, 100)}, Jakarta`,
+      parentName: generateParentName(),
+      parentPhone,
+      startJoinDate: joinDate,
+      schoolLevel: "SMP" as const,
+      hasAccount: true,
+      password: hashedPhone,
+      mustChangePassword: true,
+      accountCreatedAt: joinDate,
+      accountCreatedBy: "SEED",
+    });
+  }
+
+  await prisma.student.createMany({
+    data: smpStudentInputs,
+    skipDuplicates: true,
+  });
+  console.log(
+    `  Created ${SMP_DUPLICATE_COUNT} SMP students with duplicate NIS.`,
+  );
+
   // ============================================================
   // 5b. CURRENT STUDENT-CLASS ASSIGNMENTS
   // ============================================================
