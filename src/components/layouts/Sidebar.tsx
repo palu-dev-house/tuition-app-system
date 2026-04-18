@@ -438,19 +438,17 @@ export default function Sidebar() {
               variant="default"
               styles={{
                 control: {
-                  paddingLeft: 8,
-                  paddingRight: 8,
-                  paddingTop: 6,
-                  paddingBottom: 6,
+                  paddingLeft: 10,
+                  paddingRight: 10,
+                  paddingTop: 8,
+                  paddingBottom: 8,
+                  borderRadius: 6,
                 },
                 label: {
-                  fontWeight: 700,
-                  fontSize: 11,
-                  letterSpacing: 0.8,
-                  textTransform: "uppercase",
-                  color: "var(--mantine-color-dimmed)",
+                  fontWeight: 500,
+                  fontSize: 14,
                 },
-                content: { padding: 0, paddingLeft: 6 },
+                content: { padding: 0, paddingLeft: 20 },
                 item: {
                   borderBottom: "none",
                   marginBottom: 2,
@@ -460,14 +458,7 @@ export default function Sidebar() {
             >
               {groups.map((group) => (
                 <Accordion.Item key={group.key} value={group.key}>
-                  <Accordion.Control
-                    icon={
-                      <group.icon
-                        size={14}
-                        color="var(--mantine-color-dimmed)"
-                      />
-                    }
-                  >
+                  <Accordion.Control icon={<group.icon size={20} />}>
                     {group.label}
                   </Accordion.Control>
                   <Accordion.Panel>
