@@ -104,7 +104,8 @@ export function createApiHandler(handlers: RouteHandlers) {
         res.send(body);
       } else {
         const buffer = Buffer.from(await response.arrayBuffer());
-        res.send(buffer);
+        res.setHeader("Content-Length", buffer.byteLength);
+        res.end(buffer);
       }
     } catch (error) {
       console.error("API handler error:", error);

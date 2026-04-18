@@ -16,6 +16,7 @@ interface Scholarship {
   student?: {
     nis: string;
     name: string;
+    schoolLevel?: string;
     parentPhone?: string;
   };
   classAcademic?: {

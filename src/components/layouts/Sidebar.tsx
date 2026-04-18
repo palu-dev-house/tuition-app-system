@@ -352,17 +352,20 @@ export default function Sidebar() {
     }
   }, [userOpenGroups]);
 
-  // Groups that contain the active route should force-open (without
-  // polluting the persisted user preference).
-  const activeGroupKeys = useMemo(() => {
-    const keys: string[] = [];
-    for (const group of groups) {
-      if (group.items.some((item) => item.href && item.href === activeHref)) {
-        keys.push(group.key);
-      }
-    }
-    return keys;
-  }, [groups, activeHref]);
+  // When navigating, auto-open the group containing the active route if it
+  // isn't already open. User can still close it afterwards.
+  useEffect(() => {
+    if (!activeHref) return;
+    const activeGroup = groups.find((g) =>
+      g.items.some((item) => item.href === activeHref),
+    );
+    if (!activeGroup) return;
+    setUserOpenGroups((prev) => {
+      const base = prev ?? defaultOpenGroups;
+      if (base.includes(activeGroup.key)) return prev;
+      return [...base, activeGroup.key];
+    });
+  }, [activeHref, groups, defaultOpenGroups]);
 
   const searching = search.trim().length > 0;
 
@@ -381,12 +384,10 @@ export default function Sidebar() {
     return out;
   }, [groups, search]);
 
-  // Effective open groups = user-opened ∪ active-forced (∪ all during search)
   const effectiveOpenGroups = useMemo(() => {
     if (searching) return defaultOpenGroups;
-    const base = userOpenGroups ?? defaultOpenGroups;
-    return Array.from(new Set([...base, ...activeGroupKeys]));
-  }, [defaultOpenGroups, userOpenGroups, activeGroupKeys, searching]);
+    return userOpenGroups ?? defaultOpenGroups;
+  }, [defaultOpenGroups, userOpenGroups, searching]);
 
   const handleAccordionChange = (value: string[]) => {
     // While searching, don't let user toggles clobber the search-expand state.
@@ -432,15 +433,37 @@ export default function Sidebar() {
               chevronPosition="right"
               variant="default"
               styles={{
-                control: { paddingLeft: 8, paddingRight: 8 },
-                label: { fontWeight: 600, fontSize: 13 },
-                content: { padding: 0 },
-                item: { borderBottom: "none" },
+                control: {
+                  paddingLeft: 8,
+                  paddingRight: 8,
+                  paddingTop: 6,
+                  paddingBottom: 6,
+                },
+                label: {
+                  fontWeight: 700,
+                  fontSize: 11,
+                  letterSpacing: 0.8,
+                  textTransform: "uppercase",
+                  color: "var(--mantine-color-dimmed)",
+                },
+                content: { padding: 0, paddingLeft: 6 },
+                item: {
+                  borderBottom: "none",
+                  marginBottom: 2,
+                },
+                chevron: { color: "var(--mantine-color-dimmed)" },
               }}
             >
               {groups.map((group) => (
                 <Accordion.Item key={group.key} value={group.key}>
-                  <Accordion.Control icon={<group.icon size={18} />}>
+                  <Accordion.Control
+                    icon={
+                      <group.icon
+                        size={14}
+                        color="var(--mantine-color-dimmed)"
+                      />
+                    }
+                  >
                     {group.label}
                   </Accordion.Control>
                   <Accordion.Panel>
@@ -452,6 +475,7 @@ export default function Sidebar() {
                         label={item.label}
                         leftSection={<item.icon size={18} />}
                         active={isActive(item.href!)}
+                        style={{ borderRadius: 6 }}
                       />
                     ))}
                   </Accordion.Panel>

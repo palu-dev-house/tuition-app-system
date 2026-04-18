@@ -19,6 +19,7 @@ import { useDisclosure } from "@mantine/hooks";
 import { modals } from "@mantine/modals";
 import { notifications } from "@mantine/notifications";
 import {
+  IconDownload,
   IconEdit,
   IconFileUpload,
   IconFilter,
@@ -29,15 +30,12 @@ import {
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import type { ReactElement } from "react";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { z } from "zod";
 import FeeServiceForm, {
   type FeeServiceFormValues,
 } from "@/components/forms/FeeServiceForm";
 import AdminLayout from "@/components/layouts/AdminLayout";
-import ImportModal, {
-  type ImportResult,
-} from "@/components/shared/ImportModal";
 import PageHeader from "@/components/ui/PageHeader/PageHeader";
 import TablePagination from "@/components/ui/TablePagination";
 import { useAcademicYears } from "@/hooks/api/useAcademicYears";
@@ -49,7 +47,6 @@ import {
   useUpdateFeeService,
 } from "@/hooks/api/useFeeServices";
 import { useQueryFilters } from "@/hooks/useQueryFilters";
-import { downloadFileFromApi } from "@/lib/download";
 import type { NextPageWithLayout } from "@/lib/page-types";
 
 const filterSchema = z.object({
@@ -92,38 +89,30 @@ const FeeServicesPage: NextPageWithLayout = function FeeServicesPage() {
 
   const [createOpened, { open: openCreate, close: closeCreate }] =
     useDisclosure(false);
-  const [importOpened, { open: openImport, close: closeImport }] =
-    useDisclosure(false);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
-  const handleImport = async (file: File): Promise<ImportResult> => {
-    try {
-      const data = await importMutation.mutateAsync(file);
-      notifications.show({
-        color: "green",
-        title: t("common.success"),
-        message: t("import.completeMessage", {
-          imported: data.imported,
-          skipped: data.skipped,
-        }),
-      });
-      return {
-        success: data.imported,
-        skipped: data.skipped,
-        errors: (data.errors ?? []).map(
-          (e: { row: number; error?: string; errors?: string[] }) => ({
-            row: e.row,
-            message: e.error ?? e.errors?.join(", ") ?? "Unknown",
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.currentTarget.files?.[0];
+    if (!file) return;
+    importMutation.mutate(file, {
+      onSuccess: (data) => {
+        notifications.show({
+          color: "green",
+          title: t("common.success"),
+          message: t("import.completeMessage", {
+            imported: data.imported,
+            skipped: data.skipped,
           }),
-        ),
-      };
-    } catch (error) {
-      notifications.show({
-        color: "red",
-        title: t("common.error"),
-        message: (error as Error).message,
-      });
-      throw error;
-    }
+        });
+      },
+      onError: (err) =>
+        notifications.show({
+          color: "red",
+          title: t("common.error"),
+          message: err.message,
+        }),
+    });
+    e.currentTarget.value = "";
   };
   const [editTarget, setEditTarget] = useState<{
     id: string;
@@ -221,12 +210,28 @@ const FeeServicesPage: NextPageWithLayout = function FeeServicesPage() {
         actions={
           <Group gap="sm">
             <Button
+              component="a"
+              href="/api/v1/fee-services/template"
+              variant="light"
+              leftSection={<IconDownload size={18} />}
+            >
+              {t("common.downloadTemplate")}
+            </Button>
+            <Button
               variant="light"
               leftSection={<IconFileUpload size={18} />}
-              onClick={openImport}
+              onClick={() => fileInputRef.current?.click()}
+              loading={importMutation.isPending}
             >
               {t("common.import")}
             </Button>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".xlsx,.xls"
+              style={{ display: "none" }}
+              onChange={handleFileChange}
+            />
             <Button leftSection={<IconPlus size={18} />} onClick={openCreate}>
               {t("feeService.create")}
             </Button>
@@ -375,20 +380,6 @@ const FeeServicesPage: NextPageWithLayout = function FeeServicesPage() {
           </Stack>
         )}
       </Paper>
-
-      <ImportModal
-        opened={importOpened}
-        onClose={closeImport}
-        title={t("feeService.importTitle")}
-        description={t("feeService.importDescription")}
-        onDownloadTemplate={() =>
-          downloadFileFromApi(
-            "/api/v1/fee-services/template",
-            "fee-service-import-template.xlsx",
-          )
-        }
-        onImport={handleImport}
-      />
 
       <Modal
         opened={createOpened}

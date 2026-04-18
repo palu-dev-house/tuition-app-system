@@ -1,67 +1,46 @@
 import { Button, Group } from "@mantine/core";
-import { useDisclosure } from "@mantine/hooks";
 import { notifications } from "@mantine/notifications";
-import { IconFileUpload, IconPlus } from "@tabler/icons-react";
+import { IconDownload, IconFileUpload, IconPlus } from "@tabler/icons-react";
 import { useRouter } from "next/router";
 import { useTranslations } from "next-intl";
-import type { ReactElement } from "react";
+import { type ReactElement, useRef } from "react";
 import AdminLayout from "@/components/layouts/AdminLayout";
-import ImportModal, {
-  type ImportResult,
-} from "@/components/shared/ImportModal";
 import StudentTable from "@/components/tables/StudentTable";
 import PageHeader from "@/components/ui/PageHeader/PageHeader";
 import { useImportStudents } from "@/hooks/api/useStudents";
 import { usePermissions } from "@/hooks/usePermissions";
-import { downloadFileFromApi } from "@/lib/download";
 import type { NextPageWithLayout } from "@/lib/page-types";
 
 const StudentsPage: NextPageWithLayout = function StudentsPage() {
   const router = useRouter();
   const { canCreate } = usePermissions();
   const t = useTranslations();
-  const [importOpened, { open: openImport, close: closeImport }] =
-    useDisclosure(false);
   const importStudents = useImportStudents();
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
-  const handleImport = async (file: File): Promise<ImportResult> => {
-    try {
-      const data = await importStudents.mutateAsync(file);
-      notifications.show({
-        title: t("student.importComplete"),
-        message: t("student.importCompleteMessage", {
-          imported: data.imported,
-          updated: data.updated,
-        }),
-        color: "green",
-      });
-      return {
-        success: data.imported,
-        extraBadges: [
-          {
-            color: "blue",
-            label: `${t("import.imported")} (update): ${data.updated}`,
-          },
-        ],
-        errors: (
-          (data.errors ?? []) as Array<{
-            row?: number;
-            error?: string;
-            errors?: string[];
-          }>
-        ).map((e) => ({
-          row: e.row ?? 0,
-          message: e.error ?? e.errors?.join(", ") ?? "Unknown error",
-        })),
-      };
-    } catch (error) {
-      notifications.show({
-        title: t("student.importFailed"),
-        message: (error as Error).message,
-        color: "red",
-      });
-      throw error;
-    }
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.currentTarget.files?.[0];
+    if (!file) return;
+    importStudents.mutate(file, {
+      onSuccess: (data) => {
+        notifications.show({
+          title: t("student.importComplete"),
+          message: t("student.importCompleteMessage", {
+            imported: data.imported,
+            updated: data.updated,
+          }),
+          color: "green",
+        });
+      },
+      onError: (error) => {
+        notifications.show({
+          title: t("student.importFailed"),
+          message: (error as Error).message,
+          color: "red",
+        });
+      },
+    });
+    e.currentTarget.value = "";
   };
 
   return (
@@ -73,12 +52,28 @@ const StudentsPage: NextPageWithLayout = function StudentsPage() {
           canCreate ? (
             <Group>
               <Button
+                component="a"
+                href="/api/v1/students/template"
+                leftSection={<IconDownload size={18} />}
+                variant="light"
+              >
+                {t("common.downloadTemplate")}
+              </Button>
+              <Button
                 leftSection={<IconFileUpload size={18} />}
                 variant="light"
-                onClick={openImport}
+                onClick={() => fileInputRef.current?.click()}
+                loading={importStudents.isPending}
               >
                 {t("student.import")}
               </Button>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".xlsx,.xls"
+                style={{ display: "none" }}
+                onChange={handleFileChange}
+              />
               <Button
                 leftSection={<IconPlus size={18} />}
                 onClick={() => router.push("/admin/students/new")}
@@ -90,19 +85,6 @@ const StudentsPage: NextPageWithLayout = function StudentsPage() {
         }
       />
       <StudentTable />
-      <ImportModal
-        opened={importOpened}
-        onClose={closeImport}
-        title={t("student.import")}
-        description={t("class.importStudentsDescription")}
-        onDownloadTemplate={() =>
-          downloadFileFromApi(
-            "/api/v1/students/template",
-            "student-import-template.xlsx",
-          )
-        }
-        onImport={handleImport}
-      />
     </>
   );
 };
