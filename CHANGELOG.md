@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.25.0] - 2026-04-18
+
+### Features
+- add NIS search + schoolLevel filter to overdue fee/service-fee reports
+
+
+
 ## [2.24.0] - 2026-04-18
 
 ### Features
