@@ -90,16 +90,16 @@ export function createApiHandler(handlers: RouteHandlers) {
       });
 
       const contentType = response.headers.get("content-type") || "";
+      const isTextual =
+        contentType.startsWith("text/") ||
+        contentType.includes("charset=") ||
+        contentType.includes("javascript") ||
+        /(^|\/|\+)xml(;|$)/.test(contentType) ||
+        contentType === "";
       if (contentType.includes("application/json")) {
         const body = await response.json();
         res.json(body);
-      } else if (
-        contentType.startsWith("text/") ||
-        contentType.includes("charset=") ||
-        contentType.includes("xml") ||
-        contentType.includes("javascript") ||
-        contentType === ""
-      ) {
+      } else if (isTextual) {
         const body = await response.text();
         res.send(body);
       } else {
