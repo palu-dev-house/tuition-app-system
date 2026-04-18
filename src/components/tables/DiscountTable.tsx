@@ -64,10 +64,8 @@ export default function DiscountTable() {
   const isActive = filters.isActive ?? "true";
 
   const { data: academicYearsData } = useAcademicYears({ limit: 100 });
-  const activeYear = academicYearsData?.academicYears.find((ay) => ay.isActive);
 
-  // Set default academic year
-  const effectiveAcademicYearId = academicYearId || activeYear?.id;
+  const effectiveAcademicYearId = academicYearId || undefined;
 
   const { data, isLoading, refetch, isFetching } = useDiscounts({
     page,
@@ -349,7 +347,7 @@ export default function DiscountTable() {
             placeholder={t("discount.filterByYear")}
             leftSection={<IconFilter size={16} />}
             data={academicYearOptions}
-            value={academicYearId || activeYear?.id || null}
+            value={academicYearId}
             onChange={(value) => setFilter("academicYearId", value || null)}
             clearable
             searchable

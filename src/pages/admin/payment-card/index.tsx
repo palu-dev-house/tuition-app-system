@@ -28,14 +28,6 @@ const PaymentCardPage: NextPageWithLayout = function PaymentCardPage() {
   // Academic years
   const { data: academicYearsData } = useAcademicYears({ limit: 100 });
   const years = academicYearsData?.academicYears ?? [];
-  const activeYear = years.find((ay) => ay.isActive);
-
-  // Default to active academic year when none chosen
-  useEffect(() => {
-    if (!academicYearId && activeYear?.id) {
-      setAcademicYearId(activeYear.id);
-    }
-  }, [academicYearId, activeYear?.id]);
 
   // Classes for selected academic year
   const { data: classesData } = useClassAcademics({

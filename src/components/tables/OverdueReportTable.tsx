@@ -60,18 +60,17 @@ export default function OverdueReportTable() {
   }));
 
   const { data: academicYearsData } = useAcademicYears({ limit: 100 });
-  const activeYear = academicYearsData?.academicYears.find((ay) => ay.isActive);
 
   const { data: classesData } = useClassAcademics({
     limit: 100,
-    academicYearId: academicYearId || activeYear?.id,
+    academicYearId: academicYearId || undefined,
     grade: grade ? Number(grade) : undefined,
   });
 
   const { data, isLoading, refetch, isFetching } = useOverdueReport({
     classAcademicId: classAcademicId || undefined,
     grade: grade ? Number(grade) : undefined,
-    academicYearId: academicYearId || activeYear?.id,
+    academicYearId: academicYearId || undefined,
   });
 
   const { exportReport } = useExportOverdueReport();
@@ -80,7 +79,7 @@ export default function OverdueReportTable() {
     exportReport({
       classAcademicId: classAcademicId || undefined,
       grade: grade ? Number(grade) : undefined,
-      academicYearId: academicYearId || activeYear?.id,
+      academicYearId: academicYearId || undefined,
     });
   };
 

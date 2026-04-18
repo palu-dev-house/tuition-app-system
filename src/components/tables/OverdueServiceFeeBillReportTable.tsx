@@ -55,11 +55,10 @@ export default function OverdueServiceFeeBillReportTable() {
   }));
 
   const { data: academicYearsData } = useAcademicYears({ limit: 100 });
-  const activeYear = academicYearsData?.academicYears.find((ay) => ay.isActive);
 
   const { data: classesData } = useClassAcademics({
     limit: 100,
-    academicYearId: academicYearId || activeYear?.id,
+    academicYearId: academicYearId || undefined,
     grade: grade ? Number(grade) : undefined,
   });
 
@@ -67,7 +66,7 @@ export default function OverdueServiceFeeBillReportTable() {
     useOverdueServiceFeeBillReport({
       classAcademicId: classAcademicId || undefined,
       grade: grade ? Number(grade) : undefined,
-      academicYearId: academicYearId || activeYear?.id,
+      academicYearId: academicYearId || undefined,
     });
 
   const yearOptions =

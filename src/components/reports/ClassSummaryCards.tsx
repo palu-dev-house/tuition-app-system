@@ -50,10 +50,9 @@ export default function ClassSummaryCards({
   };
 
   const { data: academicYearsData } = useAcademicYears({ limit: 100 });
-  const activeYear = academicYearsData?.academicYears.find((ay) => ay.isActive);
 
   const { data, isLoading } = useClassSummary({
-    academicYearId: academicYearId || activeYear?.id,
+    academicYearId: academicYearId || undefined,
   });
 
   const academicYearOptions =

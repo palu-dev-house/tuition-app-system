@@ -77,10 +77,8 @@ export default function TuitionTable() {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
   const { data: academicYearsData } = useAcademicYears({ limit: 100 });
-  const activeYear = academicYearsData?.academicYears.find((ay) => ay.isActive);
 
-  // Auto-select active year if no year selected
-  const selectedYearId = academicYearId || activeYear?.id;
+  const selectedYearId = academicYearId || undefined;
 
   const { data: classesData } = useClassAcademics({
     limit: 100,

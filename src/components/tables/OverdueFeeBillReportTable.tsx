@@ -55,18 +55,17 @@ export default function OverdueFeeBillReportTable() {
   }));
 
   const { data: academicYearsData } = useAcademicYears({ limit: 100 });
-  const activeYear = academicYearsData?.academicYears.find((ay) => ay.isActive);
 
   const { data: classesData } = useClassAcademics({
     limit: 100,
-    academicYearId: academicYearId || activeYear?.id,
+    academicYearId: academicYearId || undefined,
     grade: grade ? Number(grade) : undefined,
   });
 
   const { data, isLoading, refetch, isFetching } = useOverdueFeeBillReport({
     classAcademicId: classAcademicId || undefined,
     grade: grade ? Number(grade) : undefined,
-    academicYearId: academicYearId || activeYear?.id,
+    academicYearId: academicYearId || undefined,
   });
 
   const yearOptions =
