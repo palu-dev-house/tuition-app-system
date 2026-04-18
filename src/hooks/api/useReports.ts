@@ -217,10 +217,13 @@ export function useOverdueFeeBillReport(filters: OverdueFilters = {}) {
       const { data } = await apiClient.get<OverdueFeeBillResponse>(
         "/reports/overdue-fee-bills",
         {
-          params: filters as Record<
-            string,
-            string | number | boolean | undefined
-          >,
+          params: {
+            classAcademicId: filters.classAcademicId,
+            grade: filters.grade,
+            academicYearId: filters.academicYearId,
+            schoolLevel: filters.schoolLevel,
+            studentSearch: filters.search,
+          },
         },
       );
       return data.data;
@@ -235,10 +238,13 @@ export function useOverdueServiceFeeBillReport(filters: OverdueFilters = {}) {
       const { data } = await apiClient.get<OverdueServiceFeeBillResponse>(
         "/reports/overdue-service-fee-bills",
         {
-          params: filters as Record<
-            string,
-            string | number | boolean | undefined
-          >,
+          params: {
+            classAcademicId: filters.classAcademicId,
+            grade: filters.grade,
+            academicYearId: filters.academicYearId,
+            schoolLevel: filters.schoolLevel,
+            studentSearch: filters.search,
+          },
         },
       );
       return data.data;

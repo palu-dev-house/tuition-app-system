@@ -20,9 +20,21 @@ async function GET(request: NextRequest) {
     const classAcademicId = sp.get("classAcademicId") || undefined;
     const grade = sp.get("grade") ? Number(sp.get("grade")) : undefined;
     const academicYearId = sp.get("academicYearId") || undefined;
+    const schoolLevelParam = sp.get("schoolLevel");
+    const schoolLevel =
+      schoolLevelParam && schoolLevelParam !== "null"
+        ? (schoolLevelParam as "SD" | "SMP" | "SMA")
+        : undefined;
+    const studentSearch = sp.get("studentSearch") || undefined;
 
     const items = await getOverdueServiceFeeBills(
-      { classAcademicId, grade, academicYearId },
+      {
+        classAcademicId,
+        grade,
+        academicYearId,
+        schoolLevel,
+        studentSearch,
+      },
       prisma,
     );
     const overdue = groupServiceFeeBillsByStudent(items);

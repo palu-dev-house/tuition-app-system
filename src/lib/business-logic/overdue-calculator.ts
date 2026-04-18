@@ -360,6 +360,8 @@ export async function getOverdueFeeBills(
     classAcademicId?: string;
     grade?: number;
     academicYearId?: string;
+    schoolLevel?: "SD" | "SMP" | "SMA";
+    studentSearch?: string;
   },
   prisma: PrismaClient,
 ): Promise<OverdueFeeBillItem[]> {
@@ -371,6 +373,17 @@ export async function getOverdueFeeBills(
   };
   if (filters.academicYearId) {
     where.feeService = { academicYearId: filters.academicYearId };
+  }
+  if (filters.schoolLevel || filters.studentSearch) {
+    const sw: Record<string, unknown> = {};
+    if (filters.schoolLevel) sw.schoolLevel = filters.schoolLevel;
+    if (filters.studentSearch) {
+      sw.OR = [
+        { nis: { contains: filters.studentSearch, mode: "insensitive" } },
+        { name: { contains: filters.studentSearch, mode: "insensitive" } },
+      ];
+    }
+    where.student = sw;
   }
 
   const bills = await prisma.feeBill.findMany({
@@ -427,6 +440,8 @@ export async function getOverdueServiceFeeBills(
     classAcademicId?: string;
     grade?: number;
     academicYearId?: string;
+    schoolLevel?: "SD" | "SMP" | "SMA";
+    studentSearch?: string;
   },
   prisma: PrismaClient,
 ): Promise<OverdueServiceFeeBillItem[]> {
@@ -444,6 +459,17 @@ export async function getOverdueServiceFeeBills(
     if (filters.academicYearId)
       (where.classAcademic as Record<string, unknown>).academicYearId =
         filters.academicYearId;
+  }
+  if (filters.schoolLevel || filters.studentSearch) {
+    const sw: Record<string, unknown> = {};
+    if (filters.schoolLevel) sw.schoolLevel = filters.schoolLevel;
+    if (filters.studentSearch) {
+      sw.OR = [
+        { nis: { contains: filters.studentSearch, mode: "insensitive" } },
+        { name: { contains: filters.studentSearch, mode: "insensitive" } },
+      ];
+    }
+    where.student = sw;
   }
 
   const bills = await prisma.serviceFeeBill.findMany({
