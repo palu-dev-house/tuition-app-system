@@ -2,7 +2,7 @@
 
 This guide explains how to use **SkolFi**, the school tuition (SPP) application, for day-to-day operations. It is intended for school staff (Admins and Cashiers) as well as students/parents who use the portal.
 
-**App version:** 2.14.0
+**App version:** 2.25.1
 **UI language:** Available in Bahasa Indonesia and English (switchable via the flag button at the top of the page).
 
 ---
@@ -34,7 +34,9 @@ This guide explains how to use **SkolFi**, the school tuition (SPP) application,
     - [11.1 Overdue Report](#111-overdue-report)
     - [11.2 Class Summary Report](#112-class-summary-report)
     - [11.3 Fee Service Summary Report](#113-fee-service-summary-report)
-    - [11.4 Shareable filters](#114-shareable-filters)
+    - [11.4 Income Report](#114-income-report)
+    - [11.5 Shareable filters](#115-shareable-filters)
+    - [11.6 Working with Tables](#116-working-with-tables)
 12. [Student / Parent Portal](#12-student--parent-portal)
 13. [Account Settings](#13-account-settings)
 14. [FAQ](#14-faq)
@@ -140,9 +142,15 @@ A student portal account is created automatically with the default password set 
 - The **Status** dropdown above the table — choose `Active` (default), `Exited`, or `All`.
 - Exited students appear dimmed with an "Exited" label.
 
+**Search & filter:**
+- **NIS / name search** — the search box (with an NIS icon) above the table matches either the student's NIS or their name. Results update as you type.
+- **School Level filter** — the `SD / SMP / SMA` dropdown narrows the table to a single school level. It can be combined with the NIS search and any other filter.
+
+**Columns:** The table shows the student's **NIS** (not their internal UUID) and **School Level** so you can scan the list quickly.
+
 **Bulk actions:** Check multiple students to delete or update their start date in bulk.
 
-**Excel import:** Use the `Import` menu → upload a file based on the provided template.
+**Excel import (inline):** The toolbar above the table has an **Import** button and a **Download Template** button right next to it — no separate modal page to navigate to. Download the template, fill it in, then upload via **Import**.
 
 ### 4.4 Employees
 
@@ -174,6 +182,14 @@ A scholarship reduces a specific student's tuition fee for a specific academic y
 
 Scholarships are applied automatically when bills are generated.
 
+**Search & filter:**
+- **NIS / name search** — use the search box (NIS icon) above the table to find a scholarship by student NIS or name.
+- **School Level filter** — narrow the list to `SD`, `SMP`, or `SMA`. Works together with the NIS search.
+
+**Columns:** The table shows the student's **NIS** and **school level** alongside the scholarship details.
+
+**Inline import:** The toolbar hosts an **Import** button and a **Download Template** button side by side.
+
 ### 5.2 Discounts
 
 **Menu:** `Discounts` *(Admin only)*
@@ -187,6 +203,12 @@ Discounts apply to entire classes (for example, sibling discounts, Independence 
 4. Enable/disable as needed.
 
 **Note:** Inactive discounts are not applied when bills are generated.
+
+**Search & filter:**
+- **NIS / name search** — find a discount by the student's NIS or name via the search box above the table.
+- **School Level filter** — `SD / SMP / SMA` dropdown works alone or together with the NIS search.
+
+**Inline import:** The toolbar has an **Import** button with a **Download Template** button right next to it.
 
 ---
 
@@ -212,10 +234,13 @@ Tuition bills are typically generated at the start of the academic year for the 
 
 The bills table can be filtered by:
 - Academic class
-- Student (NIS)
+- **Student (NIS / name)** — search box above the table matches either NIS or name.
+- **School Level** — `SD / SMP / SMA` dropdown; combines with all other filters.
 - Status: `UNPAID`, `PAID`, `PARTIAL`, `VOID`
 - Period and year
 - Due date range
+
+The table shows the student's **NIS** and **school level** in dedicated columns.
 
 ### 6.3 Bill Statuses
 
@@ -395,6 +420,13 @@ The **Generate All Bills** button at the top of **All Bills** creates any missin
 - **Data-drift aware:** picks up new students, subscriptions, and exits on next run.
 - Re-run after adding a missing price, subscribing a late joiner, or recording a student exit.
 
+### Search, filter, and columns on All Bills
+
+- **NIS / name search** — the search box at the top of the table accepts either a student's NIS or name.
+- **School Level filter** — `SD / SMP / SMA` dropdown; combines with every other filter.
+- **Column settings** — click the **column-sliders** icon button on the toolbar. A drawer slides in with a toggle for every column — show or hide whatever you need (e.g. hide the cashier column when presenting to parents). Preferences persist per browser.
+- **NIS and school-level columns** — visible by default alongside the student name.
+
 ## Multi-Bill Payment (Cashier)
 
 On the cashier payment page the outstanding list combines tuition, transport bills, and service-fee bills for the selected student.
@@ -451,6 +483,8 @@ This page manages portal login accounts for students/parents.
 ---
 
 ## 9. Online Payments
+
+> **Note:** Online payments are an **optional** feature. If your school only records cash and bank-transfer payments at the cashier, you can leave this disabled — there is no need to configure Midtrans or expose the portal's **Pay** menu. The rest of the application works fully without it.
 
 **Menu:** `Online Payments` *(Admin only)*
 
@@ -528,21 +562,22 @@ If you run **Generate Bills** after marking a student as exited, the system auto
 
 ### 11.1 Overdue Report
 
-Shows a list of bills that are **past due** and still unpaid. The report is split into three tabs by bill type:
+Shows a list of bills that are **past due** and still unpaid. The report is split into three sub-tabs by bill type:
 
 - **Tuition (SPP)** — monthly tuition bills.
-- **Transport & Boarding** — subscription service fee bills.
-- **Supplies Fee** — one-time service fee bills per class.
+- **Fee Bill** — subscription fee bills (transport, boarding, etc.).
+- **Service Fee Bill** — one-time per-class service fee bills (supplies, etc.).
 
 Each tab uses the same filters and table format, so you can switch between bill types without losing context.
 
-**Available filters:**
+**Available filters (all tabs):**
+- **NIS / name search** — find a student directly by NIS or name.
+- **School Level** — `SD / SMP / SMA` dropdown.
 - Academic class
-- Grade / level
 - Academic year
 
 **Per-row info:**
-- Student name, class, period, due date.
+- Student NIS, name, school level, class, period, due date.
 - Outstanding amount.
 - Days overdue.
 
@@ -583,7 +618,28 @@ A unified view of **transport** fee services, grouped by service. Use this when 
 
 **Export:** click **Export Excel** to download the current filtered view as an `.xlsx` file.
 
-### 11.4 Shareable filters
+### 11.4 Income Report
+
+**Menu:** `Reports → Income`
+**URL:** `/admin/reports/income`
+
+Summarises money actually collected (not billed) across a chosen date, month, or year range.
+
+**Period modes:** use the **SegmentedControl** at the top of the page to pick one of:
+
+- **Daily** — choose a **date range** (from / to). Best for weekly / monthly cashier reconciliation.
+- **Monthly** — choose a **month range** (from / to). Best for term-level overviews.
+- **Yearly** — choose a **year range** (from / to). Best for board meetings and annual recaps.
+
+The date inputs automatically swap to match the selected mode — a date picker for Daily, month picker for Monthly, year picker for Yearly.
+
+**Excel export (3 sheets):** click **Export Excel** to download an `.xlsx` file containing:
+
+1. **Payment Detail** — every individual payment within the period (student, class, bill type, amount, date, cashier, receipt number).
+2. **Summary** — totals grouped per period bucket (day / month / year depending on mode) and per bill type.
+3. **Info** — export metadata (filter values, generated-at timestamp, user).
+
+### 11.5 Shareable filters
 
 Every filter and page number on the admin list and report pages is **saved in the URL**. This means you can:
 
@@ -592,6 +648,18 @@ Every filter and page number on the admin list and report pages is **saved in th
 - Use the browser **back / forward** buttons to step through filter changes.
 
 Changing any filter automatically resets the table back to page 1 so you never land on an empty page.
+
+### 11.6 Working with Tables
+
+A few quality-of-life behaviours apply across all admin tables and reports:
+
+- **NIS / name search** — tables that list students (Tuitions, Discounts, Scholarships, Fee Bills, Overdue Report) all have a search box with an **NIS icon**. Typing matches either the NIS or the student name.
+- **School Level filter** — the same pages have an `SD / SMP / SMA` dropdown. It combines with the NIS search and every other filter.
+- **NIS + School Level columns** — student tables and any table that shows students display the student's **NIS** (not their internal UUID) and their **school level**, so rows are easier to scan.
+- **Column Settings** — the Fee Bills table includes a **column-sliders** icon button on the toolbar. Click it to open a drawer that toggles individual columns on/off. Settings persist per browser.
+- **Inline Excel Import** — student, scholarship, and discount imports are on a toolbar **Import** button (no separate page). A **Download Template** button sits right next to it.
+- **Download loading state** — every **Export Excel** button shows a spinner and is disabled while the file is being generated, so you cannot accidentally click twice.
+- **Sidebar accordion** — the menu groups in the sidebar (**Main**, **Academic**, **Finance**, **Reports**, **System**) can be collapsed by clicking the group header. Collapsed / expanded state is remembered per browser.
 
 ---
 
@@ -896,4 +964,4 @@ Every `git commit` automatically triggers **Husky** which runs **lint-staged**. 
 - **Operational questions:** Contact the primary Admin at the school.
 - **Developer documentation:** See the `docs/` folder in the repository.
 
-*This document was last updated in April 2026 for app version 2.16.*
+*This document was last updated in April 2026 for app version 2.25.1.*

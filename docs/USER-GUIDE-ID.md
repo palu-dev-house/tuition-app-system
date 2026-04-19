@@ -2,7 +2,7 @@
 
 Panduan ini menjelaskan cara menggunakan **SkolFi**, aplikasi SPP sekolah, untuk kegiatan sehari-hari. Dokumen ini ditujukan untuk staf sekolah (Admin dan Kasir) serta siswa/orang tua yang menggunakan portal.
 
-**Versi aplikasi:** 2.14.0
+**Versi aplikasi:** 2.25.1
 **Bahasa UI:** Tersedia dalam Bahasa Indonesia dan English (dapat diubah lewat tombol bendera di bagian atas).
 
 ---
@@ -34,13 +34,20 @@ Panduan ini menjelaskan cara menggunakan **SkolFi**, aplikasi SPP sekolah, untuk
     - [11.1 Laporan Tunggakan](#111-laporan-tunggakan-overdue)
     - [11.2 Laporan Ringkasan Kelas](#112-laporan-ringkasan-kelas)
     - [11.3 Laporan Ringkasan Fee Service](#113-laporan-ringkasan-fee-service)
-    - [11.4 Filter yang dapat dibagikan](#114-filter-yang-dapat-dibagikan)
+    - [11.4 Laporan Pendapatan](#114-laporan-pendapatan-income-report)
+    - [11.5 Filter yang dapat dibagikan](#115-filter-yang-dapat-dibagikan)
 12. [Portal Siswa / Orang Tua](#12-portal-siswa--orang-tua)
 13. [Pengaturan Akun](#13-pengaturan-akun)
-14. [Pertanyaan Umum](#14-pertanyaan-umum)
-15. [Alur Kerja (Workflow)](#15-alur-kerja-workflow)
-16. [Studi Kasus](#16-studi-kasus)
-17. [Untuk Developer](#untuk-developer)
+14. [Fitur Tabel & Navigasi](#14-fitur-tabel--navigasi)
+    - [14.1 Pencarian NIS dan Filter Jenjang](#141-pencarian-nis-dan-filter-jenjang)
+    - [14.2 Pengaturan Kolom Tabel](#142-pengaturan-kolom-tabel)
+    - [14.3 Import Excel Inline](#143-import-excel-inline)
+    - [14.4 Loading saat Download](#144-loading-saat-download)
+    - [14.5 Accordion Group di Sidebar](#145-accordion-group-di-sidebar)
+15. [Pertanyaan Umum](#15-pertanyaan-umum)
+16. [Alur Kerja (Workflow)](#16-alur-kerja-workflow)
+17. [Studi Kasus](#17-studi-kasus)
+18. [Untuk Developer](#untuk-developer)
 
 ---
 
@@ -142,7 +149,11 @@ Secara otomatis, akun portal siswa akan dibuat dengan password default berupa no
 
 **Operasi massal:** Centang beberapa siswa untuk menghapus atau mengubah tanggal masuk secara massal.
 
-**Import Excel:** Gunakan menu `Import` → unggah file berdasarkan template yang disediakan.
+**Import Excel:** Tombol **Import** dan **Download Template** kini tersedia langsung pada toolbar halaman Siswa (tidak lagi lewat modal terpisah). Unggah file berdasarkan template yang disediakan.
+
+**Kolom NIS dan Jenjang:** Tabel siswa (serta tabel-tabel lain yang menampilkan data siswa seperti Tagihan SPP, Potongan, Beasiswa, dan Tagihan Layanan) kini menampilkan **NIS** (bukan UUID internal) beserta **jenjang sekolah** (SD/SMP/SMA) sehingga lebih mudah dibaca oleh staf.
+
+**Pencarian dan filter lanjutan:** Lihat bagian [14.1 Pencarian NIS dan Filter Jenjang](#141-pencarian-nis-dan-filter-jenjang) untuk detail pencarian via NIS dan filter jenjang yang tersedia di banyak tabel.
 
 ### 4.4 Karyawan
 
@@ -452,6 +463,8 @@ Halaman ini untuk mengelola akun portal (login siswa/orang tua).
 
 ## 9. Pembayaran Online
 
+> **Catatan:** Fitur Pembayaran Online bersifat **opsional** dan dapat dinonaktifkan jika sekolah Anda tidak menggunakan gateway pembayaran digital. Jika saat ini Anda tidak menggunakan pembayaran online, bagian ini dapat diabaikan — semua proses pembayaran tetap dapat dilakukan via kasir seperti biasa.
+
 **Menu:** `Pembayaran Online` *(hanya Admin)*
 
 Memantau transaksi pembayaran online yang dilakukan siswa/orang tua lewat portal (terintegrasi dengan Midtrans).
@@ -528,21 +541,23 @@ Jika Anda menjalankan **Generate Tagihan** setelah menandai siswa keluar, sistem
 
 ### 11.1 Laporan Tunggakan (Overdue)
 
-Menampilkan daftar tagihan yang **lewat jatuh tempo** dan belum lunas. Laporan dipisah menjadi tiga tab sesuai jenis tagihan:
+Menampilkan daftar tagihan yang **lewat jatuh tempo** dan belum lunas. Laporan dipisah menjadi tiga sub-tab sesuai jenis tagihan:
 
 - **SPP** — tagihan SPP bulanan (tuition).
-- **Transport** — tagihan layanan berlangganan (fee bills).
-- **Uang Perlengkapan** — tagihan one-time per kelas (service fee bills).
+- **Tagihan Layanan** — tagihan layanan berlangganan seperti transport (fee bills).
+- **Tagihan Layanan Siswa** — tagihan one-time per kelas seperti uang perlengkapan (service fee bills).
 
 Setiap tab menggunakan filter dan format tabel yang sama, jadi Anda bisa beralih antar jenis tagihan tanpa kehilangan konteks.
 
-**Filter yang tersedia:**
-- Kelas akademik
-- Grade / tingkat
-- Tahun ajaran
+**Filter yang tersedia di semua tab:**
+- **Pencarian NIS/Nama** — ketik NIS atau nama siswa; hasil cocok dengan salah satu.
+- **Jenjang Sekolah** — dropdown SD / SMP / SMA (bisa dikombinasikan dengan filter lain).
+- **Tahun ajaran**.
+- **Kelas** akademik.
+- **Grade / tingkat**.
 
 **Informasi per baris:**
-- Nama siswa, kelas, periode, tanggal jatuh tempo.
+- Nama siswa beserta **NIS** dan **jenjang**, kelas, periode, tanggal jatuh tempo.
 - Sisa tagihan.
 - Jumlah hari keterlambatan.
 
@@ -583,7 +598,29 @@ Tampilan terpadu untuk layanan **transport**, dikelompokkan per layanan. Gunakan
 
 **Ekspor:** klik **Export Excel** untuk mengunduh tampilan yang sedang difilter sebagai file `.xlsx`.
 
-### 11.4 Filter yang dapat dibagikan
+### 11.4 Laporan Pendapatan (Income Report)
+
+**Menu:** `Laporan → Pendapatan` (URL: `/admin/reports/income`)
+
+Laporan ini merangkum seluruh pembayaran yang masuk pada periode tertentu — berguna untuk rekap kas harian, bulanan, maupun tahunan.
+
+**Tiga mode periode** (dipilih via **SegmentedControl** di bagian atas halaman):
+
+- **Harian** — pilih **rentang tanggal** (dari — sampai). Cocok untuk rekap kas harian atau mingguan.
+- **Bulanan** — pilih **rentang bulan** (dari bulan X — sampai bulan Y). Cocok untuk rekap per bulan atau per kuartal.
+- **Tahunan** — pilih **rentang tahun**. Cocok untuk rekap akhir tahun ajaran.
+
+Input tanggal di halaman akan **otomatis berganti** menyesuaikan mode yang dipilih, sehingga tidak perlu dipikirkan format tanggalnya.
+
+**Ekspor Excel:** klik tombol **Export Excel**. File `.xlsx` yang dihasilkan berisi **tiga sheet**:
+
+1. **Detail Pembayaran** — daftar seluruh transaksi pembayaran pada periode terpilih (tanggal, NIS, nama siswa, kelas, jenis tagihan, jumlah, metode, kasir).
+2. **Ringkasan** — total pendapatan dikelompokkan per jenis tagihan / periode.
+3. **Info** — metadata laporan (periode, tanggal generate, pengguna yang mengunduh).
+
+Tombol export menampilkan **spinner** selama proses berjalan dan dinonaktifkan agar tidak bisa diklik dua kali.
+
+### 11.5 Filter yang dapat dibagikan
 
 Semua filter dan nomor halaman di halaman daftar admin dan laporan **disimpan di URL**. Artinya Anda dapat:
 
@@ -648,7 +685,53 @@ Klik **bendera** di pojok kanan atas untuk beralih antara Bahasa Indonesia dan E
 
 ---
 
-## 14. Pertanyaan Umum
+## 14. Fitur Tabel & Navigasi
+
+Bagian ini merangkum fitur-fitur yang berlaku lintas halaman — terutama pada tabel daftar (Siswa, Tagihan, Laporan) dan sidebar utama.
+
+### 14.1 Pencarian NIS dan Filter Jenjang
+
+Sebagian besar tabel yang menampilkan data siswa kini dilengkapi dua kontrol baru di toolbar atas:
+
+- **Pencarian NIS / Nama** — input pencarian dengan ikon NIS. Ketik **NIS** atau **nama siswa**; sistem akan mencocokkan salah satunya. Cocok untuk menemukan satu siswa tertentu dengan cepat.
+- **Jenjang Sekolah** — dropdown filter **SD / SMP / SMA**. Dapat digunakan sendiri atau dikombinasikan dengan pencarian NIS untuk mempersempit hasil (misalnya hanya siswa SMP dengan nama mengandung "Andi").
+
+**Halaman yang mendukung kedua kontrol ini:**
+- Tagihan SPP
+- Potongan (Diskon)
+- Beasiswa
+- Tagihan Layanan
+- Laporan Tunggakan — semua tab (SPP, Tagihan Layanan, Tagihan Layanan Siswa)
+
+Filter-filter ini juga tersimpan di URL, sehingga dapat di-bookmark maupun dibagikan (lihat bagian 11.5).
+
+### 14.2 Pengaturan Kolom Tabel
+
+Pada tabel **Tagihan Layanan**, terdapat tombol ikon **pengaturan kolom** (ikon sliders) di pojok toolbar. Klik tombol ini untuk membuka **drawer pengaturan kolom** — di sana Anda dapat **menyembunyikan** atau **menampilkan** kolom sesuai kebutuhan.
+
+Pengaturan ini berguna saat ingin mencetak/meng-capture tabel dengan kolom tertentu saja, atau untuk mempermudah pembacaan di layar kecil.
+
+### 14.3 Import Excel Inline
+
+Fitur import Excel pada halaman **Siswa**, **Beasiswa**, dan **Potongan** kini berjalan lewat tombol di **toolbar halaman** (bukan modal terpisah seperti sebelumnya). Di samping tombol **Import**, tersedia juga tombol **Download Template** untuk mengunduh format Excel yang benar.
+
+Alurnya:
+1. Klik **Download Template** untuk mendapatkan file contoh.
+2. Isi data pada file Excel tersebut.
+3. Klik **Import** dan pilih file yang sudah diisi.
+4. Sistem memproses dan melaporkan baris yang berhasil / dilewati.
+
+### 14.4 Loading saat Download
+
+Semua tombol **Export Excel** di aplikasi (Laporan Tunggakan, Laporan Fee Services, Laporan Pendapatan, dan lain-lain) kini menampilkan **spinner** selama proses unduh berjalan. Tombol otomatis **dinonaktifkan** selama spinner muncul agar tidak bisa diklik dua kali — mencegah duplikasi permintaan dan file yang dihasilkan ganda.
+
+### 14.5 Accordion Group di Sidebar
+
+Sidebar utama mengelompokkan menu ke dalam beberapa grup: **Utama**, **Akademik**, **Keuangan**, **Laporan**, dan **Sistem**. Setiap grup kini dapat **dilipat (collapse)** maupun dibuka dengan mengklik header grup. Sangat membantu ketika Anda ingin fokus pada satu area kerja tanpa distraksi menu lain.
+
+---
+
+## 15. Pertanyaan Umum
 
 **Q: Tagihan yang di-VOID bisa dikembalikan?**
 A: Admin dapat mengubah status via halaman tagihan (edit atau update massal). Tagihan yang di-VOID otomatis karena status keluar hanya dipulihkan jika Anda membatalkan status keluar siswa.
@@ -673,11 +756,11 @@ A: Ya. Semua data historis tetap tersimpan. Gunakan filter tahun ajaran di tagih
 
 ---
 
-## 15. Alur Kerja (Workflow)
+## 16. Alur Kerja (Workflow)
 
 Bagian ini menjelaskan urutan kerja tipikal dari setup awal hingga operasional harian.
 
-### 15.1 Alur Setup Awal (Admin, sekali di awal tahun ajaran)
+### 16.1 Alur Setup Awal (Admin, sekali di awal tahun ajaran)
 
 ```
 Tahun Ajaran → Kelas → Siswa → Akun Portal → Tagihan SPP
@@ -689,7 +772,7 @@ Tahun Ajaran → Kelas → Siswa → Akun Portal → Tagihan SPP
 4. **Generate Akun Portal** untuk siswa (tombol *Generate Akun* di daftar Akun Siswa). Password default otomatis dibuat.
 5. **Generate Tagihan SPP** di menu *Tagihan* — pilih tahun ajaran, periode (bulanan/kuartal/semester), dan kelas. Sistem akan membuat tagihan untuk semua siswa di kelas tersebut.
 
-### 15.2 Alur Harian (Kasir)
+### 16.2 Alur Harian (Kasir)
 
 ```
 Siswa datang bayar → Cari NIS → Catat Pembayaran → Cetak Kwitansi
@@ -703,7 +786,7 @@ Siswa datang bayar → Cari NIS → Catat Pembayaran → Cetak Kwitansi
 6. Simpan → status tagihan otomatis update (PAID atau PARTIAL).
 7. Klik *Cetak Kwitansi* → berikan ke siswa.
 
-### 15.3 Alur Bulanan (Admin)
+### 16.3 Alur Bulanan (Admin)
 
 ```
 Cek tagihan nunggak → Ingatkan → Rekap laporan bulanan
@@ -714,7 +797,7 @@ Cek tagihan nunggak → Ingatkan → Rekap laporan bulanan
 3. Akhir bulan: cek *Laporan Pendapatan* untuk rekap masuk kas.
 4. Cek *Riwayat Pembayaran* untuk audit trail.
 
-### 15.4 Alur Akhir Tahun Ajaran (Admin)
+### 16.4 Alur Akhir Tahun Ajaran (Admin)
 
 ```
 Tutup tahun ajaran → Rekap akhir → Buat tahun ajaran baru → Naik kelas
@@ -727,7 +810,7 @@ Tutup tahun ajaran → Rekap akhir → Buat tahun ajaran baru → Naik kelas
 5. Pindahkan siswa ke kelas baru (naik kelas) — atau tandai keluar bagi yang lulus.
 6. Generate tagihan SPP untuk tahun ajaran baru.
 
-### 15.5 Alur Keluar Siswa Mid-Year (Admin)
+### 16.5 Alur Keluar Siswa Mid-Year (Admin)
 
 ```
 Siswa tidak lanjut → Tandai Keluar → Sistem otomatis VOID tagihan ke depan
@@ -740,7 +823,7 @@ Siswa tidak lanjut → Tandai Keluar → Sistem otomatis VOID tagihan ke depan
 5. Status siswa berubah jadi **Keluar**, tagihan periode setelah tanggal keluar otomatis VOID.
 6. Jika salah input tanggal, klik **Batalkan Keluar** untuk restore.
 
-### 15.6 Alur Portal Siswa / Orang Tua
+### 16.6 Alur Portal Siswa / Orang Tua
 
 ```
 Login portal → Lihat tagihan → Bayar online (opsional) → Unduh kwitansi
@@ -754,7 +837,7 @@ Login portal → Lihat tagihan → Bayar online (opsional) → Unduh kwitansi
 
 ---
 
-## 16. Studi Kasus
+## 17. Studi Kasus
 
 Bagian ini memberi contoh skenario nyata dan cara menanganinya.
 
@@ -896,4 +979,4 @@ Setiap kali `git commit`, **Husky** menjalankan **lint-staged** secara otomatis.
 - **Pertanyaan operasional:** Hubungi Admin utama di sekolah.
 - **Dokumentasi teknis (developer):** Lihat folder `docs/` pada repository.
 
-*Dokumen ini diperbarui pada April 2026 untuk aplikasi versi 2.16.*
+*Dokumen ini diperbarui pada April 2026 untuk aplikasi versi 2.25.1.*
