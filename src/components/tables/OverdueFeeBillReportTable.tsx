@@ -32,6 +32,7 @@ import { useClassAcademics } from "@/hooks/api/useClassAcademics";
 import { useOverdueFeeBillReport } from "@/hooks/api/useReports";
 import { useQueryFilters } from "@/hooks/useQueryFilters";
 import { getMonthDisplayName } from "@/lib/business-logic/tuition-generator";
+import { schoolLevelColor } from "@/lib/school-level-color";
 
 const filterSchema = z.object({
   classAcademicId: z.string().optional(),
@@ -241,7 +242,11 @@ export default function OverdueFeeBillReportTable() {
                       <Stack gap={0}>
                         <Group gap="xs">
                           <Text fw={600}>{item.student.name}</Text>
-                          <Badge size="sm" variant="light">
+                          <Badge
+                            size="sm"
+                            variant="light"
+                            color={schoolLevelColor(item.student.schoolLevel)}
+                          >
                             {item.student.nis} · {item.student.schoolLevel}
                           </Badge>
                         </Group>

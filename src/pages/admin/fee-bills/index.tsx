@@ -52,6 +52,7 @@ import {
 import { useQueryFilters } from "@/hooks/useQueryFilters";
 import { PERIODS } from "@/lib/business-logic/tuition-generator";
 import type { NextPageWithLayout } from "@/lib/page-types";
+import { schoolLevelColor } from "@/lib/school-level-color";
 
 const billFilterSchema = z.object({
   studentId: z.string().optional(),
@@ -363,12 +364,22 @@ function FeeBillTab({ activeYearId }: { activeYearId?: string }) {
                                 {b.student?.name ?? b.studentId}
                               </Text>
                               {b.student?.nis && (
-                                <Text size="xs" c="dimmed">
-                                  NIS {b.student.nis}
-                                  {b.student.schoolLevel
-                                    ? ` · ${b.student.schoolLevel}`
-                                    : ""}
-                                </Text>
+                                <Group gap={6}>
+                                  <Text size="xs" c="dimmed">
+                                    NIS {b.student.nis}
+                                  </Text>
+                                  {b.student.schoolLevel && (
+                                    <Badge
+                                      size="xs"
+                                      variant="light"
+                                      color={schoolLevelColor(
+                                        b.student.schoolLevel,
+                                      )}
+                                    >
+                                      {b.student.schoolLevel}
+                                    </Badge>
+                                  )}
+                                </Group>
                               )}
                             </Stack>
                           </Table.Td>
@@ -679,12 +690,22 @@ function ServiceFeeBillTab({ activeYearId }: { activeYearId?: string }) {
                                 {b.student?.name ?? b.studentId}
                               </Text>
                               {b.student?.nis && (
-                                <Text size="xs" c="dimmed">
-                                  NIS {b.student.nis}
-                                  {b.student.schoolLevel
-                                    ? ` · ${b.student.schoolLevel}`
-                                    : ""}
-                                </Text>
+                                <Group gap={6}>
+                                  <Text size="xs" c="dimmed">
+                                    NIS {b.student.nis}
+                                  </Text>
+                                  {b.student.schoolLevel && (
+                                    <Badge
+                                      size="xs"
+                                      variant="light"
+                                      color={schoolLevelColor(
+                                        b.student.schoolLevel,
+                                      )}
+                                    >
+                                      {b.student.schoolLevel}
+                                    </Badge>
+                                  )}
+                                </Group>
                               )}
                             </Stack>
                           </Table.Td>

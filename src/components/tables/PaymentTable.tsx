@@ -47,6 +47,7 @@ import {
 import { useAuth } from "@/hooks/useAuth";
 import { useQueryFilters } from "@/hooks/useQueryFilters";
 import { getMonthDisplayName } from "@/lib/business-logic/tuition-generator";
+import { schoolLevelColor } from "@/lib/school-level-color";
 
 const filterSchema = z.object({
   classAcademicId: z.string().optional(),
@@ -443,12 +444,22 @@ export default function PaymentTable() {
                                 <Text size="sm" fw={500}>
                                   {student?.name ?? "-"}
                                 </Text>
-                                <Text size="xs" c="dimmed">
-                                  {student?.nis ? `NIS ${student.nis}` : ""}
-                                  {student?.schoolLevel
-                                    ? ` · ${student.schoolLevel}`
-                                    : ""}
-                                </Text>
+                                <Group gap={6}>
+                                  <Text size="xs" c="dimmed">
+                                    {student?.nis ? `NIS ${student.nis}` : ""}
+                                  </Text>
+                                  {student?.schoolLevel && (
+                                    <Badge
+                                      size="xs"
+                                      variant="light"
+                                      color={schoolLevelColor(
+                                        student.schoolLevel,
+                                      )}
+                                    >
+                                      {student.schoolLevel}
+                                    </Badge>
+                                  )}
+                                </Group>
                               </Stack>
                             </Table.Td>
                           );

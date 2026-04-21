@@ -46,6 +46,7 @@ import {
   getPeriodDisplayName,
   PERIODS,
 } from "@/lib/business-logic/tuition-generator";
+import { schoolLevelColor } from "@/lib/school-level-color";
 
 const filtersSchema = z.object({
   academicYearId: z.string().optional(),
@@ -500,12 +501,22 @@ export default function TuitionTable() {
                               <Text size="sm" fw={500}>
                                 {tuition.student?.name}
                               </Text>
-                              <Text size="xs" c="dimmed">
-                                NIS {tuition.student?.nis}
-                                {tuition.student?.schoolLevel
-                                  ? ` · ${tuition.student.schoolLevel}`
-                                  : ""}
-                              </Text>
+                              <Group gap={6}>
+                                <Text size="xs" c="dimmed">
+                                  NIS {tuition.student?.nis}
+                                </Text>
+                                {tuition.student?.schoolLevel && (
+                                  <Badge
+                                    size="xs"
+                                    variant="light"
+                                    color={schoolLevelColor(
+                                      tuition.student.schoolLevel,
+                                    )}
+                                  >
+                                    {tuition.student.schoolLevel}
+                                  </Badge>
+                                )}
+                              </Group>
                             </Stack>
                           </Table.Td>
                         );

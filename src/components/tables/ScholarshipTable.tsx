@@ -45,6 +45,7 @@ import {
   useScholarships,
 } from "@/hooks/api/useScholarships";
 import { useQueryFilters } from "@/hooks/useQueryFilters";
+import { schoolLevelColor } from "@/lib/school-level-color";
 
 const scholarshipFiltersSchema = z.object({
   classAcademicId: z.string().optional(),
@@ -488,12 +489,22 @@ export default function ScholarshipTable() {
                               <Text size="sm" fw={500}>
                                 {scholarship.student?.name}
                               </Text>
-                              <Text size="xs" c="dimmed">
-                                NIS {scholarship.student?.nis}
-                                {scholarship.student?.schoolLevel
-                                  ? ` · ${scholarship.student.schoolLevel}`
-                                  : ""}
-                              </Text>
+                              <Group gap={6}>
+                                <Text size="xs" c="dimmed">
+                                  NIS {scholarship.student?.nis}
+                                </Text>
+                                {scholarship.student?.schoolLevel && (
+                                  <Badge
+                                    size="xs"
+                                    variant="light"
+                                    color={schoolLevelColor(
+                                      scholarship.student.schoolLevel,
+                                    )}
+                                  >
+                                    {scholarship.student.schoolLevel}
+                                  </Badge>
+                                )}
+                              </Group>
                             </Stack>
                           </Table.Td>
                         );

@@ -40,6 +40,7 @@ import {
   useDeleteClassAcademic,
 } from "@/hooks/api/useClassAcademics";
 import { useQueryFilters } from "@/hooks/useQueryFilters";
+import { schoolLevelColor } from "@/lib/school-level-color";
 
 const filtersSchema = z.object({
   search: z.string().optional(),
@@ -354,7 +355,12 @@ export default function ClassAcademicTable() {
                       case "schoolLevel":
                         return (
                           <Table.Td key={key}>
-                            <Badge variant="light">{cls.schoolLevel}</Badge>
+                            <Badge
+                              variant="light"
+                              color={schoolLevelColor(cls.schoolLevel)}
+                            >
+                              {cls.schoolLevel}
+                            </Badge>
                           </Table.Td>
                         );
                       case "grade":
