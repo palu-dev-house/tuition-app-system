@@ -239,7 +239,7 @@ export default function OverdueFeeBillReportTable() {
                         <Group gap="xs">
                           <Text fw={600}>{item.student.name}</Text>
                           <Badge size="sm" variant="light">
-                            {item.student.nis}
+                            {item.student.nis} · {item.student.schoolLevel}
                           </Badge>
                         </Group>
                         <Text size="sm" c="dimmed">

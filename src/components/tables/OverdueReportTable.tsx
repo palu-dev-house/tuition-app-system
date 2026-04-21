@@ -270,7 +270,7 @@ export default function OverdueReportTable() {
                         <Group gap="xs">
                           <Text fw={600}>{item.student.name}</Text>
                           <Badge size="sm" variant="light">
-                            NIS {item.student.nis} · {item.student.schoolLevel}
+                            {item.student.nis} · {item.student.schoolLevel}
                           </Badge>
                         </Group>
                         <Text size="sm" c="dimmed">

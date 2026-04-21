@@ -1,10 +1,14 @@
-import type { PaymentStatus, PrismaClient } from "@/generated/prisma/client";
+import type {
+  PaymentStatus,
+  PrismaClient,
+  SchoolLevel,
+} from "@/generated/prisma/client";
 
 export interface OverdueItem {
   tuitionId: string;
   studentId: string;
   studentNis: string;
-  schoolLevel: string;
+  schoolLevel: SchoolLevel;
   studentName: string;
   parentPhone: string;
   className: string;
@@ -24,7 +28,7 @@ export interface OverdueItem {
 export interface OverdueByStudent {
   student: {
     nis: string;
-    schoolLevel: string;
+    schoolLevel: SchoolLevel;
     name: string;
     parentName: string;
     parentPhone: string;
@@ -279,6 +283,9 @@ export interface OverdueFeeBillItem {
   outstandingAmount: number;
   dueDate: Date;
   daysOverdue: number;
+
+  nis: string;
+  schoolLevel: SchoolLevel;
 }
 
 export interface OverdueServiceFeeBillItem {
@@ -298,6 +305,8 @@ export interface OverdueServiceFeeBillItem {
   outstandingAmount: number;
   dueDate: Date;
   daysOverdue: number;
+  nis: string;
+  schoolLevel: SchoolLevel;
 }
 
 export interface OverdueFeeBillByStudent {
@@ -306,6 +315,7 @@ export interface OverdueFeeBillByStudent {
     name: string;
     parentName: string;
     parentPhone: string;
+    schoolLevel: SchoolLevel;
   };
   class: {
     className: string;
@@ -334,6 +344,7 @@ export interface OverdueServiceFeeBillByStudent {
     name: string;
     parentName: string;
     parentPhone: string;
+    schoolLevel: SchoolLevel;
   };
   class: {
     className: string;
@@ -430,6 +441,8 @@ export async function getOverdueFeeBills(
         outstandingAmount: Math.max(amount - paidAmount, 0),
         dueDate: b.dueDate,
         daysOverdue: calculateDaysOverdue(b.dueDate),
+        nis: b.student.nis,
+        schoolLevel: b.student.schoolLevel,
       } satisfies OverdueFeeBillItem;
     })
     .filter((b): b is OverdueFeeBillItem => b !== null);
@@ -502,6 +515,8 @@ export async function getOverdueServiceFeeBills(
       outstandingAmount: Math.max(amount - paidAmount, 0),
       dueDate: b.dueDate,
       daysOverdue: calculateDaysOverdue(b.dueDate),
+      nis: b.student.nis,
+      schoolLevel: b.student.schoolLevel,
     } satisfies OverdueServiceFeeBillItem;
   });
 }
@@ -515,10 +530,11 @@ export function groupFeeBillsByStudent(
     if (!grouped.has(key)) {
       grouped.set(key, {
         student: {
-          nis: item.studentId,
+          nis: item.nis,
           name: item.studentName,
           parentName: item.parentName,
           parentPhone: item.parentPhone,
+          schoolLevel: item.schoolLevel,
         },
         class: {
           className: item.className,
@@ -558,10 +574,11 @@ export function groupServiceFeeBillsByStudent(
     if (!grouped.has(key)) {
       grouped.set(key, {
         student: {
-          nis: item.studentId,
+          nis: item.nis,
           name: item.studentName,
           parentName: item.parentName,
           parentPhone: item.parentPhone,
+          schoolLevel: item.schoolLevel,
         },
         class: {
           className: item.className,

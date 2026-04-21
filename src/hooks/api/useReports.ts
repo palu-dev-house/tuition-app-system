@@ -1,7 +1,7 @@
 "use client";
 
 import { useMutation, useQuery } from "@tanstack/react-query";
-import type { Month } from "@/generated/prisma/client";
+import type { Month, SchoolLevel } from "@/generated/prisma/client";
 import { apiClient } from "@/lib/api-client";
 import type {
   FeeServiceSummaryFilters,
@@ -154,6 +154,7 @@ export interface OverdueFeeBillByStudent {
     name: string;
     parentName: string;
     parentPhone: string;
+    schoolLevel: SchoolLevel;
   };
   class: {
     className: string;
@@ -183,6 +184,7 @@ export interface OverdueServiceFeeBillByStudent {
     name: string;
     parentName: string;
     parentPhone: string;
+    schoolLevel: SchoolLevel;
   };
   class: {
     className: string;
