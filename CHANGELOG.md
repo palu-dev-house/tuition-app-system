@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.28.0] - 2026-04-21
+
+### Features
+- add schoolLevel to ClassAcademic + TK dropdown
+
+
+
 ## [2.27.0] - 2026-04-21
 
 ### Features
