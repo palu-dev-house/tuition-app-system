@@ -114,9 +114,13 @@ interface ClassSummaryResponse {
   };
 }
 
-export function useOverdueReport(filters: OverdueFilters = {}) {
+export function useOverdueReport(
+  filters: OverdueFilters = {},
+  options: { enabled?: boolean } = {},
+) {
   return useQuery({
     queryKey: queryKeys.reports.overdue(filters),
+    enabled: options.enabled ?? true,
     queryFn: async () => {
       const { data } = await apiClient.get<OverdueReportResponse>(
         "/reports/overdue",
@@ -212,9 +216,13 @@ interface OverdueServiceFeeBillResponse {
   };
 }
 
-export function useOverdueFeeBillReport(filters: OverdueFilters = {}) {
+export function useOverdueFeeBillReport(
+  filters: OverdueFilters = {},
+  options: { enabled?: boolean } = {},
+) {
   return useQuery({
     queryKey: queryKeys.reports.overdueFeeBills(filters),
+    enabled: options.enabled ?? true,
     queryFn: async () => {
       const { data } = await apiClient.get<OverdueFeeBillResponse>(
         "/reports/overdue-fee-bills",
@@ -233,9 +241,13 @@ export function useOverdueFeeBillReport(filters: OverdueFilters = {}) {
   });
 }
 
-export function useOverdueServiceFeeBillReport(filters: OverdueFilters = {}) {
+export function useOverdueServiceFeeBillReport(
+  filters: OverdueFilters = {},
+  options: { enabled?: boolean } = {},
+) {
   return useQuery({
     queryKey: queryKeys.reports.overdueServiceFeeBills(filters),
+    enabled: options.enabled ?? true,
     queryFn: async () => {
       const { data } = await apiClient.get<OverdueServiceFeeBillResponse>(
         "/reports/overdue-service-fee-bills",

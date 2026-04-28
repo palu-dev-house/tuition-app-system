@@ -76,13 +76,20 @@ export default function OverdueFeeBillReportTable() {
     grade: grade ? Number(grade) : undefined,
   });
 
-  const { data, isLoading, refetch, isFetching } = useOverdueFeeBillReport({
-    classAcademicId: classAcademicId || undefined,
-    grade: grade ? Number(grade) : undefined,
-    academicYearId: academicYearId || undefined,
-    schoolLevel: schoolLevel ?? undefined,
-    search: studentSearch || undefined,
-  });
+  const hasFilters = Boolean(
+    classAcademicId || grade || academicYearId || schoolLevel || studentSearch,
+  );
+
+  const { data, isLoading, refetch, isFetching } = useOverdueFeeBillReport(
+    {
+      classAcademicId: classAcademicId || undefined,
+      grade: grade ? Number(grade) : undefined,
+      academicYearId: academicYearId || undefined,
+      schoolLevel: schoolLevel ?? undefined,
+      search: studentSearch || undefined,
+    },
+    { enabled: hasFilters },
+  );
 
   const yearOptions =
     academicYearsData?.academicYears?.map((ay) => ({
@@ -207,7 +214,15 @@ export default function OverdueFeeBillReportTable() {
         </Group>
       </Paper>
 
-      {isLoading && (
+      {!hasFilters && (
+        <Paper withBorder p="xl">
+          <Text ta="center" c="dimmed" py="xl">
+            {t("overdue.applyFilterPrompt")}
+          </Text>
+        </Paper>
+      )}
+
+      {hasFilters && isLoading && (
         <Paper withBorder p="md">
           <Stack gap="md">
             {Array.from({ length: 3 }).map((_, i) => (
@@ -217,7 +232,7 @@ export default function OverdueFeeBillReportTable() {
         </Paper>
       )}
 
-      {!isLoading && data?.overdue.length === 0 && (
+      {hasFilters && !isLoading && data?.overdue.length === 0 && (
         <Paper withBorder p="xl">
           <Text ta="center" c="dimmed" py="xl">
             {t("noOverdueFound")}
@@ -225,7 +240,7 @@ export default function OverdueFeeBillReportTable() {
         </Paper>
       )}
 
-      {!isLoading && overdue.length > 0 && (
+      {hasFilters && !isLoading && overdue.length > 0 && (
         <Virtuoso
           useWindowScroll
           data={overdue}

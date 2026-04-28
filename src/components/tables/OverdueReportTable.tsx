@@ -81,13 +81,20 @@ export default function OverdueReportTable() {
     grade: grade ? Number(grade) : undefined,
   });
 
-  const { data, isLoading, refetch, isFetching } = useOverdueReport({
-    classAcademicId: classAcademicId || undefined,
-    grade: grade ? Number(grade) : undefined,
-    academicYearId: academicYearId || undefined,
-    schoolLevel: schoolLevel ?? undefined,
-    search: studentSearch || undefined,
-  });
+  const hasFilters = Boolean(
+    classAcademicId || grade || academicYearId || schoolLevel || studentSearch,
+  );
+
+  const { data, isLoading, refetch, isFetching } = useOverdueReport(
+    {
+      classAcademicId: classAcademicId || undefined,
+      grade: grade ? Number(grade) : undefined,
+      academicYearId: academicYearId || undefined,
+      schoolLevel: schoolLevel ?? undefined,
+      search: studentSearch || undefined,
+    },
+    { enabled: hasFilters },
+  );
 
   const { exportReport, isExporting } = useExportOverdueReport();
 
@@ -220,7 +227,7 @@ export default function OverdueReportTable() {
             variant="light"
             onClick={handleExport}
             loading={isExporting}
-            disabled={!data || data.overdue.length === 0}
+            disabled={!hasFilters || !data || data.overdue.length === 0}
           >
             {t("exportToExcel")}
           </Button>
@@ -235,8 +242,17 @@ export default function OverdueReportTable() {
         </Group>
       </Paper>
 
+      {/* Filter Prompt */}
+      {!hasFilters && (
+        <Paper withBorder p="xl">
+          <Text ta="center" c="dimmed" py="xl">
+            {t("overdue.applyFilterPrompt")}
+          </Text>
+        </Paper>
+      )}
+
       {/* Loading State */}
-      {isLoading && (
+      {hasFilters && isLoading && (
         <Paper withBorder p="md">
           <Stack gap="md">
             {Array.from({ length: 3 }).map((_, i) => (
@@ -247,7 +263,7 @@ export default function OverdueReportTable() {
       )}
 
       {/* Empty State */}
-      {!isLoading && data?.overdue.length === 0 && (
+      {hasFilters && !isLoading && data?.overdue.length === 0 && (
         <Paper withBorder p="xl">
           <Text ta="center" c="dimmed" py="xl">
             {t("noOverdueFound")}

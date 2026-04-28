@@ -1079,6 +1079,7 @@
       "lastPayment": "Last Payment",
       "export": "Export to Excel",
       "noOverdue": "No overdue payments",
+      "applyFilterPrompt": "Select at least one filter above to load data.",
       "filterByClass": "Filter by Class",
       "filterByGrade": "Filter by Grade",
       "tabs": {

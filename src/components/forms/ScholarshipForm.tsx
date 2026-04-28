@@ -13,6 +13,7 @@ import {
   Stack,
   Text,
 } from "@mantine/core";
+import { useDebouncedValue } from "@mantine/hooks";
 import { notifications } from "@mantine/notifications";
 import {
   IconAlertCircle,
@@ -49,6 +50,11 @@ export default function ScholarshipForm() {
   const [academicYearId, setAcademicYearId] = useState<string | null>(null);
   const [classAcademicId, setClassAcademicId] = useState<string | null>(null);
   const [studentId, setStudentId] = useState<string | null>(null);
+  const [selectedStudentLabel, setSelectedStudentLabel] = useState<
+    string | null
+  >(null);
+  const [studentSearch, setStudentSearch] = useState("");
+  const [debouncedStudentSearch] = useDebouncedValue(studentSearch, 250);
   const [scholarshipName, setScholarshipName] = useState<string | null>(
     "Academic",
   );
@@ -76,7 +82,8 @@ export default function ScholarshipForm() {
   });
 
   const { data: studentsData, isLoading: loadingStudents } = useStudents({
-    limit: 1000,
+    limit: 20,
+    search: debouncedStudentSearch || undefined,
   });
 
   // Fetch tuitions for the selected class to get the fee amount
@@ -146,11 +153,21 @@ export default function ScholarshipForm() {
       label: c.className,
     })) || [];
 
-  const studentOptions =
-    studentsData?.students.map((s) => ({
-      value: s.id,
-      label: `${s.nis} - ${s.name} (${s.schoolLevel})`,
-    })) || [];
+  const studentOptions = useMemo(() => {
+    const opts =
+      studentsData?.students.map((s) => ({
+        value: s.id,
+        label: `${s.nis} - ${s.name} (${s.schoolLevel})`,
+      })) ?? [];
+    if (
+      studentId &&
+      selectedStudentLabel &&
+      !opts.some((o) => o.value === studentId)
+    ) {
+      opts.unshift({ value: studentId, label: selectedStudentLabel });
+    }
+    return opts;
+  }, [studentsData, studentId, selectedStudentLabel]);
 
   return (
     <Paper withBorder p="lg">
@@ -184,9 +201,17 @@ export default function ScholarshipForm() {
           placeholder={t("scholarship.selectStudent")}
           data={studentOptions}
           value={studentId}
-          onChange={setStudentId}
-          disabled={loadingStudents}
+          onChange={(v) => {
+            setStudentId(v);
+            const opt = studentOptions.find((o) => o.value === v);
+            setSelectedStudentLabel(opt?.label ?? null);
+          }}
           searchable
+          searchValue={studentSearch}
+          onSearchChange={setStudentSearch}
+          nothingFoundMessage={
+            loadingStudents ? t("common.loading") : t("common.noResults")
+          }
           required
         />
 

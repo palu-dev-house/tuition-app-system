@@ -19,6 +19,7 @@ import {
   Text,
   Textarea,
 } from "@mantine/core";
+import { useDebouncedValue } from "@mantine/hooks";
 import { notifications } from "@mantine/notifications";
 import {
   IconAlertCircle,
@@ -71,13 +72,21 @@ export default function PaymentForm() {
   const t = useTranslations();
   const router = useRouter();
   const [studentId, setStudentId] = useState<string | null>(null);
+  const [selectedStudentLabel, setSelectedStudentLabel] = useState<
+    string | null
+  >(null);
+  const [studentSearch, setStudentSearch] = useState("");
+  const [debouncedStudentSearch] = useDebouncedValue(studentSearch, 250);
   const [notes, setNotes] = useState("");
   const [selected, setSelected] = useState<Record<string, boolean>>({});
   const [inputs, setInputs] = useState<Record<string, ItemInput>>({});
   const [result, setResult] = useState<CreatePaymentResult | null>(null);
   const [confirmOpen, setConfirmOpen] = useState(false);
 
-  const { data: studentsData } = useStudents({ limit: 1000 });
+  const { data: studentsData } = useStudents({
+    limit: 20,
+    search: debouncedStudentSearch || undefined,
+  });
   const { data: tuitionsData } = useTuitions({
     limit: 100,
     studentId: studentId || undefined,
@@ -251,11 +260,21 @@ export default function PaymentForm() {
     );
   };
 
-  const studentOptions =
-    studentsData?.students.map((s) => ({
-      value: s.id,
-      label: `${s.nis} - ${s.name} (${s.schoolLevel})`,
-    })) ?? [];
+  const studentOptions = useMemo(() => {
+    const opts =
+      studentsData?.students.map((s) => ({
+        value: s.id,
+        label: `${s.nis} - ${s.name} (${s.schoolLevel})`,
+      })) ?? [];
+    if (
+      studentId &&
+      selectedStudentLabel &&
+      !opts.some((o) => o.value === studentId)
+    ) {
+      opts.unshift({ value: studentId, label: selectedStudentLabel });
+    }
+    return opts;
+  }, [studentsData, studentId, selectedStudentLabel]);
 
   return (
     <Paper withBorder p="lg">
@@ -268,11 +287,16 @@ export default function PaymentForm() {
           value={studentId}
           onChange={(v) => {
             setStudentId(v);
+            const opt = studentOptions.find((o) => o.value === v);
+            setSelectedStudentLabel(opt?.label ?? null);
             setSelected({});
             setInputs({});
             setResult(null);
           }}
           searchable
+          searchValue={studentSearch}
+          onSearchChange={setStudentSearch}
+          nothingFoundMessage={t("common.noResults")}
           required
         />
 
