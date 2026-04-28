@@ -1,5 +1,18 @@
 # Changelog
 
+## [2.30.0] - 2026-04-28
+
+### Features
+- display TK tingkat as PG/TKA/TKB across UI, exports, and import
+
+### Fixes
+- resolve duplicate-NIS Select crashes and speed up bill generation
+
+### Other
+- chore(db): regenerate baseline migration and expand seed coverage
+
+
+
 ## [2.29.0] - 2026-04-21
 
 ### Features
