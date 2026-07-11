@@ -162,3 +162,5 @@ async function POST(request: NextRequest) {
 }
 
 export default createApiHandler({ POST });
+
+export const config = { api: { bodyParser: false } };

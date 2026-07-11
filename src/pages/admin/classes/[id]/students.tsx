@@ -229,147 +229,154 @@ const ClassStudentsPage: NextPageWithLayout = function ClassStudentsPage() {
 
       {/* Students Table */}
       <Paper withBorder>
-        <Table striped highlightOnHover>
-          <Table.Thead>
-            <Table.Tr>
-              <Table.Th w={40}>
-                <Checkbox
-                  checked={
-                    data &&
-                    data.students.length > 0 &&
-                    selectedStudents.length === data.students.length
-                  }
-                  indeterminate={
-                    selectedStudents.length > 0 &&
-                    data &&
-                    selectedStudents.length < data.students.length
-                  }
-                  onChange={(e) => handleSelectAll(e.currentTarget.checked)}
-                />
-              </Table.Th>
-              <Table.Th>{t("student.nis")}</Table.Th>
-              <Table.Th>{t("common.name")}</Table.Th>
-              <Table.Th>{t("student.parentName")}</Table.Th>
-              <Table.Th>{t("common.phone")}</Table.Th>
-              <Table.Th>{t("class.joinDate")}</Table.Th>
-              <Table.Th>{t("class.enrolledAt")}</Table.Th>
-              <Table.Th w={80}>{t("common.actions")}</Table.Th>
-            </Table.Tr>
-          </Table.Thead>
-          <Table.Tbody>
-            {isLoading &&
-              Array.from({ length: 5 }).map((_, i) => (
-                <Table.Tr key={`skeleton-${i}`}>
-                  {Array.from({ length: 8 }).map((_, j) => (
-                    <Table.Td key={`skeleton-cell-${j}`}>
-                      <Skeleton height={20} />
-                    </Table.Td>
-                  ))}
+        <ScrollArea>
+          <Table striped highlightOnHover>
+            <Table.Thead>
+              <Table.Tr>
+                <Table.Th w={40}>
+                  <Checkbox
+                    checked={
+                      data &&
+                      data.students.length > 0 &&
+                      selectedStudents.length === data.students.length
+                    }
+                    indeterminate={
+                      selectedStudents.length > 0 &&
+                      data &&
+                      selectedStudents.length < data.students.length
+                    }
+                    onChange={(e) => handleSelectAll(e.currentTarget.checked)}
+                  />
+                </Table.Th>
+                <Table.Th>{t("student.nis")}</Table.Th>
+                <Table.Th>{t("common.name")}</Table.Th>
+                <Table.Th>{t("student.parentName")}</Table.Th>
+                <Table.Th>{t("common.phone")}</Table.Th>
+                <Table.Th>{t("class.joinDate")}</Table.Th>
+                <Table.Th>{t("class.enrolledAt")}</Table.Th>
+                <Table.Th w={80}>{t("common.actions")}</Table.Th>
+              </Table.Tr>
+            </Table.Thead>
+            <Table.Tbody>
+              {isLoading &&
+                Array.from({ length: 5 }).map((_, i) => (
+                  <Table.Tr key={`skeleton-${i}`}>
+                    {Array.from({ length: 8 }).map((_, j) => (
+                      <Table.Td key={`skeleton-cell-${j}`}>
+                        <Skeleton height={20} />
+                      </Table.Td>
+                    ))}
+                  </Table.Tr>
+                ))}
+              {!isLoading && data?.students.length === 0 && (
+                <Table.Tr>
+                  <Table.Td colSpan={8}>
+                    <Stack align="center" gap="md" py="xl">
+                      <IconUsers size={48} color="gray" />
+                      <Text ta="center" c="dimmed">
+                        {t("class.noStudentsYet")}
+                        <br />
+                        {t("class.clickAddStudents")}
+                      </Text>
+                    </Stack>
+                  </Table.Td>
+                </Table.Tr>
+              )}
+              {data?.students.map((student) => (
+                <Table.Tr key={student.nis}>
+                  <Table.Td>
+                    <Checkbox
+                      checked={selectedStudents.includes(student.nis)}
+                      onChange={(e) =>
+                        handleSelectStudent(
+                          student.nis,
+                          e.currentTarget.checked,
+                        )
+                      }
+                    />
+                  </Table.Td>
+                  <Table.Td>
+                    <Badge variant="light">{student.nis}</Badge>
+                  </Table.Td>
+                  <Table.Td>
+                    <Text size="sm" fw={500}>
+                      {student.name}
+                    </Text>
+                  </Table.Td>
+                  <Table.Td>
+                    <Text size="sm">{student.parentName}</Text>
+                  </Table.Td>
+                  <Table.Td>
+                    <Text size="sm">{student.parentPhone}</Text>
+                  </Table.Td>
+                  <Table.Td>
+                    <Text size="sm">
+                      {dayjs(student.startJoinDate).format("DD/MM/YYYY")}
+                    </Text>
+                  </Table.Td>
+                  <Table.Td>
+                    <Text size="sm">
+                      {dayjs(student.enrolledAt).format("DD/MM/YYYY")}
+                    </Text>
+                  </Table.Td>
+                  <Table.Td>
+                    <Tooltip label={t("class.removeFromClassTooltip")}>
+                      <ActionIcon
+                        variant="subtle"
+                        color="red"
+                        onClick={() => {
+                          modals.openConfirmModal({
+                            title: t("class.removeStudents"),
+                            children: (
+                              <Text size="sm">
+                                {t("class.removeStudentConfirmSingle", {
+                                  name: student.name,
+                                })}
+                              </Text>
+                            ),
+                            labels: {
+                              confirm: t("class.remove"),
+                              cancel: t("common.cancel"),
+                            },
+                            confirmProps: { color: "red" },
+                            onConfirm: () => {
+                              removeStudents.mutate(
+                                {
+                                  classAcademicId: classId,
+                                  studentIdList: [student.nis],
+                                },
+                                {
+                                  onSuccess: () => {
+                                    notifications.show({
+                                      title: t("common.success"),
+                                      message: t(
+                                        "class.studentsRemovedSuccess",
+                                      ),
+                                      color: "green",
+                                    });
+                                  },
+                                  onError: (error) => {
+                                    notifications.show({
+                                      title: t("common.error"),
+                                      message: error.message,
+                                      color: "red",
+                                    });
+                                  },
+                                },
+                              );
+                            },
+                          });
+                        }}
+                      >
+                        <IconTrash size={18} />
+                      </ActionIcon>
+                    </Tooltip>
+                  </Table.Td>
                 </Table.Tr>
               ))}
-            {!isLoading && data?.students.length === 0 && (
-              <Table.Tr>
-                <Table.Td colSpan={8}>
-                  <Stack align="center" gap="md" py="xl">
-                    <IconUsers size={48} color="gray" />
-                    <Text ta="center" c="dimmed">
-                      {t("class.noStudentsYet")}
-                      <br />
-                      {t("class.clickAddStudents")}
-                    </Text>
-                  </Stack>
-                </Table.Td>
-              </Table.Tr>
-            )}
-            {data?.students.map((student) => (
-              <Table.Tr key={student.nis}>
-                <Table.Td>
-                  <Checkbox
-                    checked={selectedStudents.includes(student.nis)}
-                    onChange={(e) =>
-                      handleSelectStudent(student.nis, e.currentTarget.checked)
-                    }
-                  />
-                </Table.Td>
-                <Table.Td>
-                  <Badge variant="light">{student.nis}</Badge>
-                </Table.Td>
-                <Table.Td>
-                  <Text size="sm" fw={500}>
-                    {student.name}
-                  </Text>
-                </Table.Td>
-                <Table.Td>
-                  <Text size="sm">{student.parentName}</Text>
-                </Table.Td>
-                <Table.Td>
-                  <Text size="sm">{student.parentPhone}</Text>
-                </Table.Td>
-                <Table.Td>
-                  <Text size="sm">
-                    {dayjs(student.startJoinDate).format("DD/MM/YYYY")}
-                  </Text>
-                </Table.Td>
-                <Table.Td>
-                  <Text size="sm">
-                    {dayjs(student.enrolledAt).format("DD/MM/YYYY")}
-                  </Text>
-                </Table.Td>
-                <Table.Td>
-                  <Tooltip label={t("class.removeFromClassTooltip")}>
-                    <ActionIcon
-                      variant="subtle"
-                      color="red"
-                      onClick={() => {
-                        modals.openConfirmModal({
-                          title: t("class.removeStudents"),
-                          children: (
-                            <Text size="sm">
-                              {t("class.removeStudentConfirmSingle", {
-                                name: student.name,
-                              })}
-                            </Text>
-                          ),
-                          labels: {
-                            confirm: t("class.remove"),
-                            cancel: t("common.cancel"),
-                          },
-                          confirmProps: { color: "red" },
-                          onConfirm: () => {
-                            removeStudents.mutate(
-                              {
-                                classAcademicId: classId,
-                                studentIdList: [student.nis],
-                              },
-                              {
-                                onSuccess: () => {
-                                  notifications.show({
-                                    title: t("common.success"),
-                                    message: t("class.studentsRemovedSuccess"),
-                                    color: "green",
-                                  });
-                                },
-                                onError: (error) => {
-                                  notifications.show({
-                                    title: t("common.error"),
-                                    message: error.message,
-                                    color: "red",
-                                  });
-                                },
-                              },
-                            );
-                          },
-                        });
-                      }}
-                    >
-                      <IconTrash size={18} />
-                    </ActionIcon>
-                  </Tooltip>
-                </Table.Td>
-              </Table.Tr>
-            ))}
-          </Table.Tbody>
-        </Table>
+            </Table.Tbody>
+          </Table>
+        </ScrollArea>
       </Paper>
 
       {/* Add Students Modal */}

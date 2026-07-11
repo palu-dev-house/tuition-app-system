@@ -7,7 +7,7 @@ import type { NextApiRequest, NextApiResponse } from "next";
 class AdaptedRequest extends Request {
   private _nextUrl: URL;
 
-  constructor(req: NextApiRequest) {
+  constructor(req: NextApiRequest, rawBody?: Buffer) {
     const protocol = (req.headers["x-forwarded-proto"] as string) || "http";
     const host = req.headers.host || "localhost";
     const url = `${protocol}://${host}${req.url}`;
@@ -28,8 +28,12 @@ class AdaptedRequest extends Request {
       headers,
     };
 
-    if (req.method !== "GET" && req.method !== "HEAD" && req.body) {
-      init.body = JSON.stringify(req.body);
+    if (req.method !== "GET" && req.method !== "HEAD") {
+      if (rawBody !== undefined) {
+        init.body = rawBody;
+      } else if (req.body) {
+        init.body = JSON.stringify(req.body);
+      }
     }
 
     super(url, init);
@@ -39,6 +43,15 @@ class AdaptedRequest extends Request {
   get nextUrl() {
     return this._nextUrl;
   }
+}
+
+function readRawBody(req: NextApiRequest): Promise<Buffer> {
+  return new Promise((resolve, reject) => {
+    const chunks: Buffer[] = [];
+    req.on("data", (chunk: Buffer) => chunks.push(chunk));
+    req.on("end", () => resolve(Buffer.concat(chunks)));
+    req.on("error", reject);
+  });
 }
 
 // Permissive types: handlers may be typed with NextRequest or Promise<params>
@@ -68,7 +81,16 @@ export function createApiHandler(handlers: RouteHandlers) {
     }
 
     try {
-      const request = new AdaptedRequest(req);
+      const contentType = (req.headers["content-type"] as string) || "";
+      let rawBody: Buffer | undefined;
+      if (
+        contentType.includes("multipart/form-data") &&
+        req.method !== "GET" &&
+        req.method !== "HEAD"
+      ) {
+        rawBody = await readRawBody(req);
+      }
+      const request = new AdaptedRequest(req, rawBody);
 
       // Extract route params from query (dynamic route segments)
       const params: Record<string, string> = {};
@@ -89,14 +111,14 @@ export function createApiHandler(handlers: RouteHandlers) {
         res.setHeader(key, value);
       });
 
-      const contentType = response.headers.get("content-type") || "";
+      const responseContentType = response.headers.get("content-type") || "";
       const isTextual =
-        contentType.startsWith("text/") ||
-        contentType.includes("charset=") ||
-        contentType.includes("javascript") ||
-        /(^|\/|\+)xml(;|$)/.test(contentType) ||
-        contentType === "";
-      if (contentType.includes("application/json")) {
+        responseContentType.startsWith("text/") ||
+        responseContentType.includes("charset=") ||
+        responseContentType.includes("javascript") ||
+        /(^|\/|\+)xml(;|$)/.test(responseContentType) ||
+        responseContentType === "";
+      if (responseContentType.includes("application/json")) {
         const body = await response.json();
         res.json(body);
       } else if (isTextual) {
