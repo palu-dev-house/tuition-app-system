@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.33.4] - 2026-07-11
+
+### Fixes
+- use Uint8Array for multipart body to satisfy BodyInit type and add pre-push tsc check
+
+
+
 ## [2.33.3] - 2026-07-11
 
 ### Fixes
