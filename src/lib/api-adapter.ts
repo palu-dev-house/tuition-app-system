@@ -30,7 +30,7 @@ class AdaptedRequest extends Request {
 
     if (req.method !== "GET" && req.method !== "HEAD") {
       if (rawBody !== undefined) {
-        init.body = rawBody;
+        init.body = new Uint8Array(rawBody);
       } else if (req.body) {
         init.body = JSON.stringify(req.body);
       }
