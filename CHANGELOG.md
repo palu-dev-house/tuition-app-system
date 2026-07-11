@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.33.3] - 2026-07-11
+
+### Fixes
+- resolve FormData parse failure on file import routes and table overflow
+
+
+
 ## [2.33.2] - 2026-06-13
 
 ### Fixes

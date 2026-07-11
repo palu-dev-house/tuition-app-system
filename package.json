@@ -1,6 +1,6 @@
 {
   "name": "school-tuition-system",
-  "version": "2.33.2",
+  "version": "2.33.3",
   "private": true,
   "type": "module",
   "packageManager": "pnpm@10.33.0",
