@@ -1,5 +1,15 @@
 # Changelog
 
+## [2.34.0] - 2026-07-13
+
+### Features
+- auto-generate tuitions on student-class assignment with fee master
+
+### Other
+- test: add export->import round-trip tests for all Excel templates
+
+
+
 ## [2.33.4] - 2026-07-11
 
 ### Fixes
