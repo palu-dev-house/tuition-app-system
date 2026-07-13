@@ -16,11 +16,65 @@ export interface ScholarshipApplicationResult {
   }>;
 }
 
+export interface ScholarshipTuitionInput {
+  id: string;
+  feeAmount: number;
+  paidAmount: number;
+  discountAmount: number;
+}
+
+export interface ScholarshipUpdateGroup {
+  status: "PAID" | "PARTIAL" | "UNPAID";
+  tuitionIds: string[];
+}
+
+/**
+ * Group tuitions by the status they end up with after the scholarship is
+ * applied, so callers can issue one bulk update per group instead of one
+ * update per tuition.
+ */
+export function planScholarshipUpdates(
+  tuitions: ScholarshipTuitionInput[],
+  nominal: number,
+): ScholarshipUpdateGroup[] {
+  const byStatus = new Map<ScholarshipUpdateGroup["status"], string[]>();
+
+  for (const tuition of tuitions) {
+    const effectiveFee = Math.max(
+      tuition.feeAmount - nominal - tuition.discountAmount,
+      0,
+    );
+
+    let newStatus: ScholarshipUpdateGroup["status"];
+    if (tuition.paidAmount >= effectiveFee) {
+      newStatus = "PAID";
+    } else if (tuition.paidAmount > 0) {
+      newStatus = "PARTIAL";
+    } else {
+      newStatus = "UNPAID";
+    }
+
+    const ids = byStatus.get(newStatus) ?? [];
+    ids.push(tuition.id);
+    byStatus.set(newStatus, ids);
+  }
+
+  const order: ScholarshipUpdateGroup["status"][] = [
+    "PAID",
+    "PARTIAL",
+    "UNPAID",
+  ];
+  return order
+    .filter((status) => byStatus.has(status))
+    .map((status) => ({ status, tuitionIds: byStatus.get(status)! }));
+}
+
 /**
  * Apply scholarship to tuitions
  * - For full scholarships: mark UNPAID tuitions as PAID with scholarshipAmount = fee
  * - For partial scholarships: just update scholarshipAmount on UNPAID/PARTIAL tuitions
  * - Does NOT create fake payment records - scholarship is tracked separately
+ * - Batched: one updateMany per resulting status (max 3 queries).
  */
 export async function applyScholarship(
   params: ScholarshipApplicationParams,
@@ -45,34 +99,34 @@ export async function applyScholarship(
       classAcademicId,
       status: { in: ["UNPAID", "PARTIAL"] },
     },
+    select: {
+      id: true,
+      feeAmount: true,
+      paidAmount: true,
+      discountAmount: true,
+    },
   });
 
-  // Update tuitions with scholarship amount
+  const groups = planScholarshipUpdates(
+    tuitions.map((t) => ({
+      id: t.id,
+      feeAmount: Number(t.feeAmount),
+      paidAmount: Number(t.paidAmount),
+      discountAmount: Number(t.discountAmount),
+    })),
+    nominal,
+  );
+
+  await prisma.$transaction(
+    groups.map((group) =>
+      prisma.tuition.updateMany({
+        where: { id: { in: group.tuitionIds } },
+        data: { scholarshipAmount: nominal, status: group.status },
+      }),
+    ),
+  );
+
   for (const tuition of tuitions) {
-    const feeAmount = Number(tuition.feeAmount);
-    const paidAmount = Number(tuition.paidAmount);
-    const discountAmount = Number(tuition.discountAmount);
-    const effectiveFee = Math.max(feeAmount - nominal - discountAmount, 0);
-
-    // Determine new status
-    let newStatus: "PAID" | "PARTIAL" | "UNPAID";
-    if (paidAmount >= effectiveFee) {
-      newStatus = "PAID";
-    } else if (paidAmount > 0) {
-      newStatus = "PARTIAL";
-    } else {
-      newStatus = "UNPAID";
-    }
-
-    // Update tuition with scholarship tracking
-    await prisma.tuition.update({
-      where: { id: tuition.id },
-      data: {
-        scholarshipAmount: nominal,
-        status: newStatus,
-      },
-    });
-
     result.autoPayments.push({
       tuitionId: tuition.id,
       amount: 0, // No actual payment, just scholarship

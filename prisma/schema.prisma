@@ -258,6 +258,8 @@ model Tuition {
   @@index([dueDate])
   @@index([period])
   @@index([discountId])
+  @@index([studentId, status])
+  @@index([classAcademicId, status])
   @@map("tuitions")
 }
 

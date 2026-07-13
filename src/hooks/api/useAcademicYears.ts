@@ -50,6 +50,8 @@ export function useAcademicYears(filters: AcademicYearFilters = {}) {
       );
       return data.data;
     },
+    // Reference data: changes rarely, mutations invalidate explicitly.
+    staleTime: 10 * 60 * 1000,
   });
 }
 

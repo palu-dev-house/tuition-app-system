@@ -48,8 +48,11 @@ export default function App({ Component, pageProps }: AppPropsWithLayout) {
       new QueryClient({
         defaultOptions: {
           queries: {
-            staleTime: Infinity,
-            refetchOnWindowFocus: false,
+            // 60s: cached data is served instantly, but another admin's
+            // changes appear on the next focus/navigation instead of never.
+            // Reference-data hooks override with a longer staleTime.
+            staleTime: 60 * 1000,
+            refetchOnWindowFocus: true,
             refetchOnMount: false,
           },
         },

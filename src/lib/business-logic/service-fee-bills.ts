@@ -1,6 +1,7 @@
 import type { Month, ServiceFee } from "@/generated/prisma/client";
 import { Prisma } from "@/generated/prisma/client";
 import { getPeriodStart } from "@/lib/business-logic/student-exit";
+import { mapWithConcurrency } from "@/lib/concurrency";
 import { prisma } from "@/lib/prisma";
 
 type TxClient = Parameters<Parameters<typeof prisma.$transaction>[0]>[0];
@@ -179,30 +180,40 @@ export async function generateServiceFeeBills(opts: {
     },
   });
 
-  let created = 0;
-  let skipped = 0;
-  let exitSkipped = 0;
+  return sumFeeResults(
+    await mapWithConcurrency(classes, 5, async (cls) => {
+      const students: StudentCtx[] = cls.studentClasses.map((sc) => ({
+        id: sc.student.id,
+        exitedAt: sc.student.exitedAt,
+      }));
 
-  for (const cls of classes) {
-    const students: StudentCtx[] = cls.studentClasses.map((sc) => ({
-      id: sc.student.id,
-      exitedAt: sc.student.exitedAt,
-    }));
+      const perFee = [];
+      for (const fee of cls.serviceFees) {
+        perFee.push(
+          await generateServiceFeeBillsForFee(
+            prisma,
+            fee,
+            students,
+            academicYear,
+          ),
+        );
+      }
+      return sumFeeResults(perFee);
+    }),
+  );
+}
 
-    for (const fee of cls.serviceFees) {
-      const res = await generateServiceFeeBillsForFee(
-        prisma,
-        fee,
-        students,
-        academicYear,
-      );
-      created += res.created;
-      skipped += res.skipped;
-      exitSkipped += res.exitSkipped;
-    }
-  }
-
-  return { created, skipped, exitSkipped };
+function sumFeeResults(
+  results: GenerateAllServiceFeeBillsResult[],
+): GenerateAllServiceFeeBillsResult {
+  return results.reduce(
+    (acc, r) => ({
+      created: acc.created + r.created,
+      skipped: acc.skipped + r.skipped,
+      exitSkipped: acc.exitSkipped + r.exitSkipped,
+    }),
+    { created: 0, skipped: 0, exitSkipped: 0 },
+  );
 }
 
 /**
@@ -245,28 +256,25 @@ export async function generateAllServiceFeeBills(opts: {
     },
   });
 
-  let created = 0;
-  let skipped = 0;
-  let exitSkipped = 0;
+  return sumFeeResults(
+    await mapWithConcurrency(classes, 5, async (cls) => {
+      const students: StudentCtx[] = cls.studentClasses.map((sc) => ({
+        id: sc.student.id,
+        exitedAt: sc.student.exitedAt,
+      }));
 
-  for (const cls of classes) {
-    const students: StudentCtx[] = cls.studentClasses.map((sc) => ({
-      id: sc.student.id,
-      exitedAt: sc.student.exitedAt,
-    }));
-
-    for (const fee of cls.serviceFees) {
-      const res = await generateServiceFeeBillsForFee(
-        prisma,
-        fee,
-        students,
-        academicYear,
-      );
-      created += res.created;
-      skipped += res.skipped;
-      exitSkipped += res.exitSkipped;
-    }
-  }
-
-  return { created, skipped, exitSkipped };
+      const perFee = [];
+      for (const fee of cls.serviceFees) {
+        perFee.push(
+          await generateServiceFeeBillsForFee(
+            prisma,
+            fee,
+            students,
+            academicYear,
+          ),
+        );
+      }
+      return sumFeeResults(perFee);
+    }),
+  );
 }

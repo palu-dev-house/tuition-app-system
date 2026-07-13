@@ -6,7 +6,12 @@ const globalForPrisma = globalThis as unknown as {
 };
 
 function createPrismaClient() {
-  const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL! });
+  const adapter = new PrismaPg({
+    connectionString: process.env.DATABASE_URL!,
+    // Explicit pool ceiling. Bulk work (imports, bill generation) runs at
+    // concurrency 5 via mapWithConcurrency, leaving headroom for requests.
+    max: 10,
+  });
   return new PrismaClient({ adapter });
 }
 

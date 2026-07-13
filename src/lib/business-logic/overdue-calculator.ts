@@ -127,39 +127,55 @@ export async function getOverdueTuitions(
     where.student = studentWhere;
   }
 
+  // Select only the fields the report uses; include:true on student and
+  // classAcademic pulls every column for potentially thousands of rows.
   const tuitions = await prisma.tuition.findMany({
     where,
-    include: {
-      student: true,
-      classAcademic: {
-        include: {
-          academicYear: true,
+    select: {
+      id: true,
+      studentId: true,
+      classAcademicId: true,
+      period: true,
+      year: true,
+      feeAmount: true,
+      discountAmount: true,
+      paidAmount: true,
+      dueDate: true,
+      student: {
+        select: {
+          nis: true,
+          schoolLevel: true,
+          name: true,
+          parentPhone: true,
         },
+      },
+      classAcademic: {
+        select: { className: true, grade: true, section: true },
       },
     },
     orderBy: [{ dueDate: "asc" }, { student: { name: "asc" } }],
   });
 
-  // Fetch scholarships for all relevant student+class combinations
+  // Fetch scholarships for all relevant student+class combinations.
+  // Query by studentId IN (...) — an OR clause per tuition row degenerates
+  // into a huge WHERE — and keep only the pairs we actually need in JS.
   const scholarshipMap = new Map<string, number>();
-  const studentClassPairs = tuitions.map((t) => ({
-    studentId: t.studentId,
-    classAcademicId: t.classAcademicId,
-  }));
 
-  if (studentClassPairs.length > 0) {
+  if (tuitions.length > 0) {
+    const relevantPairs = new Set(
+      tuitions.map((t) => `${t.studentId}-${t.classAcademicId}`),
+    );
     const scholarships = await prisma.scholarship.findMany({
       where: {
-        OR: studentClassPairs.map((pair) => ({
-          studentId: pair.studentId,
-          classAcademicId: pair.classAcademicId,
-        })),
+        studentId: { in: [...new Set(tuitions.map((t) => t.studentId))] },
       },
+      select: { studentId: true, classAcademicId: true, nominal: true },
     });
 
     // Sum scholarships per student+class
     scholarships.forEach((s) => {
       const key = `${s.studentId}-${s.classAcademicId}`;
+      if (!relevantPairs.has(key)) return;
       const current = scholarshipMap.get(key) || 0;
       scholarshipMap.set(key, current + Number(s.nominal));
     });
@@ -399,13 +415,39 @@ export async function getOverdueFeeBills(
 
   const bills = await prisma.feeBill.findMany({
     where,
-    include: {
+    select: {
+      id: true,
+      studentId: true,
+      period: true,
+      year: true,
+      amount: true,
+      paidAmount: true,
+      dueDate: true,
       student: {
-        include: {
-          studentClasses: { include: { classAcademic: true } },
+        select: {
+          name: true,
+          nis: true,
+          schoolLevel: true,
+          parentName: true,
+          parentPhone: true,
+          studentClasses: {
+            select: {
+              classAcademic: {
+                select: {
+                  id: true,
+                  className: true,
+                  grade: true,
+                  section: true,
+                  academicYearId: true,
+                },
+              },
+            },
+          },
         },
       },
-      feeService: true,
+      feeService: {
+        select: { name: true, category: true, academicYearId: true },
+      },
     },
     orderBy: [{ dueDate: "asc" }, { student: { name: "asc" } }],
   });
@@ -487,10 +529,27 @@ export async function getOverdueServiceFeeBills(
 
   const bills = await prisma.serviceFeeBill.findMany({
     where,
-    include: {
-      student: true,
-      serviceFee: true,
-      classAcademic: true,
+    select: {
+      id: true,
+      studentId: true,
+      period: true,
+      year: true,
+      amount: true,
+      paidAmount: true,
+      dueDate: true,
+      student: {
+        select: {
+          name: true,
+          nis: true,
+          schoolLevel: true,
+          parentName: true,
+          parentPhone: true,
+        },
+      },
+      serviceFee: { select: { name: true } },
+      classAcademic: {
+        select: { className: true, grade: true, section: true },
+      },
     },
     orderBy: [{ dueDate: "asc" }, { student: { name: "asc" } }],
   });

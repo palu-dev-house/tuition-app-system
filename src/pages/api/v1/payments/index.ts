@@ -9,6 +9,7 @@ import { processPayment } from "@/lib/business-logic/payment-processor";
 import { applyServiceFeeBillPayment } from "@/lib/business-logic/service-fee-bills";
 import { getServerT } from "@/lib/i18n-server";
 import { prisma } from "@/lib/prisma";
+import { serverCache } from "@/lib/server-cache";
 import { paymentSchema } from "@/lib/validations";
 import { parseWithLocale } from "@/lib/validations/parse-with-locale";
 
@@ -336,6 +337,9 @@ async function POST(request: NextRequest) {
         employee: { select: { employeeId: true, name: true } },
       },
     });
+
+    // Recorded payments change dashboard aggregates immediately.
+    serverCache.invalidatePrefix("dashboard:");
 
     return successResponse({ transactionId, payments }, 201);
   } catch (error) {
