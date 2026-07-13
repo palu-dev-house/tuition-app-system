@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.34.1] - 2026-07-13
+
+### Other
+- perf: batch DB writes, parallelize aggregates, add caching layer
+
+
+
 ## [2.34.0] - 2026-07-13
 
 ### Features
