@@ -230,6 +230,19 @@ Tuition bills are typically generated at the start of the academic year for the 
 
 **Note:** Existing bills are not overwritten. If a deleted bill is regenerated, it will be recreated.
 
+### 6.1b Import Fees from Excel
+
+1. Open **Tuition Bills** and click **Download Template**.
+2. Fill in the monthly fee for each class and click **Import**.
+3. The fee is saved on each class:
+   - Classes that already have students get their bills generated right away.
+   - Empty classes keep the fee and wait — bills are created automatically when students are assigned.
+
+### 6.1c Automatic Generation When Assigning Students
+
+- When a student is assigned to a class (from the class detail page or via Excel import), tuition bills and service fee bills are generated automatically from the class fee. Active scholarships and discounts are applied.
+- If a student is **moved to another class**, unpaid bills from the old class are removed and regenerated in the new class. Paid or partially paid bills are always kept and never billed twice.
+
 ### 6.2 Viewing & Filtering Bills
 
 The bills table can be filtered by:

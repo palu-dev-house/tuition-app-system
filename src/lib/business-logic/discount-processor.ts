@@ -167,9 +167,16 @@ export async function getApplicableDiscounts(
  * Calculate the discount amount for a specific period
  * Returns the best matching discount (class-specific preferred, then highest amount)
  */
+export interface PeriodDiscountSource {
+  id: string;
+  classAcademicId: string | null;
+  discountAmount: Discount["discountAmount"] | number;
+  targetPeriods: string[];
+}
+
 export function calculatePeriodDiscount(
   period: string,
-  discounts: Discount[],
+  discounts: PeriodDiscountSource[],
   classAcademicId: string,
 ): { discountAmount: number; discountId: string | null } {
   let bestMatch: { amount: number; id: string } | null = null;

@@ -2,6 +2,11 @@ import type { NextRequest } from "next/server";
 import { createApiHandler } from "@/lib/api-adapter";
 import { requireRole } from "@/lib/api-auth";
 import { errorResponse, successResponse } from "@/lib/api-response";
+import {
+  syncTuitionsForClassAssignment,
+  type TuitionSyncResult,
+} from "@/lib/business-logic/tuition-sync";
+import { mapWithConcurrency } from "@/lib/concurrency";
 import { parseStudentClassImport } from "@/lib/excel-templates/student-class-template";
 import { getServerT } from "@/lib/i18n-server";
 import { prisma } from "@/lib/prisma";
@@ -36,9 +41,10 @@ async function POST(request: NextRequest) {
   const studentIdList = [...new Set(rows.map((r) => r.studentId))];
   const students = await prisma.student.findMany({
     where: { nis: { in: studentIdList } },
-    select: { nis: true },
+    select: { id: true, nis: true },
   });
   const validStudentNis = new Set(students.map((s) => s.nis));
+  const nisToId = new Map(students.map((s) => [s.nis, s.id]));
 
   // Get all classes for validation
   const classNames = [...new Set(rows.map((r) => r.className))];
@@ -73,7 +79,7 @@ async function POST(request: NextRequest) {
     }
 
     toCreate.push({
-      studentId: row.studentId,
+      studentId: nisToId.get(row.studentId)!,
       classAcademicId: classId,
     });
   }
@@ -109,6 +115,40 @@ async function POST(request: NextRequest) {
     created = result.count;
   }
 
+  // Auto-generate tuitions/service fee bills per class from its fee config.
+  // Batched per class; classes run in parallel.
+  const byClass = new Map<string, string[]>();
+  for (const a of newAssignments) {
+    const list = byClass.get(a.classAcademicId) ?? [];
+    list.push(a.studentId);
+    byClass.set(a.classAcademicId, list);
+  }
+
+  // Bounded: each sync opens a transaction (one pooled connection); the pg
+  // pool holds 10, so cap concurrent classes at 5.
+  const syncResults = await mapWithConcurrency(
+    [...byClass.entries()],
+    5,
+    ([classId, studentIds]) =>
+      syncTuitionsForClassAssignment(prisma, classId, studentIds),
+  );
+  const tuitions = syncResults.reduce<TuitionSyncResult>(
+    (acc, r) => ({
+      tuitionsCreated: acc.tuitionsCreated + r.tuitionsCreated,
+      tuitionsRemoved: acc.tuitionsRemoved + r.tuitionsRemoved,
+      serviceFeeBillsCreated:
+        acc.serviceFeeBillsCreated + r.serviceFeeBillsCreated,
+      serviceFeeBillsRemoved:
+        acc.serviceFeeBillsRemoved + r.serviceFeeBillsRemoved,
+    }),
+    {
+      tuitionsCreated: 0,
+      tuitionsRemoved: 0,
+      serviceFeeBillsCreated: 0,
+      serviceFeeBillsRemoved: 0,
+    },
+  );
+
   return successResponse({
     imported: created,
     skipped,
@@ -117,6 +157,7 @@ async function POST(request: NextRequest) {
       ...errors,
     ],
     total: rows.length,
+    tuitions,
   });
 }
 

@@ -8,6 +8,7 @@ import {
   getApplicableDiscounts,
 } from "@/lib/business-logic/discount-processor";
 import { generateTuitions } from "@/lib/business-logic/tuition-generator";
+import { mapWithConcurrency } from "@/lib/concurrency";
 import {
   type TuitionExcelRow,
   validateTuitionData,
@@ -44,32 +45,62 @@ async function POST(request: NextRequest) {
     const { valid, errors } = validateTuitionData(data, classMap);
 
     if (valid.length === 0) {
-      return successResponse({ generated: 0, skipped: 0, errors });
+      return successResponse({
+        generated: 0,
+        skipped: 0,
+        feesSaved: 0,
+        errors,
+      });
     }
 
-    let totalGenerated = 0;
-    let totalSkipped = 0;
-    const importErrors: Array<{ row: number; error: string }> = [];
-
+    // Save fees to the class master first, so classes without enrolled
+    // students keep their fee and tuitions generate automatically when
+    // students are assigned later. Batched: one updateMany per distinct fee.
+    const classIdsByFee = new Map<number, string[]>();
     for (const row of valid) {
+      const ids = classIdsByFee.get(row.feeAmount) ?? [];
+      ids.push(row.classAcademicId);
+      classIdsByFee.set(row.feeAmount, ids);
+    }
+    await prisma.$transaction(
+      [...classIdsByFee.entries()].map(([feeAmount, ids]) =>
+        prisma.classAcademic.updateMany({
+          where: { id: { in: ids } },
+          data: { monthlyFee: feeAmount },
+        }),
+      ),
+    );
+
+    // Process classes in parallel (bounded below the pg pool of 10) with the
+    // per-class reads batched via Promise.all.
+    const rowResults = await mapWithConcurrency(valid, 5, async (row, i) => {
       try {
         const classAcademic = classes.find((c) => c.id === row.classAcademicId);
-        if (!classAcademic) continue;
+        if (!classAcademic) {
+          return { generated: 0, skipped: 0, pending: 0 };
+        }
 
-        // Get students enrolled in this class
-        const studentClasses = await prisma.studentClass.findMany({
-          where: { classAcademicId: row.classAcademicId },
-          include: {
-            student: {
-              select: { id: true, startJoinDate: true, exitedAt: true },
+        const [studentClasses, applicableDiscounts] = await Promise.all([
+          prisma.studentClass.findMany({
+            where: { classAcademicId: row.classAcademicId },
+            include: {
+              student: {
+                select: { id: true, startJoinDate: true, exitedAt: true },
+              },
             },
-          },
-        });
+          }),
+          getApplicableDiscounts(
+            row.classAcademicId,
+            classAcademic.academicYearId,
+            prisma,
+          ),
+        ]);
         const students = studentClasses.map((sc) => sc.student);
 
         if (students.length === 0) {
-          totalSkipped++;
-          continue;
+          // Fee is saved on the class; tuitions will be generated when
+          // students are assigned.
+          return { generated: 0, skipped: 0, pending: 1 };
         }
 
         // Generate tuition records (MONTHLY)
@@ -105,13 +136,6 @@ async function POST(request: NextRequest) {
           (t) => !existingKeys.has(`${t.studentId}-${t.period}-${t.year}`),
         );
 
-        // Fetch applicable discounts
-        const applicableDiscounts = await getApplicableDiscounts(
-          row.classAcademicId,
-          classAcademic.academicYearId,
-          prisma,
-        );
-
         if (newTuitions.length > 0) {
           await prisma.tuition.createMany({
             data: newTuitions.map((t) => {
@@ -134,22 +158,44 @@ async function POST(request: NextRequest) {
                 discountId,
               };
             }),
+            skipDuplicates: true,
           });
         }
 
-        totalGenerated += newTuitions.length;
-        totalSkipped += tuitionsToCreate.length - newTuitions.length;
+        return {
+          generated: newTuitions.length,
+          skipped: tuitionsToCreate.length - newTuitions.length,
+          pending: 0,
+        };
       } catch (error) {
-        importErrors.push({
-          row: valid.indexOf(row) + 2,
-          error: error instanceof Error ? error.message : "Unknown error",
-        });
+        return {
+          generated: 0,
+          skipped: 0,
+          pending: 0,
+          error: {
+            row: i + 2,
+            error: error instanceof Error ? error.message : "Unknown error",
+          },
+        };
       }
+    });
+
+    let totalGenerated = 0;
+    let totalSkipped = 0;
+    let pendingClasses = 0;
+    const importErrors: Array<{ row: number; error: string }> = [];
+    for (const r of rowResults) {
+      totalGenerated += r.generated;
+      totalSkipped += r.skipped;
+      pendingClasses += r.pending;
+      if ("error" in r && r.error) importErrors.push(r.error);
     }
 
     return successResponse({
       generated: totalGenerated,
       skipped: totalSkipped,
+      feesSaved: valid.length,
+      pendingClasses,
       errors: [...errors, ...importErrors],
     });
   } catch (error) {

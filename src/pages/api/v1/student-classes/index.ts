@@ -2,6 +2,7 @@ import type { NextRequest } from "next/server";
 import { createApiHandler } from "@/lib/api-adapter";
 import { requireAuth, requireRole } from "@/lib/api-auth";
 import { errorResponse, successResponse } from "@/lib/api-response";
+import { syncTuitionsForClassAssignment } from "@/lib/business-logic/tuition-sync";
 import { getServerT } from "@/lib/i18n-server";
 import { prisma } from "@/lib/prisma";
 import {
@@ -173,6 +174,15 @@ async function POST(request: NextRequest) {
     })),
   });
 
+  // Auto-generate tuitions/service fee bills from the class fee config;
+  // on re-assignment, unpaid rows from the old class are regenerated here
+  // while paid periods are preserved.
+  const sync = await syncTuitionsForClassAssignment(
+    prisma,
+    classAcademicId,
+    toAssign,
+  );
+
   return successResponse(
     {
       assigned: created.count,
@@ -180,6 +190,7 @@ async function POST(request: NextRequest) {
       skippedNis: studentIdList.filter((nis: string) =>
         alreadyAssignedIds.has(nisToId.get(nis)!),
       ),
+      tuitions: sync,
     },
     201,
   );

@@ -2,6 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "@/lib/api-client";
+import { queryKeys } from "@/lib/query-keys";
 
 export interface StudentClassFilters {
   page?: number;
@@ -75,12 +76,20 @@ interface UnassignedStudentsResponse {
   };
 }
 
+export interface AssignmentTuitionSync {
+  tuitionsCreated: number;
+  tuitionsRemoved: number;
+  serviceFeeBillsCreated: number;
+  serviceFeeBillsRemoved: number;
+}
+
 interface AssignStudentsResponse {
   success: boolean;
   data: {
     assigned: number;
     skipped: number;
     skippedNis: string[];
+    tuitions: AssignmentTuitionSync;
   };
 }
 
@@ -180,6 +189,8 @@ export function useAssignStudentsToClass() {
       queryClient.invalidateQueries({
         queryKey: studentClassKeys.byClass(variables.classAcademicId),
       });
+      // Assignment auto-generates tuitions/service fee bills
+      queryClient.invalidateQueries({ queryKey: queryKeys.tuitions.all });
     },
   });
 }
@@ -242,6 +253,8 @@ export function useImportStudentClasses() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: studentClassKeys.all });
+      // Import auto-generates tuitions/service fee bills
+      queryClient.invalidateQueries({ queryKey: queryKeys.tuitions.all });
     },
   });
 }

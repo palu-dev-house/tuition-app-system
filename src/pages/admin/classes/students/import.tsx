@@ -36,6 +36,12 @@ interface ImportResult {
   skipped: number;
   total: number;
   errors: Array<{ row: number; nis: string; error: string }>;
+  tuitions?: {
+    tuitionsCreated: number;
+    tuitionsRemoved: number;
+    serviceFeeBillsCreated: number;
+    serviceFeeBillsRemoved: number;
+  };
 }
 
 const ImportStudentClassesPage: NextPageWithLayout =
@@ -79,6 +85,20 @@ const ImportStudentClassesPage: NextPageWithLayout =
               skipped: result.skipped,
             }),
             color: "green",
+          });
+        }
+        if (
+          result.tuitions &&
+          (result.tuitions.tuitionsCreated > 0 ||
+            result.tuitions.serviceFeeBillsCreated > 0)
+        ) {
+          notifications.show({
+            title: t("common.success"),
+            message: t("class.tuitionSyncMessage", {
+              created: result.tuitions.tuitionsCreated,
+              bills: result.tuitions.serviceFeeBillsCreated,
+            }),
+            color: "blue",
           });
         }
       } catch (error) {

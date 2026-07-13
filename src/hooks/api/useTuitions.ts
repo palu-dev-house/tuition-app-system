@@ -246,6 +246,8 @@ interface ImportTuitionsResponse {
   data: {
     generated: number;
     skipped: number;
+    feesSaved: number;
+    pendingClasses: number;
     errors: Array<{ row: number; error?: string; errors?: string[] }>;
   };
 }

@@ -23,9 +23,10 @@ const TuitionsPage: NextPageWithLayout = function TuitionsPage() {
       onSuccess: (data) => {
         notifications.show({
           title: t("common.success"),
-          message: t("import.completeMessage", {
-            imported: data.generated,
-            skipped: data.skipped,
+          message: t("import.tuitionCompleteMessage", {
+            feesSaved: data.feesSaved,
+            generated: data.generated,
+            pending: data.pendingClasses,
           }),
           color: "green",
         });

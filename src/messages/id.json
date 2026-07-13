@@ -786,6 +786,7 @@
     "importCompleteWithErrors": "Import Selesai dengan Error",
     "importCompleteWithErrorsMessage": "{imported} diimpor, {skipped} dilewati, {errors} error",
     "importSuccessMessage": "{imported} penempatan siswa-kelas diimpor, {skipped} dilewati",
+    "tuitionSyncMessage": "{created} tagihan SPP dan {bills} tagihan layanan dibuat otomatis",
     "importFailedError": "Import Gagal",
     "importAssignmentsTitle": "Import Penempatan Siswa ke Kelas",
     "importAssignmentsDescription": "Tambahkan banyak siswa ke kelas menggunakan Excel",
@@ -1459,6 +1460,7 @@
     "skipped": "Dilewati",
     "rowErrors": "{count} baris memiliki error",
     "andMore": "+{count} lagi",
-    "completeMessage": "Berhasil mengimpor {imported} data, {skipped} dilewati"
+    "completeMessage": "Berhasil mengimpor {imported} data, {skipped} dilewati",
+    "tuitionCompleteMessage": "Biaya disimpan untuk {feesSaved} kelas: {generated} tagihan dibuat, {pending} kelas menunggu penempatan siswa"
   }
 }

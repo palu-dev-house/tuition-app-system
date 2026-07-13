@@ -786,6 +786,7 @@
     "importCompleteWithErrors": "Import Completed with Errors",
     "importCompleteWithErrorsMessage": "{imported} imported, {skipped} skipped, {errors} errors",
     "importSuccessMessage": "{imported} student-class assignments imported, {skipped} skipped",
+    "tuitionSyncMessage": "{created} tuitions and {bills} service fee bills generated automatically",
     "importFailedError": "Import Failed",
     "importAssignmentsTitle": "Import Student Class Assignments",
     "importAssignmentsDescription": "Bulk assign students to classes using Excel",
@@ -1459,6 +1460,7 @@
     "skipped": "Skipped",
     "rowErrors": "{count} rows have errors",
     "andMore": "+{count} more",
-    "completeMessage": "Successfully imported {imported} records, {skipped} skipped"
+    "completeMessage": "Successfully imported {imported} records, {skipped} skipped",
+    "tuitionCompleteMessage": "Fees saved for {feesSaved} classes: {generated} tuitions generated, {pending} classes waiting for student assignment"
   }
 }

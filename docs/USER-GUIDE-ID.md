@@ -219,6 +219,19 @@ Tagihan SPP biasanya digenerate di awal tahun ajaran untuk seluruh periode.
 
 **Catatan:** Tagihan yang sudah ada tidak akan ditimpa. Untuk membuat ulang tagihan yang sudah dihapus, generate akan mengisinya kembali.
 
+### 6.1b Import Biaya dari Excel
+
+1. Buka **Tagihan SPP** lalu klik **Download Template**.
+2. Isi biaya bulanan setiap kelas lalu klik **Import**.
+3. Biaya tersimpan di setiap kelas:
+   - Kelas yang sudah punya siswa langsung dibuatkan tagihannya.
+   - Kelas kosong menyimpan biayanya dulu — tagihan dibuat otomatis saat siswa ditempatkan.
+
+### 6.1c Tagihan Otomatis Saat Penempatan Siswa
+
+- Saat siswa ditempatkan ke kelas (dari halaman detail kelas atau import Excel), tagihan SPP dan tagihan layanan dibuat otomatis dari biaya kelas. Beasiswa & diskon aktif ikut diterapkan.
+- Jika siswa **dipindahkan ke kelas lain**, tagihan yang belum dibayar dari kelas lama dihapus dan dibuat ulang di kelas baru. Tagihan yang sudah dibayar (penuh atau sebagian) selalu dipertahankan dan tidak ditagih dua kali.
+
 ### 6.2 Melihat & Memfilter Tagihan
 
 Tabel tagihan dapat difilter berdasarkan:

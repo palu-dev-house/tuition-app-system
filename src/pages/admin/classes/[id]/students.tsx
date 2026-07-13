@@ -147,6 +147,20 @@ const ClassStudentsPage: NextPageWithLayout = function ClassStudentsPage() {
               color: "green",
             });
           }
+          if (
+            data.tuitions &&
+            (data.tuitions.tuitionsCreated > 0 ||
+              data.tuitions.serviceFeeBillsCreated > 0)
+          ) {
+            notifications.show({
+              title: t("common.success"),
+              message: t("class.tuitionSyncMessage", {
+                created: data.tuitions.tuitionsCreated,
+                bills: data.tuitions.serviceFeeBillsCreated,
+              }),
+              color: "blue",
+            });
+          }
         },
         onError: (error) => {
           notifications.show({
