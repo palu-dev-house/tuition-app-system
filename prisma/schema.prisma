@@ -242,6 +242,7 @@ model Tuition {
   dueDate           DateTime      @map("due_date")
   generatedAt       DateTime      @default(now()) @map("generated_at")
   voidedByExit      Boolean       @default(false) @map("voided_by_exit")
+  proratedByExit    Boolean       @default(false) @map("prorated_by_exit")
   createdAt         DateTime      @default(now()) @map("created_at")
   updatedAt         DateTime      @updatedAt @map("updated_at")
 
@@ -570,6 +571,7 @@ model FeeBill {
   dueDate        DateTime      @map("due_date")
   generatedAt    DateTime      @default(now()) @map("generated_at")
   voidedByExit   Boolean       @default(false) @map("voided_by_exit")
+  proratedByExit Boolean       @default(false) @map("prorated_by_exit")
   createdAt      DateTime      @default(now()) @map("created_at")
   updatedAt      DateTime      @updatedAt @map("updated_at")
 
@@ -622,6 +624,7 @@ model ServiceFeeBill {
   dueDate         DateTime      @map("due_date")
   generatedAt     DateTime      @default(now()) @map("generated_at")
   voidedByExit    Boolean       @default(false) @map("voided_by_exit")
+  proratedByExit  Boolean       @default(false) @map("prorated_by_exit")
   createdAt       DateTime      @default(now()) @map("created_at")
   updatedAt       DateTime      @updatedAt @map("updated_at")
 

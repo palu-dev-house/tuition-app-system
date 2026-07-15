@@ -13,6 +13,7 @@ interface PartialWarning {
 
 interface RecordExitResponse {
   voidedCount: number;
+  proratedCount: number;
   partialWarnings: PartialWarning[];
 }
 

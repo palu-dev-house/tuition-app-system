@@ -62,15 +62,20 @@ export default function StudentExitSection({
       { nis, exitDate: exitDate.toISOString(), reason: reason.trim() },
       {
         onSuccess: (data) => {
+          const details = [
+            data.proratedCount > 0
+              ? t("proratedInfo", { count: data.proratedCount })
+              : null,
+            data.partialWarnings.length > 0
+              ? t("previewPartialWarning", {
+                  count: data.partialWarnings.length,
+                })
+              : null,
+          ].filter(Boolean);
           notifications.show({
             color: "green",
             title: t("recordSuccess", { count: data.voidedCount }),
-            message:
-              data.partialWarnings.length > 0
-                ? t("previewPartialWarning", {
-                    count: data.partialWarnings.length,
-                  })
-                : "",
+            message: details.join(" "),
           });
           closeExitModal();
           setReason("");

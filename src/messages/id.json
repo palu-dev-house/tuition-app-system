@@ -655,6 +655,7 @@
       "undoButton": "Batalkan Status Keluar",
       "undoConfirm": "Akan memulihkan {count} tagihan ke status UNPAID. Lanjutkan?",
       "recordSuccess": "Status keluar berhasil dicatat. {count} tagihan dibatalkan.",
+      "proratedInfo": "{count} tagihan bulan keluar dipotong setengah (keluar sebelum/pada tanggal 15).",
       "undoSuccess": "Status keluar dibatalkan. {count} tagihan dipulihkan.",
       "errorDateBeforeJoin": "Tanggal keluar tidak boleh sebelum tanggal masuk",
       "errorDateInFuture": "Tanggal keluar tidak boleh di masa depan",

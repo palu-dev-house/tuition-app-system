@@ -73,6 +73,66 @@ export function isPeriodAfterExit(
   return getPeriodStart(period, year, frequency).getTime() > exitDate.getTime();
 }
 
+export interface ProrationCandidate {
+  id: string;
+  period: string;
+  year: number;
+  frequency: PaymentFrequency;
+  status: "UNPAID" | "PARTIAL";
+  feeAmount: number;
+  paidAmount: number;
+  discountAmount?: number;
+  scholarshipAmount?: number;
+}
+
+export interface ProrationUpdate {
+  id: string;
+  newFeeAmount: number;
+  newStatus: "UNPAID" | "PARTIAL" | "PAID";
+}
+
+/**
+ * Half-month rule for the exit month (monthly periods only): leaving on or
+ * before the 15th halves the month's fee; after the 15th the full fee stands.
+ * The fee is never reduced below what has already been paid, and quarterly/
+ * semester tuitions are left untouched (no proration policy for them).
+ */
+export function planExitMonthProration(
+  rows: ProrationCandidate[],
+  exitDate: Date,
+): ProrationUpdate[] {
+  if (exitDate.getDate() > 15) return [];
+
+  const updates: ProrationUpdate[] = [];
+  for (const r of rows) {
+    if (r.frequency !== "MONTHLY") continue;
+    if (
+      MONTH_NUMBER[r.period] !== exitDate.getMonth() + 1 ||
+      r.year !== exitDate.getFullYear()
+    ) {
+      continue;
+    }
+
+    const halfFee = Math.round(r.feeAmount / 2);
+    const newFeeAmount = Math.max(halfFee, r.paidAmount);
+    if (newFeeAmount >= r.feeAmount) continue;
+
+    const effectiveFee = Math.max(
+      newFeeAmount - (r.discountAmount ?? 0) - (r.scholarshipAmount ?? 0),
+      0,
+    );
+    const newStatus =
+      r.paidAmount >= effectiveFee
+        ? ("PAID" as const)
+        : r.paidAmount > 0
+          ? ("PARTIAL" as const)
+          : ("UNPAID" as const);
+
+    updates.push({ id: r.id, newFeeAmount, newStatus });
+  }
+  return updates;
+}
+
 export interface RecordExitParams {
   nis: string;
   exitDate: Date;
@@ -97,6 +157,8 @@ export interface PartialWarning {
 
 export interface RecordExitResult {
   voidedCount: number;
+  /** Exit-month rows reduced by the half-month rule. */
+  proratedCount: number;
   partialWarnings: PartialWarning[];
 }
 
@@ -153,7 +215,7 @@ export async function recordStudentExit(
 
     const candidates = await tx.tuition.findMany({
       where: {
-        studentId: nis,
+        studentId: student.id,
         status: { in: ["UNPAID", "PARTIAL"] },
       },
       select: {
@@ -161,7 +223,10 @@ export async function recordStudentExit(
         period: true,
         year: true,
         status: true,
+        feeAmount: true,
         paidAmount: true,
+        discountAmount: true,
+        scholarshipAmount: true,
         classAcademic: { select: { paymentFrequency: true } },
       },
     });
@@ -205,10 +270,36 @@ export async function recordStudentExit(
       });
     }
 
+    // --- Half-month rule: exit on/before the 15th halves the exit month ---
+    const tuitionProrations = planExitMonthProration(
+      candidates.map((t) => ({
+        id: t.id,
+        period: t.period,
+        year: t.year,
+        frequency: t.classAcademic.paymentFrequency,
+        status: t.status as "UNPAID" | "PARTIAL",
+        feeAmount: Number(t.feeAmount),
+        paidAmount: Number(t.paidAmount),
+        discountAmount: Number(t.discountAmount),
+        scholarshipAmount: Number(t.scholarshipAmount),
+      })),
+      exitDate,
+    );
+    for (const u of tuitionProrations) {
+      await tx.tuition.update({
+        where: { id: u.id },
+        data: {
+          feeAmount: new Prisma.Decimal(u.newFeeAmount),
+          status: u.newStatus,
+          proratedByExit: true,
+        },
+      });
+    }
+
     // --- FeeSubscription: cap endDate at exitDate for still-active subs ---
     await tx.feeSubscription.updateMany({
       where: {
-        studentId: nis,
+        studentId: student.id,
         OR: [{ endDate: null }, { endDate: { gt: exitDate } }],
       },
       data: { endDate: exitDate },
@@ -216,12 +307,13 @@ export async function recordStudentExit(
 
     // --- FeeBill: void future unpaid, warn on future partial ---
     const feeBillCandidates = await tx.feeBill.findMany({
-      where: { studentId: nis, status: { in: ["UNPAID", "PARTIAL"] } },
+      where: { studentId: student.id, status: { in: ["UNPAID", "PARTIAL"] } },
       select: {
         id: true,
         period: true,
         year: true,
         status: true,
+        amount: true,
         paidAmount: true,
       },
     });
@@ -256,14 +348,38 @@ export async function recordStudentExit(
       });
     }
 
+    const feeBillProrations = planExitMonthProration(
+      feeBillCandidates.map((b) => ({
+        id: b.id,
+        period: b.period,
+        year: b.year,
+        frequency: "MONTHLY" as const,
+        status: b.status as "UNPAID" | "PARTIAL",
+        feeAmount: Number(b.amount),
+        paidAmount: Number(b.paidAmount),
+      })),
+      exitDate,
+    );
+    for (const u of feeBillProrations) {
+      await tx.feeBill.update({
+        where: { id: u.id },
+        data: {
+          amount: new Prisma.Decimal(u.newFeeAmount),
+          status: u.newStatus,
+          proratedByExit: true,
+        },
+      });
+    }
+
     // --- ServiceFeeBill: void future unpaid, warn on future partial ---
     const serviceBillCandidates = await tx.serviceFeeBill.findMany({
-      where: { studentId: nis, status: { in: ["UNPAID", "PARTIAL"] } },
+      where: { studentId: student.id, status: { in: ["UNPAID", "PARTIAL"] } },
       select: {
         id: true,
         period: true,
         year: true,
         status: true,
+        amount: true,
         paidAmount: true,
       },
     });
@@ -298,9 +414,36 @@ export async function recordStudentExit(
       });
     }
 
+    const serviceBillProrations = planExitMonthProration(
+      serviceBillCandidates.map((b) => ({
+        id: b.id,
+        period: b.period,
+        year: b.year,
+        frequency: "MONTHLY" as const,
+        status: b.status as "UNPAID" | "PARTIAL",
+        feeAmount: Number(b.amount),
+        paidAmount: Number(b.paidAmount),
+      })),
+      exitDate,
+    );
+    for (const u of serviceBillProrations) {
+      await tx.serviceFeeBill.update({
+        where: { id: u.id },
+        data: {
+          amount: new Prisma.Decimal(u.newFeeAmount),
+          status: u.newStatus,
+          proratedByExit: true,
+        },
+      });
+    }
+
     return {
       voidedCount:
         toVoid.length + feeBillsToVoid.length + serviceBillsToVoid.length,
+      proratedCount:
+        tuitionProrations.length +
+        feeBillProrations.length +
+        serviceBillProrations.length,
       partialWarnings,
     };
   });
@@ -334,7 +477,7 @@ export async function undoStudentExit(
 
     // Find tuitions auto-voided by this exit, with their class fee config.
     const voided = await tx.tuition.findMany({
-      where: { studentId: nis, voidedByExit: true },
+      where: { studentId: student.id, voidedByExit: true },
       select: {
         id: true,
         classAcademic: {
@@ -381,13 +524,13 @@ export async function undoStudentExit(
     // --- Restore FeeSubscription rows capped at exit date ---
     const exitedAt = student.exitedAt; // snapshot before clearing below
     const _subsRestored = await tx.feeSubscription.updateMany({
-      where: { studentId: nis, endDate: exitedAt },
+      where: { studentId: student.id, endDate: exitedAt },
       data: { endDate: null },
     });
 
     // --- Restore FeeBill rows voided by this exit; re-resolve price per period ---
     const voidedFeeBills = await tx.feeBill.findMany({
-      where: { studentId: nis, voidedByExit: true },
+      where: { studentId: student.id, voidedByExit: true },
       select: {
         id: true,
         feeServiceId: true,
@@ -444,7 +587,7 @@ export async function undoStudentExit(
 
     // --- Restore ServiceFeeBill rows voided by this exit ---
     const voidedServiceBills = await tx.serviceFeeBill.findMany({
-      where: { studentId: nis, voidedByExit: true },
+      where: { studentId: student.id, voidedByExit: true },
       select: {
         id: true,
         serviceFee: {
@@ -481,13 +624,120 @@ export async function undoStudentExit(
     }
     const serviceBillsRestored = serviceBillUpdates.length;
 
+    // --- Restore rows reduced by the half-month rule on exit ---
+    const statusFor = (paid: number, effectiveFee: number) =>
+      paid >= effectiveFee ? "PAID" : paid > 0 ? "PARTIAL" : "UNPAID";
+
+    const proratedTuitions = await tx.tuition.findMany({
+      where: { studentId: student.id, proratedByExit: true },
+      select: {
+        id: true,
+        paidAmount: true,
+        discountAmount: true,
+        scholarshipAmount: true,
+        classAcademic: {
+          select: {
+            paymentFrequency: true,
+            monthlyFee: true,
+            quarterlyFee: true,
+            semesterFee: true,
+          },
+        },
+      },
+    });
+    let proratedRestored = 0;
+    for (const t of proratedTuitions) {
+      const c = t.classAcademic;
+      const fee =
+        c.paymentFrequency === "MONTHLY"
+          ? c.monthlyFee
+          : c.paymentFrequency === "QUARTERLY"
+            ? c.quarterlyFee
+            : c.semesterFee;
+      if (fee == null) continue; // data inconsistent — skip
+      const effective = Math.max(
+        Number(fee) - Number(t.discountAmount) - Number(t.scholarshipAmount),
+        0,
+      );
+      await tx.tuition.update({
+        where: { id: t.id },
+        data: {
+          feeAmount: fee,
+          status: statusFor(Number(t.paidAmount), effective),
+          proratedByExit: false,
+        },
+      });
+      proratedRestored++;
+    }
+
+    const proratedFeeBills = await tx.feeBill.findMany({
+      where: { studentId: student.id, proratedByExit: true },
+      select: {
+        id: true,
+        feeServiceId: true,
+        period: true,
+        year: true,
+        paidAmount: true,
+      },
+    });
+    for (const bill of proratedFeeBills) {
+      const prices =
+        pricesByService.get(bill.feeServiceId) ??
+        (await tx.feeServicePrice.findMany({
+          where: { feeServiceId: bill.feeServiceId },
+        }));
+      pricesByService.set(bill.feeServiceId, prices);
+      let amount: Prisma.Decimal;
+      try {
+        amount = resolvePriceForPeriod(prices, bill.period, bill.year);
+      } catch (err) {
+        if (err instanceof NoPriceForPeriodError) continue;
+        throw err;
+      }
+      await tx.feeBill.update({
+        where: { id: bill.id },
+        data: {
+          amount,
+          status: statusFor(Number(bill.paidAmount), Number(amount)),
+          proratedByExit: false,
+        },
+      });
+      proratedRestored++;
+    }
+
+    const proratedServiceBills = await tx.serviceFeeBill.findMany({
+      where: { studentId: student.id, proratedByExit: true },
+      select: {
+        id: true,
+        paidAmount: true,
+        serviceFee: { select: { amount: true, isActive: true } },
+      },
+    });
+    for (const bill of proratedServiceBills) {
+      if (!bill.serviceFee || !bill.serviceFee.isActive) continue;
+      const amount = new Prisma.Decimal(bill.serviceFee.amount);
+      await tx.serviceFeeBill.update({
+        where: { id: bill.id },
+        data: {
+          amount,
+          status: statusFor(Number(bill.paidAmount), Number(amount)),
+          proratedByExit: false,
+        },
+      });
+      proratedRestored++;
+    }
+
     await tx.student.update({
       where: { id: student.id },
       data: { exitedAt: null, exitReason: null, exitedBy: null },
     });
 
     return {
-      restoredCount: restoredCount + feeBillsRestored + serviceBillsRestored,
+      restoredCount:
+        restoredCount +
+        feeBillsRestored +
+        serviceBillsRestored +
+        proratedRestored,
     };
   });
 }
