@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.34.3] - 2026-07-15
+
+### Other
+- test: cover mid-year join and student exit in tuition QA suite
+
+
+
 ## [2.34.2] - 2026-07-15
 
 ### Fixes
