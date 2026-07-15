@@ -3,6 +3,7 @@ import { createApiHandler } from "@/lib/api-adapter";
 import { requireRole } from "@/lib/api-auth";
 import { errorResponse, successResponse } from "@/lib/api-response";
 import {
+  removeOtherAssignmentsInYear,
   syncTuitionsForClassAssignment,
   type TuitionSyncResult,
 } from "@/lib/business-logic/tuition-sync";
@@ -129,8 +130,12 @@ async function POST(request: NextRequest) {
   const syncResults = await mapWithConcurrency(
     [...byClass.entries()],
     5,
-    ([classId, studentIds]) =>
-      syncTuitionsForClassAssignment(prisma, classId, studentIds),
+    async ([classId, studentIds]) => {
+      // Re-assignment = move: drop same-year assignments to other classes
+      // so the sync regenerates their UNPAID rows in this class.
+      await removeOtherAssignmentsInYear(prisma, classId, studentIds);
+      return syncTuitionsForClassAssignment(prisma, classId, studentIds);
+    },
   );
   const tuitions = syncResults.reduce<TuitionSyncResult>(
     (acc, r) => ({

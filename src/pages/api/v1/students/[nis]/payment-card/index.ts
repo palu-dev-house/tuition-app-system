@@ -29,18 +29,7 @@ function yearForMonth(startYear: number, month: Month): number {
   return firstHalf.includes(month) ? startYear : startYear + 1;
 }
 
-const MONTHLY_FALLBACK: Month[] = [
-  "SEPTEMBER",
-  "OCTOBER",
-  "NOVEMBER",
-  "DECEMBER",
-  "JANUARY",
-  "FEBRUARY",
-  "MARCH",
-  "APRIL",
-  "MAY",
-  "JUNE",
-];
+const MONTHLY_FALLBACK: Month[] = ACADEMIC_MONTH_ORDER;
 
 async function GET(
   request: NextRequest,
@@ -143,7 +132,7 @@ async function GET(
       new Set(tuitions.map((tt) => `${tt.period}|${tt.year}`)),
     );
 
-    let periodList: Array<{ period: string; year: number }> =
+    const periodList: Array<{ period: string; year: number }> =
       tuitionKeys.length > 0
         ? tuitionKeys.map((k) => {
             const [period, year] = k.split("|");
@@ -153,10 +142,6 @@ async function GET(
             period: m,
             year: yearForMonth(startYear, m),
           }));
-
-    periodList = periodList.filter(
-      (p) => p.period !== "JULY" && p.period !== "AUGUST",
-    );
 
     periodList.sort((a, b) => {
       const yearDiff = a.year - b.year;

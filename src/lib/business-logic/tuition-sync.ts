@@ -215,6 +215,36 @@ export function planOrphanedServiceFeeBillDeletion(
 // ORCHESTRATOR (DB)
 // ============================================
 
+/**
+ * A student belongs to at most one class per academic year: assigning to a
+ * class removes the student's assignments to other classes of the same year
+ * (re-assignment = move). Call BEFORE syncTuitionsForClassAssignment so the
+ * sync sees the old class as orphaned and regenerates its UNPAID rows in the
+ * new class (PAID/PARTIAL rows are preserved by the sync).
+ */
+export async function removeOtherAssignmentsInYear(
+  prisma: PrismaClient,
+  classAcademicId: string,
+  studentIds: string[],
+): Promise<number> {
+  if (studentIds.length === 0) return 0;
+
+  const classAcademic = await prisma.classAcademic.findUnique({
+    where: { id: classAcademicId },
+    select: { academicYearId: true },
+  });
+  if (!classAcademic) return 0;
+
+  const res = await prisma.studentClass.deleteMany({
+    where: {
+      studentId: { in: studentIds },
+      classAcademicId: { not: classAcademicId },
+      classAcademic: { academicYearId: classAcademic.academicYearId },
+    },
+  });
+  return res.count;
+}
+
 export interface TuitionSyncResult {
   tuitionsCreated: number;
   tuitionsRemoved: number;
