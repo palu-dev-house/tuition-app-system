@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.35.0] - 2026-07-15
+
+### Features
+- prorate exit-month bills with half-month rule; fix exit NIS/UUID bug
+
+
+
 ## [2.34.3] - 2026-07-15
 
 ### Other
