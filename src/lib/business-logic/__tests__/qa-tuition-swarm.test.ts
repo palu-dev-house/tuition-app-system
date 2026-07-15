@@ -15,6 +15,7 @@ import {
   planScholarshipUpdates,
   type ScholarshipTuitionInput,
 } from "../scholarship-processor";
+import { getPeriodStart, isPeriodAfterExit } from "../student-exit";
 import { generateTuitions, PERIODS } from "../tuition-generator";
 import { planTuitionSync, type SyncExistingTuition } from "../tuition-sync";
 
@@ -443,6 +444,210 @@ describe("QA swarm: scholarship re-apply invariants across random scenarios", ()
               : "UNPAID";
         expect(statusOf.get(t.id), `${context} ${t.id}`).toBe(expected);
       }
+    }
+  });
+});
+
+// ============================================
+// 5. Mid-year join and student exit
+// ============================================
+
+describe("QA: mid-year join and exit in re-assignment sync", () => {
+  it("mid-year joiner (October) gets only Oct-Jun on assignment", () => {
+    const plan = planTuitionSync({
+      classAcademic: makeClass("class-new"),
+      students: [
+        {
+          id: "student-1",
+          startJoinDate: new Date("2026-10-12"),
+          exitedAt: null,
+        },
+      ],
+      assignments: [{ studentId: "student-1", classAcademicId: "class-new" }],
+      existingTuitions: [],
+      discounts: [],
+    });
+
+    expect(plan.toCreate.map((t) => t.period)).toEqual([
+      "OCTOBER",
+      "NOVEMBER",
+      "DECEMBER",
+      "JANUARY",
+      "FEBRUARY",
+      "MARCH",
+      "APRIL",
+      "MAY",
+      "JUNE",
+    ]);
+  });
+
+  it("re-assigning a mid-year joiner never creates months before the join month", () => {
+    const plan = planTuitionSync({
+      classAcademic: makeClass("class-new"),
+      students: [
+        {
+          id: "student-1",
+          startJoinDate: new Date("2027-02-01"),
+          exitedAt: null,
+        },
+      ],
+      assignments: [{ studentId: "student-1", classAcademicId: "class-new" }],
+      existingTuitions: [
+        {
+          id: "old-feb",
+          classAcademicId: "class-old",
+          studentId: "student-1",
+          period: "FEBRUARY",
+          year: 2027,
+          status: "PAID",
+        },
+        {
+          id: "old-mar",
+          classAcademicId: "class-old",
+          studentId: "student-1",
+          period: "MARCH",
+          year: 2027,
+          status: "UNPAID",
+        },
+      ],
+      discounts: [],
+    });
+
+    // PAID February survives, unpaid March moves; Feb is never re-billed.
+    expect(plan.toDelete).toEqual(["old-mar"]);
+    expect(plan.toCreate.map((t) => t.period)).toEqual([
+      "MARCH",
+      "APRIL",
+      "MAY",
+      "JUNE",
+    ]);
+  });
+
+  it("exited student gets no periods after the exit month", () => {
+    const plan = planTuitionSync({
+      classAcademic: makeClass("class-new"),
+      students: [
+        {
+          id: "student-1",
+          startJoinDate: new Date("2026-07-06"),
+          exitedAt: new Date("2026-11-15"),
+        },
+      ],
+      assignments: [{ studentId: "student-1", classAcademicId: "class-new" }],
+      existingTuitions: [],
+      discounts: [],
+    });
+
+    // July..November only — December onwards starts after the exit date.
+    expect(plan.toCreate.map((t) => t.period)).toEqual([
+      "JULY",
+      "AUGUST",
+      "SEPTEMBER",
+      "OCTOBER",
+      "NOVEMBER",
+    ]);
+  });
+
+  it("student who joined after the academic year ended gets nothing", () => {
+    const plan = planTuitionSync({
+      classAcademic: makeClass("class-new"),
+      students: [
+        {
+          id: "student-1",
+          startJoinDate: new Date("2027-08-01"),
+          exitedAt: null,
+        },
+      ],
+      assignments: [{ studentId: "student-1", classAcademicId: "class-new" }],
+      existingTuitions: [],
+      discounts: [],
+    });
+
+    expect(plan.toCreate).toEqual([]);
+  });
+});
+
+describe("QA: exit voiding period math (isPeriodAfterExit)", () => {
+  it("keeps the exit month billed and voids strictly later months", () => {
+    const exit = new Date(2026, 10, 15); // Nov 15, 2026
+    expect(isPeriodAfterExit("NOVEMBER", 2026, "MONTHLY", exit)).toBe(false);
+    expect(isPeriodAfterExit("DECEMBER", 2026, "MONTHLY", exit)).toBe(true);
+    expect(isPeriodAfterExit("OCTOBER", 2026, "MONTHLY", exit)).toBe(false);
+    // Second-semester rows carry the next calendar year.
+    expect(isPeriodAfterExit("JANUARY", 2027, "MONTHLY", exit)).toBe(true);
+  });
+
+  it("handles quarterly and semester periods", () => {
+    const exit = new Date(2026, 10, 15); // Nov 15, 2026
+    expect(isPeriodAfterExit("Q2", 2026, "QUARTERLY", exit)).toBe(false); // starts Oct 1
+    expect(isPeriodAfterExit("Q3", 2027, "QUARTERLY", exit)).toBe(true); // starts Jan 1
+    expect(isPeriodAfterExit("SEM1", 2026, "SEMESTER", exit)).toBe(false);
+    expect(isPeriodAfterExit("SEM2", 2027, "SEMESTER", exit)).toBe(true);
+  });
+
+  it("exit exactly on a period start keeps that period", () => {
+    const exit = new Date(2026, 11, 1); // Dec 1, 2026 00:00
+    expect(isPeriodAfterExit("DECEMBER", 2026, "MONTHLY", exit)).toBe(false);
+    expect(isPeriodAfterExit("JANUARY", 2027, "MONTHLY", exit)).toBe(true);
+  });
+
+  it("getPeriodStart rejects unknown periods", () => {
+    expect(() => getPeriodStart("SOMEDAY", 2026, "MONTHLY")).toThrow();
+    expect(() => getPeriodStart("Q5", 2026, "QUARTERLY")).toThrow();
+  });
+});
+
+describe("QA swarm: join/exit windows across random scenarios", () => {
+  it("500 seeded scenarios: created periods exactly match the enrollment window", () => {
+    const rand = mulberry32(11777);
+
+    for (let run = 0; run < 500; run++) {
+      // Join in a random academic month (0 = July .. 11 = June), sometimes
+      // before the year starts; optional exit in a later academic month.
+      const joinIdx = rand() < 0.3 ? -1 : Math.floor(rand() * 12);
+      const joinDate =
+        joinIdx === -1
+          ? new Date("2025-07-01")
+          : new Date(
+              joinIdx < 6 ? 2026 : 2027,
+              (6 + joinIdx) % 12,
+              1 + Math.floor(rand() * 27),
+            );
+      const hasExit = rand() < 0.4;
+      const exitIdx = hasExit
+        ? Math.max(joinIdx, 0) +
+          Math.floor(rand() * (12 - Math.max(joinIdx, 0)))
+        : null;
+      const exitDate =
+        exitIdx === null
+          ? null
+          : new Date(
+              exitIdx < 6 ? 2026 : 2027,
+              (6 + exitIdx) % 12,
+              1 + Math.floor(rand() * 27),
+            );
+
+      const plan = planTuitionSync({
+        classAcademic: makeClass("class-new"),
+        students: [{ id: "s-0", startJoinDate: joinDate, exitedAt: exitDate }],
+        assignments: [{ studentId: "s-0", classAcademicId: "class-new" }],
+        existingTuitions: [],
+        discounts: [],
+      });
+
+      const startIdx = Math.max(joinIdx, 0);
+      // A period is generated while its first day is not after the exit date.
+      const expected = MONTHS.filter((_, i) => {
+        if (i < startIdx) return false;
+        if (!exitDate) return true;
+        const periodStart = new Date(i < 6 ? 2026 : 2027, (6 + i) % 12, 1);
+        return periodStart.getTime() <= exitDate.getTime();
+      });
+
+      expect(
+        plan.toCreate.map((t) => t.period),
+        `run=${run} join=${joinDate.toISOString()} exit=${exitDate?.toISOString() ?? "none"}`,
+      ).toEqual(expected);
     }
   });
 });
