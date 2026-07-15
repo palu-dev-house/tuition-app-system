@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.34.2] - 2026-07-15
+
+### Fixes
+- show all 12 months on payment card and make re-assignment a move
+
+
+
 ## [2.34.1] - 2026-07-13
 
 ### Other
